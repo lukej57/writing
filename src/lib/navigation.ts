@@ -34,6 +34,7 @@ export const navigation = [
         title: 'Predictive data generation',
         href: '/docs/predictive-data-generation',
       },
+      { title: 'Composable Views in Rails', href: '/docs/composable-views' },
     ],
   },
   {
