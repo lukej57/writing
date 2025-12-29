@@ -58,17 +58,6 @@ export function Hero() {
               </p>
             </div>
           </div>
-          <div className="relative lg:static xl:pl-10">
-            <div className="relative flex justify-center lg:justify-start">
-              <Image
-                src={rubyFpCoreImage}
-                alt="Ruby FP Core"
-                className="rounded-2xl w-64"
-                unoptimized
-                priority
-              />
-            </div>
-          </div>
         </div>
       </div>
     </div>
