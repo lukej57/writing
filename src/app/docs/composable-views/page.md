@@ -1,9 +1,9 @@
 ---
-title: Composable Views in Rails
+title: Composable Views in Rails, Using Only Templates, Partials and PORO Presenters.
 nextjs:
   metadata:
     title: Composable Views in Rails
-    description: Using only templates, partials and PORO presenters.
+    description: Using Only Templates, Partials and PORO Presenters.
 ---
 
 Views grow in complexity like every other part of a Rails application.
