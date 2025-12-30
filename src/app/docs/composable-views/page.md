@@ -10,11 +10,11 @@ Views grow in complexity like every other part of a Rails application.
 We need to decompose views to manage them, but decomposition along the wrong axes creates **fragmentation** that rapidly devolves into technical debt.
 Instead, we need **factorisation** that splits our work into composable partials and flexible templates.
 We can achieve this in three steps:
- 1. Pull page concerns up into templates,
- 1. Push presentational HTML down into partials, and
- 1. Extract presentation of model data into POROs.
+ 1. Push page concerns up into templates,
+ 1. Pull presentational HTML down into partials, and
+ 1. Extract model presentation into POROs.
 
-This covers off the fundamentals to know before considering technical solutions like Draper, Keynote, Phlex or ViewComponents.
+These fundamentals position you to properly consider technical solutions like Draper, Keynote, Phlex or ViewComponents.
 
 ## Action Templates
 
@@ -71,8 +71,8 @@ Consider an index view for timesheets.
 ## Naive Decomposition
 
 Let's decompose this page ontologically.
-Whatever we can name, we extract into a partial.
-Since we can see a summary bar and a lists of timesheets, the index action template becomes as follows.
+Whatever you can name, extract it into a partial.
+This leads to a summary bar and a list of timesheets.
 
 ```haml
 -# app/views/timesheets/index.html.haml
@@ -83,7 +83,7 @@ Since we can see a summary bar and a lists of timesheets, the index action templ
 = render "timesheet_list", timesheets: @timesheets
 ```
 
-The summary bar is extracted.
+The summary bar extracts wholesale.
 
 ```haml
 -# app/views/timesheets/_summary_bar.html.haml
@@ -105,7 +105,8 @@ The summary bar is extracted.
     %span.value= pending_count
 ```
 
-The timesheet list has a row that gets a partial too.
+The timesheet list contains a loop.
+The body of the loop extracts again into a `_row` partial.
 
 ```haml
 -# app/views/timesheets/_timesheet_list.html.haml
@@ -141,14 +142,8 @@ The timesheet list has a row that gets a partial too.
         = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-This decomposition strategy creates what I call the *partial tunnelling anti-pattern*.
-Let's try to work with these partials to illustrate the anti-pattern.
-
-Note:
-When we do the proper compositional break up, you do the composition in template and you can see at a glance again what's going on, instead of having to do that composition in your head.
-It will be easier to understand the structure than the first time around, because dense presentational info will be abstract by partials, but structure remains clear at the top level.
-
-Now let's evolve the page.
+This demonstrates what I call the *partial tunnelling anti-pattern*.
+Evolving the page bears this out.
 
 ### Chaotic Evolution
 Let's try to reuse the timesheets list to show an employee their timesheets.
@@ -163,29 +158,26 @@ Let's try to reuse the timesheets list to show an employee their timesheets.
   = render "timesheets/timesheet_list", timesheets: @my_timesheets
 ```
 
-When the page loads, we see the approve and reject buttons.
-Darn.
-We don't want to show those to employees viewing their own timesheets.
-
-How can we stop the buttons showing?
-Here's what our structure looks like now.
+It should be this easy, but when the page loads, we see the approve and reject buttons.
+We only want to show that to managers.
+Let's try to fix the issue within the current structure.
 
 ```
-index.html.haml (manager views) 
+timesheets/index.html.haml (manager view) 
 └── _timesheet_list.html.haml
     └── _row.html.haml
 
-dashboard.html.haml (employee views)
+dashboard/show.html.haml   (employee view)
 └── _timesheet_list.html.haml
     └── _row.html.haml
 ```
 
-The `_timesheet_list` partial is sandwiched between the action templates and the `_row`—all of which now need to communicate.
+The manager view and employee view both need `_row` to adjust its behaviour, but `_row` is a hidden implementation detail of `_timesheet_list.html.haml`.
 This gives us a range of bad options.
+
 We can smuggle data down to `_row` with an instance variable or a page parameter.
 We can also drill an argument through the `_timesheet_list`.
 The `_timesheet_list` partial won't use the argument, but it's still the least surprising and most portable option, given the structure we have.
-Let's do the flag.
 
 ```haml
 -# app/views/timesheets/_timesheet_list.html.haml
@@ -225,25 +217,25 @@ Now the dashboard can hide the form.
            show_review_form: false
 ```
 
-That was a lot of work to "reuse" a partial.
-That's just the beginning.
+That was a lot of work to "reuse" a partial, and it's just the beginning.
 It turns out that the employee needs to be shown an edit button that the mananger does not.
 That's another flag.
 
 The manager's timesheet view is also built for a batch processing workflow.
-The manager clicks approve or reject on each timesheet row and the frame updates in place, preserving scroll position.
-The employee clicks the edit button, but now turbo tries to extract a frame from the response, causing an error.
+The manager clicks approve or reject on each timesheet row and the turbo frame update preserves the scroll position.
+When the employee clicks the edit button, turbo tries to extract a frame from the response, causing an error.
 We have another slew of bad options:
  1. Add `data-turbo-frame="_top"` to edit links (but only for employees)—another flag
  1. Wrap the edit page content in the same turbo frame—couples unrelated pages
  1. Make the turbo frame conditional: if `should_use_turbo_frame`—page concern in partial
- 1. Copy the partial and maintain two versions
 
-The last option there is interesting too.
-It's the other side of this tradeoff: horizontal coupling.
-The partial becomes a union of its clients' concerns, fast devolving into a pile of technical debt. 
+The developer repeatedly faces the same fork in the road.
+Invest a lot of effort to restructure, or make the situation a bit worse and move on.
 
 ## Factorisation
+
+How can we make this workable?
+The major problem was that templates could not adjust the behaviour of a nested partial.
 
 ```haml
 -# app/views/timesheets/index.html.haml
