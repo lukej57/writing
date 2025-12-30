@@ -23,11 +23,11 @@ const lexend = localFont({
 
 export const metadata: Metadata = {
   title: {
-    template: '%s - Docs',
-    default: 'CacheAdvance - Never miss the cache again.',
+    template: '%s - LukeJ',
+    default: 'LukeJ - Practical Programming Wisdom',
   },
   description:
-    'Cache every single thing your app could ever do ahead of time, so your code never even has to run at all.',
+    'Programming articles on Ruby, Rails, and software design.',
 }
 
 export default function RootLayout({
