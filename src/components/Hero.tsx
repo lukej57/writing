@@ -7,7 +7,8 @@ import { Button } from '@/components/Button'
 import { HeroBackground } from '@/components/HeroBackground'
 import blurCyanImage from '@/images/blur-cyan.png'
 import blurIndigoImage from '@/images/blur-indigo.png'
-import rubyFpCoreImage from '@/images/ruby_fp_core.png'
+import rubyFpCoreImage from '@/images/ruby_fp_core_2.png'
+import rubyFpCoreInvertedImage from '@/images/ruby_fp_core_2_inverted.png'
 
 const codeLanguage = 'javascript'
 const code = `export default {
@@ -56,6 +57,24 @@ export function Hero() {
                 Cache every single thing your app could ever do ahead of time,
                 so your code never even has to run at all.
               </p>
+            </div>
+          </div>
+          <div className="relative lg:static xl:pl-10">
+            <div className="relative flex justify-center lg:justify-start">
+              <Image
+                src={rubyFpCoreImage}
+                alt="Ruby FP Core"
+                className="w-64 dark:hidden"
+                unoptimized
+                priority
+              />
+              <Image
+                src={rubyFpCoreInvertedImage}
+                alt="Ruby FP Core"
+                className="w-64 hidden dark:block"
+                unoptimized
+                priority
+              />
             </div>
           </div>
         </div>
