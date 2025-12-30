@@ -11,9 +11,9 @@ Ruby projects using Sorbet will almost certainly be using `T::Struct` which, acc
 
 My aim here is to deep dive into that definition and then discuss how best to use `T::Struct`.
 
-# Why Do We Need Structs?
+## Why Do We Need Structs?
 
-## The Need for Compound Data
+### The Need for Compound Data
 
 Geometry is full of canonical, motivating examples of why we need compound data. Consider writing a function to compute the centroid of three points in 3D space.
 
@@ -88,10 +88,18 @@ end
 We need compound data to get the benefits of conceptual alignment with the domain.
 
 {% callout %}
-See *Class vs Array vs Hash* in the appendix to compare this to using an array or hash.
+It is tempting to use collection types like arrays and hashes to aggregate data, but they are both *open* structures.
+That means accessing them can always produce a `nil` value at runtime, complicating client code with `T.nilable(...)` types.
+
+Collections are even worse at aggregating different types.
+Types like `T::Array[T.any(Float, Integer, String)]` compound the `nil` problem, by making you check for `nil` and then **narrow** the type.
+
+On paper, hashes can escape the union types problem in Sorbet via [shaped hashes](https://sorbet.org/docs/shapes), but they are so tricky in practice that even the documentation recommends  `T::Struct` instead.
+
+Colleciton types cannot replace data classes, but we would almost certainly find use for `T::Array[Point3d]` and `T::Hash[Symbol, Point3d]`.
 {% /callout %}
 
-## The Need for Data Classes
+### The Need for Data Classes
 
 Let’s try this approach with the more complicated example of a configuration object for a hypothetical email client.
 We have many properties, with a variety of types and some have default values.
@@ -195,7 +203,7 @@ Ruby’s answer to this is `Struct`, which should in principle address the boile
 At first glance, this is a big improvement, but we are still missing default values and type information.
 This will not actually work yet.
 
-# Why Do We Need `T::Struct`?
+### Why Do We Need T::Struct?
 
 Let’s add a constructor to our `Struct` to handle default values.
 
@@ -285,7 +293,7 @@ end
 The result reads like a concise, typed specification of the data.
 This is exactly what we want and `T::Struct` is the only way to get it when using Sorbet.
 
-# When Should We Use `T::Struct`?
+## When Should We Use T::Struct?
 
 Let’s recap.
 We need compound data, but classes are an unnatural medium for it.
@@ -355,7 +363,7 @@ object = MyClass::Builder.new(
 T.reveal_type(object) # <MyClass:0x000000015dfdd370>
 ```
 
-# Attribute Macros
+### Attribute Macros
 If you don’t use this pattern, you may be tempted to inherit from `T::Struct` to sidestep the boilerplate that comes with attribute macros and Sorbet.
 Recall the `EmailConfig` example.
 
@@ -410,7 +418,7 @@ You are better off designing your class to minimise them, rather than sugar coat
 I will leave the details of the class design argument for another day.
 For now, if attribute macros are bothering you, consider whether you actually need them.
 
-# Intent Signalling
+### Intent Signalling
 
 The term “struct” has historically connoted plain data across many programming languages.
 It can be jarring to see a struct loaded with behaviour.
@@ -436,7 +444,7 @@ Google’s C++ style guide provides interesting [guidance](https://google.github
 This introduces two more angles to consider: behavioural evolution and passivity.
 How does `T::Struct` weigh up there?
 
-# Evolution and Inheritance
+### Evolution and Inheritance
 
 You use `T::Struct` by inheriting from it.
 This seals the class off, preventing further inheritance.
@@ -456,7 +464,7 @@ When something is widely used, you are more likely to need flexibility.
 Inheritance gives you one way to introduce some flexibility by creating variations of the base class.
 {% /callout %}
 
-## The Passive Nature of `T::Struct`
+### The Passive Nature of T::Struct
 An active class encapsulates state and manages it via public methods.
 A passive class keeps everything public and is acted upon by external logic.
 Which is `T::Struct`?
@@ -546,7 +554,7 @@ Mongoid is also an ODM with a DSL for defining properties.
 It also has no visibility API and is [hardwired](https://github.com/mongodb/mongoid/blob/master/lib/mongoid/fields.rb#L622-L635) to create public getters and setters.
 All of this points to `T::Struct` being a passive object.
 
-# Takeaway
+## Takeaway
 
 A `T::Struct` is objectively more concise than a PORO thanks to its DSL.
 It also has the complexity of that DSL’s implementation directly inside the class, crippling inheritance and hardcoding public visibility onto your properties.
@@ -556,51 +564,5 @@ If the PORO has many constructor arguments, consider using a nested `T::Struct` 
 Building substantial behaviour right into a `T::Struct` is rarely if ever necessary.
 Using the right tool for the job beats cleverness.
 
-# Appendix
-
-## Readability
-
-| Container | Access Pattern |
-|-----------|----------------|
-| Class | `points.sum(&:x) / 3` or `p1.x + p2.x + p3.x / 3` |
-| Array | `(p1[0] + p2[0] + p3[0]) / 3.0` |
-| Hash | `(p1[:x] + p2[:x] + p3[:x]) / 3.0` |
-
-I think dot notation (`.x`) is the most readable. This becomes especially true with nested data (`polygon.bounding_box.corners.to_a`). You can get dot notation over a hash with `OpenStruct`, but that leads to the next downside.
-
-## Openness and `T.nilable`
-
-Arrays and hashes are *open*. They can contain more or less data than you require. This makes your types `T.nilable(…)`, because it is always possible at runtime that you will:
-
-1. Execute an out-of-bounds array access, or
-2. Fetch a non-existent hash key.
-
-In Ruby, both cases return `nil`. The array and hash code above both have the same type error: `Method + does not exist on NilClass component of T.nilable(Float)`.
-
-## Heterogeneous Types
-
-There is one last problem with collection types.
-They expect every element to have the same type. Everything is a `Float` in our example, but what if we had other types?
-You can use union types like `T::Array[T.any(Float, Integer, String)]`, but this is the `nil` problem on steroids.
-When a type is `T.nilable(X)`, it is essentially `T.any(nil, X)`, making you handle two cases.
-When you have a union type in a collection, you have to handle `nil` and then **narrow** the type.
-
-On paper, hashes can escape the union types problem in Sorbet via [shaped hashes](https://sorbet.org/docs/shapes).
-
-```ruby
-Point3d = T.type_alias do
-  x: Float,
-  y: Float,
-  z: Float,
-end
-```
-
-This is a very intuitive API, but a very unintuitive feature in practice.
-It is so full of gotchas that a `T::Struct` is a better choice.
-
-## Conclusion: Arrays and Hashes *of* Classes
-
-A class is superior in the case of `Point3d` because we are modelling a domain concept.
-Since `Point3d` is not really a collection, implementing it that way complicates our code.
-However, we would almost certainly find use for `T::Array[Point3d]` and `T::Hash[Symbol, Point3d]`.
+## Appendix
 
