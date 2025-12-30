@@ -16,7 +16,7 @@ We can achieve this in three steps:
 
 This covers off the fundamentals to know before considering technical solutions like Draper, Keynote, Phlex or ViewComponents.
 
-# Decomposing A View
+## An Action Template
 
 Consider an index view for timesheets. 
 
@@ -68,7 +68,7 @@ Consider an index view for timesheets.
               = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-## Structure One: Naive Decomposition
+## Naive Decomposition
 
 Let's decompose this page ontologically.
 Whatever we can name, we extract into a partial.
@@ -150,7 +150,7 @@ It will be easier to understand the structure than the first time around, becaus
 
 Now let's evolve the page.
 
-### Evolution: Add a timesheets list on Employee Dashboard
+### Chaotic Evolution
 Let's try to reuse the timesheets list to show an employee their timesheets.
 
 ```haml
@@ -243,7 +243,7 @@ The last option there is interesting too.
 It's the other side of this tradeoff: horizontal coupling.
 The partial becomes a union of its clients' concerns, fast devolving into a pile of technical debt. 
 
-## Structure Two: Factorisation
+## Factorisation
 
 ```haml
 -# app/views/timesheets/index.html.haml
@@ -299,9 +299,9 @@ The partial becomes a union of its clients' concerns, fast devolving into a pile
       = yield
 ```
 
-### Evolution: Add a timesheets list on Employee Dashboard
+### Controlled Evolution
 
-This time around, we can add the timesheets list with an edit button instead of the approve/reject buttons—all with essentially zero fritction.
+This time around, we can add the timesheets list with an edit button instead of the approve/reject buttons—all with essentially zero friction.
 
 ```haml
 -# app/views/dashboard/show.html.haml
@@ -332,7 +332,7 @@ This time around, we can add the timesheets list with an edit button instead of 
 There is some duplication of style logic, but this is where presenters help.
 Let's add a plain PORO presenter.
 
-```haml
+```ruby
 # app/presenters/timesheet_presenter.rb
 class TimesheetPresenter
   def initialize(timesheet)
@@ -395,18 +395,18 @@ Now the status badge logic can be pulled out of both action templates.
 ```haml
 -# app/views/dashboard/show.html.haml
 
+- presenter = TimesheetCollectionPresenter.new(@my_timesheets)
+
 %h1 Dashboard
 
 %section.my-timesheets
   %h2 My Timesheets
-  
+
   %ul.timesheet-list
-    - @my_timesheets.each do |timesheet|
-      - presenter = TimesheetPresenter.new(timesheet)
-      
-      = render "timesheets/row", timesheet: presenter do
-        - if presenter.draft?
-          = link_to "Edit", edit_timesheet_path(timesheet), class: "btn-sm"
+    - presenter.each do |timesheet|
+      = render "timesheets/row", timesheet: timesheet do
+        - if timesheet.draft?
+          = link_to "Edit", edit_timesheet_path(timesheet.model), class: "btn-sm"
 ```
 
 ```haml
@@ -425,7 +425,9 @@ Now the status badge logic can be pulled out of both action templates.
 
 Notice we still have inline logic for the summary bar.
 
-```haml
+### Presenter
+
+```ruby
 # app/presenters/timesheet_collection_presenter.rb
 class TimesheetCollectionPresenter
   OVERTIME_THRESHOLD = 40
@@ -564,10 +566,20 @@ When you put logic in partials you rely too much on global view helpers, polluti
 
 There will be remaining cases of components that are generic and logic heavy. Rails offers no good way to deal with that. That is the problem solved by ViewComponents.
 
-# React-like Composition with `yield`
+## Composable Partials
+ - HTML and attributes (attribute bag pattern)
+ - Derived, non-structural data
+ - `yield` or slots
+
+Also you don't necessarily need to create a partial to deduplicate.
+You can create capture blocks.
+
+Compare static hierarchical structure that template cannot control to dynamic siblings composed by the template. 
+
+### Nesting vs. Yielding
 
 The Rails documentation briefly [discusses](https://guides.rubyonrails.org/layouts_and_rendering.html#understanding-yield) `yield` in the context of layouts.
-The documentation does not cover using `yield` in regular partials to invert dependencues and let the caller provide context-specific content.
+The documentation does not cover using `yield` in regular partials to invert dependencies and let the caller provide context-specific content.
 That seems like a major gap in documentation to me. 
 
 Use yield to get React-like composition. This allows you to pull all the partials back into the template. That allows logic in the template to affect even deeply nested partials without drilling locals or filling partials with logic directly. When you embed page-level concerns into partials, they become magnets for more and more logic and they need more and more global view helpers.
@@ -596,7 +608,11 @@ Use yield to get React-like composition. This allows you to pull all the partial
             = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-# Page Concerns
+## Flexibile Templates
+Composable partials give templates the flexibility they need.
+Templates allow partials a place to push logic.
+This is the symbiosis.
+
  - instance variables
  - forms
  - turbo frame or stream boundaries
@@ -605,17 +621,8 @@ Use yield to get React-like composition. This allows you to pull all the partial
  - iteration logic
  - conditional rendering
 
-# Partial Concerns
- - HTML and attributes (attribute bag pattern)
- - Derived, non-structural data
- - `yield` or slots
 
-Also you don't necessarily need to create a partial to deduplicate.
-You can create capture blocks.
-
-Compare static hierarchical structure that template cannot control to dynamic siblings composed by the template. 
-
-# Summary
+## ActionView's Architectural Limitations
 Process
 
 Pull logic into page template
