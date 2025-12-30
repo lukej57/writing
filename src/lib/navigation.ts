@@ -1,14 +1,15 @@
 export const navigation = [
   {
-    title: 'Rails',
+    title: 'Ruby/Rails',
     links: [
       { title: 'Composable Views in Rails', href: '/docs/composable-views' },
+      { title: 'T::Struct in Context', href: '/docs/t-struct-in-context' },
     ],
   },
   {
-    title: 'Ruby',
+    title: 'Conceptual',
     links: [
-      { title: 'T::Struct in Context', href: '/docs/t-struct-in-context' },
+      { title: 'The Dark Side of DRY', href: '/docs/dark-side-of-dry' },
     ],
   },
 ]
