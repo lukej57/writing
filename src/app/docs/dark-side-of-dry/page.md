@@ -1,11 +1,21 @@
-# The Dark Side of DRY
+---
+title: The Dark Side of DRY
+nextjs:
+  metadata:
+    title: The Dark Side of DRY
+---
+
+{% callout title="TL;DR" type="note" hideIcon=true %}
+Duplicating code creates technical debt, but blind deduplication simply moves the problem.
+Dependency injection enables you to synthesise the two approaches to create maintainable abstractions. 
+{% /callout %}
 
 Software developers all know the slogan *Don't Repeat Yourself* (DRY).
 It is a standard remedy for an obvious problem: the technical debt created by duplicate code.
 The fatal flaw with DRY is that it picks one side of a hidden tradeoff.
 This intellectual shortcut plays itself out as trading one kind of technical debt for another.
 
-# Implicit Horizontal Coupling
+## Implicit Horizontal Coupling
 
 Suppose you write similar functionality in a few different places.
 This creates duplicate code with some minor differences.
@@ -30,7 +40,7 @@ At first glance, that solves the problem.
 Now you can change the code in one place.
 This is where the dark side of DRY begins.
 
-# Implicit Vertical Coupling
+## Implicit Vertical Coupling
 
 It turns out that not every difference is incidental.
 Some differences are essential.
@@ -66,7 +76,7 @@ NAIVE DEDUPLICATION: Vertical Coupling
 Variant changes ripple up and down
 ```
 
-# DRY Alone Only Rotates Coupling
+## DRY Alone Only Rotates Coupling
 
 We have obeyed the *Don't Repeat Yourself* slogan only to transform horizontal coupling into vertical coupling. This presents the following lose-lose tradeoff.
 
@@ -75,7 +85,7 @@ We have obeyed the *Don't Repeat Yourself* slogan only to transform horizontal c
 | **Duplication** | Change **N** places, if you can find them all. | Change **1** place |
 | **Naive deduplication** | Change **1** place | Change **2** places, but risk rippling into **N** clients. |
 
-# Transforming the Tradeoff with DRY+DI
+## Transforming the Tradeoff with DRY+DI
 The problem on each side of the duplication-abstraction tradeoff comes down to displacing code from its natural context.
 Duplicated code anchors copies of general behaviour to specific contexts unnecessarily.
 Conversely, deduplicated code separates unique behaviours from their origin.
