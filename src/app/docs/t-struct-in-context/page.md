@@ -554,15 +554,13 @@ Mongoid is also an ODM with a DSL for defining properties.
 It also has no visibility API and is [hardwired](https://github.com/mongodb/mongoid/blob/master/lib/mongoid/fields.rb#L622-L635) to create public getters and setters.
 All of this points to `T::Struct` being a passive object.
 
-## Takeaway
+## Conclusion
 
 A `T::Struct` is objectively more concise than a PORO thanks to its DSL.
 It also has the complexity of that DSL’s implementation directly inside the class, crippling inheritance and hardcoding public visibility onto your properties.
 All of that complexity can be safely forgotten if you focus on intent.
-Use a `T::Struct` if you intend to carry data primarily, otherwise (or if in doubt) use a PORO.
+Use a `T::Struct` if you intend to carry data.
+If you intend to carry behaviour (or if in doubt) use a PORO.
 If the PORO has many constructor arguments, consider using a nested `T::Struct` as a factory, or minimising attribute macros to keep boilerplate under control.
-Building substantial behaviour right into a `T::Struct` is rarely if ever necessary.
-Using the right tool for the job beats cleverness.
-
-## Appendix
-
+Building substantial behaviour directly into a `T::Struct` is rarely if ever necessary.
+Using the right tool beats cleverness.
