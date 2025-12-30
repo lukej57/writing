@@ -9,7 +9,6 @@ import { Hero } from '@/components/Hero'
 import { MobileNavigation } from '@/components/MobileNavigation'
 import { Navigation } from '@/components/Navigation'
 import { Search } from '@/components/Search'
-import { ThemeSelector } from '@/components/ThemeSelector'
 
 function GitHubIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -36,10 +35,7 @@ function Header() {
   return (
     <header
       className={clsx(
-        'sticky top-0 z-50 flex flex-none flex-wrap items-center justify-between bg-white px-4 py-5 shadow-md shadow-slate-900/5 transition duration-500 sm:px-6 lg:px-8 dark:shadow-none',
-        isScrolled
-          ? 'dark:bg-slate-900/95 dark:backdrop-blur-sm dark:[@supports(backdrop-filter:blur(0))]:bg-slate-900/75'
-          : 'dark:bg-transparent',
+        'sticky top-0 z-50 flex flex-none flex-wrap items-center justify-between bg-white px-4 py-5 shadow-md shadow-slate-900/5 transition duration-500 sm:px-6 lg:px-8',
       )}
     >
       <div className="relative flex grow basis-0 items-center">
@@ -51,7 +47,6 @@ function Header() {
         <Search />
       </div>
       <div className="relative flex basis-0 justify-end gap-6 sm:gap-8 md:grow">
-        <ThemeSelector className="relative z-10" />
       </div>
     </header>
   )

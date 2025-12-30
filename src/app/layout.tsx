@@ -3,7 +3,6 @@ import { Inter } from 'next/font/google'
 import localFont from 'next/font/local'
 import clsx from 'clsx'
 
-import { Providers } from '@/app/providers'
 import { Layout } from '@/components/Layout'
 
 import '@/styles/tailwind.css'
@@ -27,7 +26,7 @@ export const metadata: Metadata = {
     default: 'LukeJ - Practical Programming Wisdom',
   },
   description:
-    'Programming articles on Ruby, Rails, and software design.',
+    'Writing on principled software development, Ruby and Rails.',
 }
 
 export default function RootLayout({
@@ -41,10 +40,8 @@ export default function RootLayout({
       className={clsx('h-full antialiased', inter.variable, lexend.variable)}
       suppressHydrationWarning
     >
-      <body className="flex min-h-full bg-white dark:bg-slate-900">
-        <Providers>
-          <Layout>{children}</Layout>
-        </Providers>
+      <body className="flex min-h-full bg-white">
+        <Layout>{children}</Layout>
       </body>
     </html>
   )

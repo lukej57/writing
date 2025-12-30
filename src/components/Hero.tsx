@@ -35,7 +35,7 @@ function TrafficLightsIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 
 export function Hero() {
   return (
-    <div className="overflow-hidden bg-white dark:bg-slate-900 dark:-mt-19 dark:-mb-32 dark:pt-19 dark:pb-32">
+    <div className="overflow-hidden bg-white">
       <div className="py-16 sm:px-2 lg:relative lg:px-0 lg:py-20">
         <div className="mx-auto grid max-w-2xl grid-cols-1 items-center gap-x-8 gap-y-8 px-4 lg:max-w-8xl lg:grid-cols-2 lg:px-8 xl:gap-x-16 xl:px-12">
           <div className="relative lg:static xl:pl-10">
@@ -60,10 +60,10 @@ export function Hero() {
               priority
             />
             <div className="relative">
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+              <h1 className="text-3xl font-bold tracking-tight text-slate-900">
                 Writing on principled software development, Ruby and Rails.
               </h1>
-              <p className="mt-3 text-2xl tracking-tight text-slate-600 dark:text-slate-400">
+              <p className="mt-3 text-2xl tracking-tight text-slate-600">
                 by Luke Jeremy
               </p>
             </div>
