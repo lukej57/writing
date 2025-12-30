@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
 
 import { Hero } from '@/components/Hero'
-import { Logo, Logomark } from '@/components/Logo'
 import { MobileNavigation } from '@/components/MobileNavigation'
 import { Navigation } from '@/components/Navigation'
 import { Search } from '@/components/Search'
@@ -43,12 +42,9 @@ function Header() {
           : 'dark:bg-transparent',
       )}
     >
-      <div className="mr-6 flex lg:hidden">
-        <MobileNavigation />
-      </div>
       <div className="relative flex grow basis-0 items-center">
-        <Link href="/" aria-label="Home page">
-          <Logo className="hidden h-9 w-auto fill-slate-700 lg:block dark:fill-sky-100" />
+        <Link href="/" aria-label="Home page" className="text-3xl font-light text-slate-700 dark:text-sky-100">
+          λ
         </Link>
       </div>
       <div className="-my-5 mr-6 sm:mr-8 md:mr-0">
@@ -72,14 +68,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {isHomePage && <Hero />}
 
       <div className="relative mx-auto flex w-full max-w-8xl flex-auto justify-center sm:px-2 lg:px-8 xl:px-12">
-        <div className="hidden lg:relative lg:block lg:flex-none">
-          <div className="absolute inset-y-0 right-0 w-[50vw] bg-slate-50 dark:hidden" />
-          <div className="absolute top-16 right-0 bottom-0 hidden h-12 w-px bg-linear-to-t from-slate-800 dark:block" />
-          <div className="absolute top-28 right-0 bottom-0 hidden w-px bg-slate-800 dark:block" />
-          <div className="sticky top-19 -ml-0.5 h-[calc(100vh-4.75rem)] w-64 overflow-x-hidden overflow-y-auto py-16 pr-8 pl-0.5 xl:w-72 xl:pr-16">
-            <Navigation />
-          </div>
-        </div>
         {children}
       </div>
     </div>

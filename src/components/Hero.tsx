@@ -38,7 +38,25 @@ export function Hero() {
   return (
     <div className="overflow-hidden bg-white dark:bg-slate-900 dark:-mt-19 dark:-mb-32 dark:pt-19 dark:pb-32">
       <div className="py-16 sm:px-2 lg:relative lg:px-0 lg:py-20">
-        <div className="mx-auto grid max-w-2xl grid-cols-1 items-center gap-x-8 gap-y-16 px-4 lg:max-w-8xl lg:grid-cols-2 lg:px-8 xl:gap-x-16 xl:px-12">
+        <div className="mx-auto grid max-w-2xl grid-cols-1 items-center gap-x-8 gap-y-8 px-4 lg:max-w-8xl lg:grid-cols-2 lg:px-8 xl:gap-x-16 xl:px-12">
+          <div className="relative lg:static xl:pl-10">
+            <div className="relative flex justify-center lg:justify-start">
+              <Image
+                src={rubyFpCoreImage}
+                alt="Ruby FP Core"
+                className="w-48 dark:hidden"
+                unoptimized
+                priority
+              />
+              <Image
+                src={rubyFpCoreInvertedImage}
+                alt="Ruby FP Core"
+                className="w-48 hidden dark:block"
+                unoptimized
+                priority
+              />
+            </div>
+          </div>
           <div className="relative z-10 md:text-center lg:text-left">
             <Image
               className="absolute right-full bottom-full -mr-72 -mb-56 opacity-50"
@@ -50,31 +68,12 @@ export function Hero() {
               priority
             />
             <div className="relative">
-              <p className="inline font-display text-5xl tracking-tight text-slate-900 dark:text-slate-100">
-                Never miss the cache again.
-              </p>
+              <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+                Thoughts on principled software development, Ruby and Rails.
+              </h1>
               <p className="mt-3 text-2xl tracking-tight text-slate-600 dark:text-slate-400">
-                Cache every single thing your app could ever do ahead of time,
-                so your code never even has to run at all.
+                by Luke Jeremy
               </p>
-            </div>
-          </div>
-          <div className="relative lg:static xl:pl-10">
-            <div className="relative flex justify-center lg:justify-start">
-              <Image
-                src={rubyFpCoreImage}
-                alt="Ruby FP Core"
-                className="w-64 dark:hidden"
-                unoptimized
-                priority
-              />
-              <Image
-                src={rubyFpCoreInvertedImage}
-                alt="Ruby FP Core"
-                className="w-64 hidden dark:block"
-                unoptimized
-                priority
-              />
             </div>
           </div>
         </div>
