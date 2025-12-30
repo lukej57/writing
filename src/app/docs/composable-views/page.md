@@ -7,7 +7,7 @@ nextjs:
 ---
 
 {% callout title="TL;DR" type="note" hideIcon=true %}
-Principled view composition maximises the value of views in Vanilla Rails, while helping you evaluate the value propositions of gems like Draper, Keynote, Phlex and ViewComponents.
+Principled view composition maximises the maintainability of views in Vanilla Rails, while helping you evaluate the value propositions of gems like Draper, Keynote, Phlex and ViewComponents.
 {% /callout %}
 
 Views grow in complexity like every other part of a Rails application.
