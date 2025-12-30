@@ -49,7 +49,7 @@ export function Hero() {
               />
             </div>
           </div>
-          <div className="relative z-10 md:text-center lg:text-left">
+          <div className="relative z-10 text-center lg:text-left">
             <Image
               className="absolute right-full bottom-full -mr-72 -mb-56 opacity-50"
               src={blurCyanImage}
