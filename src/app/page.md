@@ -1,6 +1,6 @@
 {% quick-links %}
 
-{% quick-link title="Composable Views in Rails" icon="plugins" href="/docs/composable-views" description="Using only templates, partials and PORO presenters to manage view complexity without fragmentation." /%}
+{% quick-link title="Composable Views in Vanilla Rails" icon="plugins" href="/docs/composable-views" description="Using only templates, partials and PORO presenters to manage view complexity without fragmentation." /%}
 
 {% quick-link title="T::Struct in Context" icon="presets" href="/docs/t-struct-in-context" description="A deep dive into T::Struct, compound data, and how to use structs effectively in Ruby with Sorbet." /%}
 
