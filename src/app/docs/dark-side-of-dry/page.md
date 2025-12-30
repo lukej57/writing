@@ -80,8 +80,9 @@ The problem on each side of the duplication-abstraction tradeoff comes down to d
 Duplicated code anchors copies of general behaviour to specific contexts unnecessarily.
 Conversely, deduplicated code separates unique behaviours from their origin.
 We need to put everything where it is easiest to maintain.
+
 That means pulling invariants down into a class, while pushing variants back up to the call site.
 You can achieve this by having your class accept **behaviour** from callers, not just data.
-Have clients pass the behaviour they require as a class through the constructor.
+Clients pass the behaviour they require as a class through the constructor.
 This makes both axes of change maintainable.
 The technique is called [dependency injection](https://en.wikipedia.org/wiki/Dependency_injection) and it is fundamental for developing maintainable, object-oriented systems.
