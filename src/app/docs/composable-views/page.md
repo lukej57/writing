@@ -8,7 +8,7 @@ nextjs:
 
 {% callout title="TL;DR" type="note" hideIcon=true %}
 Principled view composition maximises view maintainability in Vanilla Rails.
-It also helps you evaluate the value propositions of gems like Draper, Keynote, Phlex and ViewComponents.
+These principles clarify the value propositions of gems like Draper, Keynote, Phlex and ViewComponents.
 {% /callout %}
 
 Views grow in complexity like every other part of a Rails application.
@@ -470,7 +470,7 @@ Demonstrate that testing presentation directly is a very high noise data structu
 
 Another case is dynamic test ids that serve to indicate that the right thing is being displayed, e.g. data-test-id=”user-avatar-#{user.id}”
 
-### A Third Factor: Presenters
+### Model Presentation
 
 There remains some duplication of style logic.
 Let's add a plain PORO presenter.

@@ -76,7 +76,7 @@ NAIVE DEDUPLICATION: Vertical Coupling
 Variant changes ripple up and down
 ```
 
-## DRY Alone Only Rotates Coupling
+## DRY Merely Rotates Coupling
 
 We have obeyed the *Don't Repeat Yourself* slogan only to transform horizontal coupling into vertical coupling. This presents the following lose-lose tradeoff.
 
@@ -85,7 +85,7 @@ We have obeyed the *Don't Repeat Yourself* slogan only to transform horizontal c
 | **Duplication** | Change **N** places, if you can find them all. | Change **1** place |
 | **Naive deduplication** | Change **1** place | Change **2** places, but risk rippling into **N** clients. |
 
-## Transforming the Tradeoff with DRY+DI
+## DRY+DI Transforms the Tradeoff
 The problem on each side of the duplication-abstraction tradeoff comes down to displacing code from its natural context.
 Duplicated code anchors copies of general behaviour to specific contexts unnecessarily.
 Conversely, deduplicated code separates unique behaviours from their origin.
