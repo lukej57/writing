@@ -6,13 +6,15 @@ nextjs:
     description: Using Only Templates, Partials and PORO Presenters.
 ---
 
+{% callout title="TL;DR" type="note" hideIcon=true %}
+Cover principles for Rails view composition, before thinking about gems like Draper, Keynote, Phlex or ViewComponents.
+{% /callout %}
+
 Views grow in complexity like every other part of a Rails application.
-We need to decompose views to manage them, but decomposition along the wrong axes creates **fragmentation** that rapidly devolves into technical debt.
-Instead, we need **factorisation** that splits our work into composable partials and flexible templates.
-We can achieve this in three steps:
- 1. Push page concerns up into templates,
- 1. Pull presentational HTML down into partials, and
- 1. Extract model presentation into POROs.
+We need to decompose views to manage them, but decomposition along the wrong axes creates **fragmentation** and technical debt.
+Instead, we need **factorisation** that splits our views along the axes of page structure, HTML units and model presentation.
+
+![Factorization axes diagram](/images/composable-views/axes.svg)
 
 These fundamentals position you to properly consider technical solutions like Draper, Keynote, Phlex or ViewComponents.
 
@@ -274,6 +276,7 @@ Now `_timesheet_list` can yield too, giving templates full control over row cont
         = yield timesheet
 ```
 
+
 ### Controlled Evolution
 
 Once we `yield`, we can add the timesheets list with an edit button instead of the approve/reject buttons—all with essentially zero friction.
@@ -363,7 +366,110 @@ We can push the turbo frame up into the template that needs it and eliminate the
             = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-### Adding Presenters
+### Template-Partial Symbiosis
+#### Composable Partials
+
+This is the first sense in which we have factorised the view. The partials are now independent, rather than embedded in one another.
+
+This is the second sense in which we have factorised the view.
+Page concerns live in the template, while partials are a self-contained unit of presentation.
+
+Together, this gives us independent and composable partials.
+The flipside of this is flexible templates. 
+
+Ideally, partials are like a custom HTML element.
+They let you factor bulky HTML presentation out your templates.
+They `yield` to let the template inject behaviour and decide page-level structure.
+They can also take an attribute bag argument to let the template set behaviour-relevant data like attributes used by turbo or stimulus.
+Partials should be composable, that means portable and yielding.
+You should be able to put them anywhere.
+
+The Rails documentation briefly [discusses](https://guides.rubyonrails.org/layouts_and_rendering.html#understanding-yield) `yield` in the context of layouts.
+The documentation does not cover using `yield` in regular partials to invert dependencies and let the caller provide context-specific content.
+That seems like a major gap in documentation to me. 
+
+
+```haml
+-# app/views/timesheets/index.html.haml
+
+- presenter = TimesheetCollectionPresenter.new(@timesheets)
+
+= render "card", title: "Timesheets for Review" do
+  = render "data_table", headers: ["Employee", "Hours", "Status", "Actions"] do
+    - presenter.each do |timesheet|
+      = render "timesheets/row", timesheet: timesheet do
+        -# Three partials deep, but we have full access to:
+        -# - @current_user (controller instance variable)
+        -# - policy() (Pundit helper)
+        -# - timesheet (from presenter.each)
+        -# - All route helpers
+
+        - if timesheet.submitted? && policy(timesheet.model).approve?
+          = form_with model: timesheet.model,
+                      url: timesheet_review_path(timesheet.model),
+                      class: "inline-actions" do |f|
+            = f.hidden_field :status
+            = f.button "Approve", value: "approved", class: "btn-sm btn-success"
+            = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
+```
+
+Structural branching in partials is a context accumulation smell, but if the structure is not affected by arguments that’s fine if the arguments are simply inputs for derived data that slots into a stable presentation structure.
+
+#### Flexible Templates
+
+Page concerns are what the page owns:
+
+layout, e.g. turbo frames
+
+params
+
+Forms (can’t nest, cannot compose, though form fields can compose). Forms submit to an endpoint, they belong to a template.
+
+controller instance variables
+
+structural logic
+
+if this then show that, else show something else
+
+Iterations over collections to render
+
+Logic heavy enough to require view helpers (which should be controller-scoped, not global)
+
+Including partials
+
+Note this is a page concern. Partials should not be including other partials wherever possible.
+
+
+Consider templates coupled to the controller and non-transferable.
+
+They don't need to be portable, but they need to be independenly changeable.
+That's why spreading a template's concern over partials does not help; it's just fragmentation.
+
+Composable partials give templates the flexibility they need.
+Templates allow partials a place to push logic.
+This is the symbiosis.
+
+ - instance variables
+ - forms
+ - turbo frame or stream boundaries
+ - page parameters
+ - data-test-ids
+ - iteration logic
+ - conditional rendering
+
+data-test-ids are best used to factor out presentational details from testing logic in your templates
+
+Testing against completely static parts of your views is not really a problem, but it’s not much use either.
+
+You don’t want to test against all sorts of presentational rubbish like particular HTML elements
+
+it should test something dynamic. That’s logic and since logic should gravitate toward templates then that’s where data test ids are most useful.
+
+Demonstrate that testing presentation directly is a very high noise data structure, useful as a smoke test at best.
+
+Another case is dynamic test ids that serve to indicate that the right thing is being displayed, e.g. data-test-id=”user-avatar-#{user.id}”
+
+### A Third Factor: Presenters
 
 There remains some duplication of style logic.
 Let's add a plain PORO presenter.
@@ -540,99 +646,7 @@ end
 Once you remove page concerns from your partials and `yield` instead of nesting, you eliminate the interlocking constraints that wreck the evolution of your views.
 
 
-## Composable Partials
 
-Ideally, partials are like a custom HTML element.
-They let you factor bulky HTML presentation out your templates.
-They `yield` to let the template inject behaviour and decide page-level structure.
-They can also take an attribute bag argument to let the template set behaviour-relevant data like attributes used by turbo or stimulus.
-Partials should be composable, that means portable and yielding.
-You should be able to put them anywhere.
-
-The Rails documentation briefly [discusses](https://guides.rubyonrails.org/layouts_and_rendering.html#understanding-yield) `yield` in the context of layouts.
-The documentation does not cover using `yield` in regular partials to invert dependencies and let the caller provide context-specific content.
-That seems like a major gap in documentation to me. 
-
-
-```haml
--# app/views/timesheets/index.html.haml
-
-- presenter = TimesheetCollectionPresenter.new(@timesheets)
-
-= render "card", title: "Timesheets for Review" do
-  = render "data_table", headers: ["Employee", "Hours", "Status", "Actions"] do
-    - presenter.each do |timesheet|
-      = render "timesheets/row", timesheet: timesheet do
-        -# Three partials deep, but we have full access to:
-        -# - @current_user (controller instance variable)
-        -# - policy() (Pundit helper)
-        -# - timesheet (from presenter.each)
-        -# - All route helpers
-
-        - if timesheet.submitted? && policy(timesheet.model).approve?
-          = form_with model: timesheet.model,
-                      url: timesheet_review_path(timesheet.model),
-                      class: "inline-actions" do |f|
-            = f.hidden_field :status
-            = f.button "Approve", value: "approved", class: "btn-sm btn-success"
-            = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
-```
-
-Structural branching in partials is a context accumulation smell, but if the structure is not affected by arguments that’s fine if the arguments are simply inputs for derived data that slots into a stable presentation structure.
-
-## Flexible Templates
-
-Page concerns are what the page owns:
-
-layout, e.g. turbo frames
-
-params
-
-Forms (can’t nest, cannot compose, though form fields can compose). Forms submit to an endpoint, they belong to a template.
-
-controller instance variables
-
-structural logic
-
-if this then show that, else show something else
-
-Iterations over collections to render
-
-Logic heavy enough to require view helpers (which should be controller-scoped, not global)
-
-Including partials
-
-Note this is a page concern. Partials should not be including other partials wherever possible.
-
-
-Consider templates coupled to the controller and non-transferable.
-
-They don't need to be portable, but they need to be independenly changeable.
-That's why spreading a template's concern over partials does not help; it's just fragmentation.
-
-Composable partials give templates the flexibility they need.
-Templates allow partials a place to push logic.
-This is the symbiosis.
-
- - instance variables
- - forms
- - turbo frame or stream boundaries
- - page parameters
- - data-test-ids
- - iteration logic
- - conditional rendering
-
-data-test-ids are best used to factor out presentational details from testing logic in your templates
-
-Testing against completely static parts of your views is not really a problem, but it’s not much use either.
-
-You don’t want to test against all sorts of presentational rubbish like particular HTML elements
-
-it should test something dynamic. That’s logic and since logic should gravitate toward templates then that’s where data test ids are most useful.
-
-Demonstrate that testing presentation directly is a very high noise data structure, useful as a smoke test at best.
-
-Another case is dynamic test ids that serve to indicate that the right thing is being displayed, e.g. data-test-id=”user-avatar-#{user.id}”
 
 ## ActionView's Architectural Limitations
 Notice that (3) puts us back to where we started: logic-heavy partials.
@@ -674,7 +688,7 @@ Ultimately, once you pull everything into templates and find you need in-depth t
 You’re either creating global view helpers or lugging modules around to every controller that uses the partials.
 Either way, you get no encapsulation and no good approach to testing.
 
-### View Helpers
+### Global View Helper Soup
 If you can concentrate logic in templates, then you can extract it into controller-specific helpers or private methods.
 For example, MyBusinessThingController will automatically load MyBusinessThingHelper.
 Make sure you have config.action_controller.include_all_helpers = false in config/application.rb.

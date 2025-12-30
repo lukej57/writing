@@ -18,7 +18,7 @@ const styles = {
 }
 
 const icons = {
-  note: (props: { className?: string }) => <Icon icon="lightbulb" {...props} />,
+  note: (props: { className?: string }) => <Icon icon="book" {...props} />,
   warning: (props: { className?: string }) => (
     <Icon icon="warning" color="amber" {...props} />
   ),

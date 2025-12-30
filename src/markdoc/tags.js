@@ -11,6 +11,7 @@ const tags = {
         matches: ['note', 'warning'],
         errorLevel: 'critical',
       },
+      hideIcon: { type: Boolean },
     },
     render: Callout,
   },

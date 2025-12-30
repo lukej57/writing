@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import clsx from 'clsx'
 
+import { BookIcon } from '@/components/icons/BookIcon'
 import { InstallationIcon } from '@/components/icons/InstallationIcon'
 import { LightbulbIcon } from '@/components/icons/LightbulbIcon'
 import { PluginsIcon } from '@/components/icons/PluginsIcon'
@@ -9,6 +10,7 @@ import { ThemingIcon } from '@/components/icons/ThemingIcon'
 import { WarningIcon } from '@/components/icons/WarningIcon'
 
 const icons = {
+  book: BookIcon,
   installation: InstallationIcon,
   presets: PresetsIcon,
   plugins: PluginsIcon,

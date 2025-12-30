@@ -1,0 +1,31 @@
+<svg viewBox="0 0 440 420" xmlns="http://www.w3.org/2000/svg" width="440" height="420">
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="440" height="420" fill="#ffffff"/>
+
+  <!-- Center point -->
+  <circle cx="220" cy="230" r="4" fill="#333"/>
+
+  <!-- Up: Templates (Y axis) -->
+  <line x1="220" y1="230" x2="220" y2="60" stroke="#555" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="220" y="45" font-family="system-ui" font-size="13" font-weight="600" fill="#333" text-anchor="middle">Templates</text>
+  <text x="155" y="140" font-family="system-ui" font-size="10" fill="#666" text-anchor="end">push page</text>
+  <text x="155" y="153" font-family="system-ui" font-size="10" fill="#666" text-anchor="end">concerns up</text>
+
+  <!-- Down-left: Partials (Z axis, into page) -->
+  <line x1="220" y1="230" x2="100" y2="330" stroke="#555" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="75" y="360" font-family="system-ui" font-size="13" font-weight="600" fill="#333" text-anchor="middle">Partials</text>
+  <text x="130" y="295" font-family="system-ui" font-size="10" fill="#666" text-anchor="end">pull pure</text>
+  <text x="130" y="308" font-family="system-ui" font-size="10" fill="#666" text-anchor="end">HTML down</text>
+
+  <!-- Right: Presenters (X axis) -->
+  <line x1="220" y1="230" x2="370" y2="230" stroke="#555" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="390" y="255" font-family="system-ui" font-size="13" font-weight="600" fill="#333" text-anchor="middle">Presenters</text>
+  <text x="300" y="215" font-family="system-ui" font-size="10" fill="#666" text-anchor="middle">shift model</text>
+  <text x="300" y="228" font-family="system-ui" font-size="10" fill="#666" text-anchor="middle">presentation out</text>
+</svg>
