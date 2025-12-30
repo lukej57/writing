@@ -16,7 +16,7 @@ We can achieve this in three steps:
 
 This covers off the fundamentals to know before considering technical solutions like Draper, Keynote, Phlex or ViewComponents.
 
-## An Action Template
+## Action Templates
 
 Consider an index view for timesheets. 
 
@@ -425,7 +425,7 @@ Now the status badge logic can be pulled out of both action templates.
 
 Notice we still have inline logic for the summary bar.
 
-### Presenter
+### Adding a Presenter
 
 ```ruby
 # app/presenters/timesheet_collection_presenter.rb
@@ -623,6 +623,12 @@ This is the symbiosis.
 
 
 ## ActionView's Architectural Limitations
+
+### Responsibility without Ownership
+
+### Template-Level Abstraction
+
+### View Helpers
 Process
 
 Pull logic into page template
@@ -744,3 +750,5 @@ Repeating presentation doesn’t necessarily demand another partial. You can use
 Presenters
 
 The problem of queries in views is almost certainly from directly accessing models from views. Presenters can pull this back and provide testable, scannable methods for fetching data. Presenters can also return plain data structures or force strictloading on the models they pass into views. You can have optional preloading methods hanging off presenters to provide a default and have your test scan for N+1s or at least log data access. It's so much easier to observe data access patterns with a PORO than a controller.
+
+## Conclusion
