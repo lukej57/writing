@@ -5,6 +5,12 @@ nextjs:
     title: T::Struct in Context
 ---
 
+{% callout title="TL;DR" type="note" hideIcon=true %}
+If you are using Sorbet, `T::Struct` becomes the only viable option for data classes.
+It excels as a data class, but makes no sense outside of that.
+Developers should resist the temptation to replace POROs with `T::Struct` to cut boilerplate.
+{% /callout %}
+
 Ruby projects using Sorbet will almost certainly be using `T::Struct` which, according to the documentation will:
 
 > … behave similarly to the Struct class built into Ruby, but work better with static and runtime type checking.
