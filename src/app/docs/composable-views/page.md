@@ -363,7 +363,7 @@ We can push the turbo frame up into the template that needs it and eliminate the
             = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-### Adding a Presenter
+### Adding Presenters
 
 There remains some duplication of style logic.
 Let's add a plain PORO presenter.
@@ -549,8 +549,6 @@ They can also take an attribute bag argument to let the template set behaviour-r
 Partials should be composable, that means portable and yielding.
 You should be able to put them anywhere.
 
-### Nesting vs. Yielding
-
 The Rails documentation briefly [discusses](https://guides.rubyonrails.org/layouts_and_rendering.html#understanding-yield) `yield` in the context of layouts.
 The documentation does not cover using `yield` in regular partials to invert dependencies and let the caller provide context-specific content.
 That seems like a major gap in documentation to me. 
@@ -727,7 +725,7 @@ Deep nesting of partials without yield means that partials end up accessing page
 
 Repeating presentation doesn’t necessarily demand another partial. You can use capture blocks for local repetition and to help keep the hierarchy shallow. Grow out not down.
 
-### Architectural Role of Presenters
+## Architectural Role of Presenters
 
 The problem of queries in views is almost certainly from directly accessing models from views.
 Presenters can pull this back and provide testable, scannable methods for fetching data.
@@ -735,5 +733,15 @@ Presenters can also return plain data structures or force strictloading on the m
 You can have optional preloading methods hanging off presenters to provide a default and have your test scan for N+1s or at least log data access.
 It's so much easier to observe data access patterns with a PORO than a controller.
 It's still better to let the controller decide the preloading, as it's the high context orchestrator.
+
+Presenters should decouple models from views.
+That means being closed, not open delegators and staying in that lane.
+They transform data from models.
+Having them produce HTML is not much chop.
+You want ViewComponents to handle view stuff; they are so much better equipped for that.
+I discussed this in Claude somewhere.
+Ultimately, presenting models can vary across many views.
+These use cases will accumulate forever on models, but can't really be owned by a view either.
+Putting them in the model gives testability, but disorganisation, putting them in views colocates them with their use case but ruins testability and discoverability and maintainability.
 
 ## Conclusion
