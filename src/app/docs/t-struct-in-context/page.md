@@ -203,7 +203,7 @@ Ruby’s answer to this is `Struct`, which should in principle address the boile
 At first glance, this is a big improvement, but we are still missing default values and type information.
 This will not actually work yet.
 
-### Why Do We Need T::Struct?
+## Why Do We Need T::Struct?
 
 Let’s add a constructor to our `Struct` to handle default values.
 
