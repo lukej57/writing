@@ -88,15 +88,13 @@ end
 We need compound data to get the benefits of conceptual alignment with the domain.
 
 {% callout %}
-It is tempting to use arrays and hashes, but they are both *open* structures.
-That means accessing them can always produce a `nil` value at runtime, complicating client code with `T.nilable(...)` everywhere.
+Arrays and hashes look like compound data, but they are both *open* structures.
+They can always produce a `nil` at runtime, complicating client code by wrapping every type in `T.nilable(...)`.
 
-The problem compounds when you need to aggregate multiple types.
-Types like `T::Array[T.any(Float, Integer, String)]` make you check for `nil` and then **narrow** the type.
+Collections also force you to use unions to aggregate multiple types, requiring client code to narrow the union.
+On paper, [shaped hashes](https://sorbet.org/docs/shapes) sidestep that problem, but they are so fraught with danger that even the documentation recommends `T::Struct` instead.
 
-On paper, [shaped hashes](https://sorbet.org/docs/shapes), can escape the union types problem at least, but they are so tricky in practice that even the documentation recommends `T::Struct` instead.
-
-Collections cannot replace data classes, but we would almost certainly find use for `T::Array[Point3d]` and `T::Hash[Symbol, Point3d]`.
+We would surely use `T::Array[Point3d]` and `T::Hash[Symbol, Point3d]`, but we would need `Point3d` nonetheless.
 {% /callout %}
 
 ### The Need for Data Classes
