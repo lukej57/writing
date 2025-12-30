@@ -7,8 +7,7 @@ import { Button } from '@/components/Button'
 import { HeroBackground } from '@/components/HeroBackground'
 import blurCyanImage from '@/images/blur-cyan.png'
 import blurIndigoImage from '@/images/blur-indigo.png'
-import rubyFpCoreImage from '@/images/ruby_fp_core_2.png'
-import rubyFpCoreInvertedImage from '@/images/ruby_fp_core_2_inverted.png'
+import rubyFpBlueImage from '@/images/ruby_fp_blue.png'
 
 const codeLanguage = 'javascript'
 const code = `export default {
@@ -42,16 +41,9 @@ export function Hero() {
           <div className="relative lg:static xl:pl-10">
             <div className="relative flex justify-center lg:justify-start">
               <Image
-                src={rubyFpCoreImage}
+                src={rubyFpBlueImage}
                 alt="Ruby FP Core"
-                className="w-48 dark:hidden"
-                unoptimized
-                priority
-              />
-              <Image
-                src={rubyFpCoreInvertedImage}
-                alt="Ruby FP Core"
-                className="w-48 hidden dark:block"
+                className="w-48"
                 unoptimized
                 priority
               />
