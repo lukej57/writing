@@ -5,11 +5,11 @@ nextjs:
     title: T::Struct in Context
 ---
 
-Ruby projects using Sorbet will almost certainly be using T::Struct which, according to the documentation will:
+Ruby projects using Sorbet will almost certainly be using `T::Struct` which, according to the documentation will:
 
 > … behave similarly to the Struct class built into Ruby, but work better with static and runtime type checking.
 
-My aim here is to deep dive into that definition and then discuss how best to use T::Struct.
+My aim here is to deep dive into that definition and then discuss how best to use `T::Struct`.
 
 # Why Do We Need Structs?
 
@@ -46,7 +46,9 @@ class GeometryCalculator
 end
 ```
 
-We compute over nine values, but we think of three points. We can compensate for the conceptual misalignment with variable names (x_1, y_1, z_1) and comments, but there is a better solution. We can group the related coordinates into a single compound datum and call it a point.
+We compute over nine values, but we think of three points.
+We can compensate for the conceptual misalignment with variable names (`x_1`, `y_1`, `z_1`) and comments, but there is a better solution.
+We can group the related coordinates into a single compound datum and call it a point.
 
 ```ruby
 class Point3d
@@ -86,12 +88,13 @@ end
 We need compound data to get the benefits of conceptual alignment with the domain.
 
 {% callout %}
-See Class vs Array vs Hash in the appendix to compare this to using an array or hash.
+See *Class vs Array vs Hash* in the appendix to compare this to using an array or hash.
 {% /callout %}
 
 ## The Need for Data Classes
 
-Let’s try this approach with the more complicated example of a configuration object for a hypothetical email client. We have many properties, with a variety of types and some have default values.
+Let’s try this approach with the more complicated example of a configuration object for a hypothetical email client.
+We have many properties, with a variety of types and some have default values.
 
 ```ruby
 class EmailConfig
@@ -159,10 +162,16 @@ end
 ```
 
 {% callout %}
-Note that we can set instance variables in the constructor without `T.let`, because we set them verbatim. Static checking [fails](https://sorbet.org/docs/type-annotations#limitations-on-instance-variable-inference) with error [7043](https://sorbet.org/docs/type-annotations#limitations-on-instance-variable-inference) if the arguments pass through any kind of expression, e.g. `@smtp_host = [smtp_host].first` or `timeout + 0`. You should only need `T.let` to create new instance variables not specified in the constructor’s sig block.
+Note that we can set instance variables in the constructor without `T.let`, because we set them verbatim.
+Static checking [fails](https://sorbet.org/docs/type-annotations#limitations-on-instance-variable-inference) with error [7043](https://sorbet.org/docs/type-annotations#limitations-on-instance-variable-inference) if the arguments pass through any kind of expression, e.g. `@smtp_host = [smtp_host].first` or `timeout + 0`.
+You should only need `T.let` to create new instance variables not specified in the constructor’s `sig` block.
 {% /callout %}
 
-This isn’t all Sorbet’s fault. Sorbet amplifies the boilerplate, but the root cause is that classes are behavioural abstractions. They force you to model data with behaviour in the form of functions that construct, get and set. This is why object-oriented languages across the board provide a data class feature. Ruby’s answer to this is Struct, which should in principle address the boilerplate problem.
+This isn’t all Sorbet’s fault.
+Sorbet amplifies the boilerplate, but the root cause is that classes are behavioural abstractions.
+They force you to model data with behaviour in the form of functions that construct, get and set.
+This is why object-oriented languages across the board provide a data class feature.
+Ruby’s answer to this is `Struct`, which should in principle address the boilerplate problem.
 
 ```ruby
   EmailConfig = Struct.new(
@@ -183,7 +192,8 @@ This isn’t all Sorbet’s fault. Sorbet amplifies the boilerplate, but the roo
   )
 ```
 
-At first glance, this is a big improvement, but we are still missing default values and type information. This will not actually work yet.
+At first glance, this is a big improvement, but we are still missing default values and type information.
+This will not actually work yet.
 
 # Why Do We Need `T::Struct`?
 
@@ -251,7 +261,8 @@ The remaining problem is typing the getters and setters, which is fatal.
 Once you have typed every property of a `Struct` it is essentially a PORO again.
 In fact, it’s worse.
 I attempted to construct a full example, but wound up caught in the crossfire between Sorbet and Rubocop.
-This is a Sorbet-specific problem that cannot be addressed with ActiveModel, `Data` or `dry-struct`. This pushes us squarely into `T::Struct`.
+This is a Sorbet-specific problem that cannot be addressed with ActiveModel, `Data` or `dry-struct`.
+This pushes us squarely into `T::Struct`.
 
 ```ruby
 class EmailConfig < T::Struct
@@ -294,9 +305,9 @@ We can divide the situations into four cases, based on two properties of a class
 
  - 🙃 Unit is a trivial case and it may be better served by a module.
  
- - ✅ Data class is a no-brainer—it’s the intended purpose of T::Struct.
+ - ✅ Data class is a no-brainer—it’s the intended purpose of `T::Struct`.
 
- - ❌ Deep class is mostly behaviour with few properties; there is little to gain from using T::Struct here.
+ - ❌ Deep class is mostly behaviour with few properties; there is little to gain from using `T::Struct` here.
 
  - ❓ God class is the grey area.
 
@@ -344,7 +355,7 @@ object = MyClass::Builder.new(
 T.reveal_type(object) # <MyClass:0x000000015dfdd370>
 ```
 
-# Attribute Macros (`attr_accessor/reader/writer`)
+# Attribute Macros
 If you don’t use this pattern, you may be tempted to inherit from `T::Struct` to sidestep the boilerplate that comes with attribute macros and Sorbet.
 Recall the `EmailConfig` example.
 
@@ -384,7 +395,7 @@ Now consider the Sorbet case:
 
  1. Since attribute macros require `sig` blocks, they can spread over many lines, and
 
- 1. Sorbet eliminates the silent nil problem by hitting undefined instance variables with type error [5005](https://sorbet.org/docs/error-reference#5005).
+ 1. Sorbet eliminates the silent `nil` problem by hitting undefined instance variables with type error [5005](https://sorbet.org/docs/error-reference#5005).
 
 The investment doesn’t look so good anymore.
 Attribute macros become essentially obsolete for internal instance variables.
@@ -415,14 +426,15 @@ Members default to public in a `struct`, but private in a `class`.
 Google’s C++ style guide provides interesting [guidance](https://google.github.io/styleguide/cppguide.html#Structs_vs._Classes).
 
 > Use a struct only for passive objects that carry data; everything else is a class.
-
+>
 > The struct and class keywords behave almost identically in C++. We add our own semantic meanings to each keyword, so you should use the appropriate keyword for the data-type you're defining.
-
+>
 > `structs` should be used for passive objects that carry data, and may have associated constants. All fields must be public. The struct must not have invariants that imply relationships between different fields, since direct user access to those fields may break those invariants. Constructors, destructors, and helper methods may be present; however, these methods must not require or enforce any invariants.
-
+>
 > If more functionality or invariants are required, or struct has wide visibility and expected to evolve, then a `class` is more appropriate. If in doubt, make it a `class`.
 
-This introduces two more angles to consider: behavioural evolution and passivity. How does `T::Struct` weigh up there?
+This introduces two more angles to consider: behavioural evolution and passivity.
+How does `T::Struct` weigh up there?
 
 # Evolution and Inheritance
 
