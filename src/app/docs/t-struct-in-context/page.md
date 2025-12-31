@@ -5,7 +5,7 @@ nextjs:
     title: T::Struct in Context
 ---
 
-{% callout title="TL;DR" type="note" hideIcon=true %}
+{% callout title="TL;DR" type="note" %}
 If you are using Sorbet, `T::Struct` becomes the only viable option for data classes.
 It excels as a data class, but makes no sense outside of that.
 Developers should resist the temptation to replace POROs with `T::Struct` to cut boilerplate.

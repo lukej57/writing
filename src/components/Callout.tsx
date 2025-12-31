@@ -18,22 +18,25 @@ const styles = {
 }
 
 const icons = {
-  note: (props: { className?: string }) => <Icon icon="book" {...props} />,
+  book: (props: { className?: string }) => <Icon icon="book" {...props} />,
   warning: (props: { className?: string }) => (
     <Icon icon="warning" color="amber" {...props} />
   ),
+  lightbulb: (props: { className?: string }) => <Icon icon="lightbulb" {...props} />,
 }
 
 export function Callout({
   title,
   children,
   type = 'note',
+  icon,
 }: {
   title: string
   children: React.ReactNode
   type?: keyof typeof styles
+  icon?: keyof typeof icons
 }) {
-  let IconComponent = icons[type]
+  let IconComponent = icons['lightbulb']
 
   return (
     <div className={clsx('my-8 flex rounded-3xl p-6', styles[type].container)}>

@@ -5,7 +5,7 @@ nextjs:
     title: The Dark Side of DRY
 ---
 
-{% callout title="TL;DR" type="note" hideIcon=true %}
+{% callout title="TL;DR" type="note" %}
 Duplicating code creates technical debt, but blind deduplication simply moves the problem.
 You need to synthesise both approaches to create maintainable abstractions. 
 {% /callout %}

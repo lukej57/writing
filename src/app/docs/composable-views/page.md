@@ -6,7 +6,7 @@ nextjs:
     description: Using Only Templates, Partials and PORO Presenters.
 ---
 
-{% callout title="TL;DR" type="note" hideIcon=true %}
+{% callout title="TL;DR" type="note" %}
 Principled view composition maxinimises maintainability in vanilla Rails.
 It also clarifies the limitations of ActionView, contextualising gems like Draper, Keynote, Phlex and ViewComponents.
 {% /callout %}
@@ -366,6 +366,26 @@ We can push the turbo frame up into the template that needs it and eliminate the
 ```
 
 ### Template-Partial Symbiosis
+When templates and partials contain the same kinds of things, you have fragmentation.
+A partial becomes an opaque page embedded in its parent.
+
+Action templates produce a page.
+They are coupled to a controller endpoint.
+Templates can easily rely on instance variables and helper methods from the controller, because there is no expectation of reuse.
+That's why templates are a better place to put anything that would break the portability of a partial.
+
+{% callout %}
+Hot water systems cannot prevent corrosion, but they can control it.
+They use a repalceable, sacrificial anode that corrodes *instead* of the non-replaceable, inbuilt components.
+Localised corrosion is much less of a problem than systemic corrosion.
+When partials contains all the same things that templates to, you have systemic corrosion.
+If partials are merely custom HTML elements, while templates have all the page concerns, you have controlled corrosion. 
+{% /callout %}
+
+The Rails documentation briefly [discusses](https://guides.rubyonrails.org/layouts_and_rendering.html#understanding-yield) `yield` in the context of layouts.
+The documentation does not cover using `yield` in regular partials to invert dependencies and let the caller provide context-specific content.
+That seems like a major gap in documentation to me. 
+
 #### Composable Partials
 
 This is the first sense in which we have factorised the view. The partials are now independent, rather than embedded in one another.
@@ -382,10 +402,6 @@ They `yield` to let the template inject behaviour and decide page-level structur
 They can also take an attribute bag argument to let the template set behaviour-relevant data like attributes used by turbo or stimulus.
 Partials should be composable, that means portable and yielding.
 You should be able to put them anywhere.
-
-The Rails documentation briefly [discusses](https://guides.rubyonrails.org/layouts_and_rendering.html#understanding-yield) `yield` in the context of layouts.
-The documentation does not cover using `yield` in regular partials to invert dependencies and let the caller provide context-specific content.
-That seems like a major gap in documentation to me. 
 
 
 ```haml
