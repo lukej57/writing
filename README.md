@@ -1,44 +1,43 @@
-# Syntax
+# Writing
 
-Syntax is a [Tailwind Plus](https://tailwindcss.com/plus) site template built using [Tailwind CSS](https://tailwindcss.com) and [Next.js](https://nextjs.org).
+A personal blog focused on principled software development, Ruby, and Rails. Built with [Next.js](https://nextjs.org), [Markdoc](https://markdoc.io), and [Tailwind CSS](https://tailwindcss.com).
 
 ## Getting started
 
-To get started with this template, first install the npm dependencies:
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-Next, run the development server:
+Run the development server:
 
 ```bash
 npm run dev
 ```
 
-Finally, open [http://localhost:3000](http://localhost:3000) in your browser to view the website.
+Open [http://localhost:3000](http://localhost:3000) to view the site locally.
 
-## Customizing
+## Writing articles
 
-You can start editing this template by modifying the files in the `/src` folder. The site will auto-update as you edit these files.
+Articles are written in Markdoc (Markdown with custom components) and stored in `src/app/docs/`. Each article is a folder with a `page.md` file.
 
-## Global search
+### Available components
 
-This template includes a global search that's powered by the [FlexSearch](https://github.com/nextapps-de/flexsearch) library. It's available by clicking the search input or by using the `⌘K` shortcut.
+- `{% callout %}` - Highlighted callout boxes
+- `{% quick-link %}` - Card-style links for the home page
+- Code blocks with syntax highlighting via Shiki
 
-This feature requires no configuration, and works out of the box by automatically scanning your documentation pages to build its index. You can adjust the search parameters by editing the `/src/markdoc/search.mjs` file.
+## Features
 
-## License
+- **Global search** - Powered by [FlexSearch](https://github.com/nextapps-de/flexsearch), accessible via the search input or `⌘K` shortcut
+- **Dark mode** - Theme switching via [next-themes](https://github.com/pacocoursey/next-themes)
+- **Static export** - Deploys to GitHub Pages as a static site
 
-This site template is a commercial product and is licensed under the [Tailwind Plus license](https://tailwindcss.com/plus/license).
+## Tech stack
 
-## Learn more
-
-To learn more about the technologies used in this site template, see the following resources:
-
-- [Tailwind CSS](https://tailwindcss.com/docs) - the official Tailwind CSS documentation
-- [Next.js](https://nextjs.org/docs) - the official Next.js documentation
-- [Headless UI](https://headlessui.dev) - the official Headless UI documentation
-- [Markdoc](https://markdoc.io) - the official Markdoc documentation
-- [Algolia Autocomplete](https://www.algolia.com/doc/ui-libraries/autocomplete/introduction/what-is-autocomplete/) - the official Algolia Autocomplete documentation
-- [FlexSearch](https://github.com/nextapps-de/flexsearch) - the official FlexSearch documentation
+- [Next.js](https://nextjs.org) - React framework with static export
+- [Markdoc](https://markdoc.io) - Markdown-based content authoring
+- [Tailwind CSS](https://tailwindcss.com) - Utility-first CSS framework
+- [Shiki](https://shiki.style) - Syntax highlighting
+- [FlexSearch](https://github.com/nextapps-de/flexsearch) - Full-text search
