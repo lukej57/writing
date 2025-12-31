@@ -7,17 +7,15 @@ nextjs:
 ---
 
 {% callout title="TL;DR" type="note" hideIcon=true %}
-Principled view composition maximises the maintainability of views in vanilla Rails.
-It also reveals the limitations of ActionView, clarifying the value propositions of gems like Draper, Keynote, Phlex and ViewComponents.
+Principled view composition maxinimises maintainability in vanilla Rails.
+It also clarifies the limitations of ActionView, contextualising gems like Draper, Keynote, Phlex and ViewComponents.
 {% /callout %}
 
 Views grow in complexity like every other part of a Rails application.
 We need to decompose views to manage them, but decomposition along the wrong axes creates **fragmentation** and technical debt.
-Instead, we need **factorisation** that splits our views along the axes of page structure, HTML units and model presentation.
+Instead, we need **factorisation** that splits views along the axes of page structure, HTML units and model presentation.
 
 ![Factorization axes diagram](/images/composable-views/axes.svg)
-
-These fundamentals position you to properly consider technical solutions like Draper, Keynote, Phlex or ViewComponents.
 
 ## Action Templates
 
@@ -73,7 +71,7 @@ Consider an index view for timesheets.
 
 ## Naive Decomposition
 
-Let's decompose this page ontologically.
+Let's decompose this page *ontologically*.
 Whatever you can name, extract it into a partial.
 This leads to a summary bar and a list of timesheets.
 
@@ -145,8 +143,8 @@ The body of the loop extracts again into a `_row` partial.
         = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-This demonstrates what I call the *partial tunnelling anti-pattern*.
-Evolving the page bears this out.
+This is easy to do, but hard to maintain.
+It's what I call the *partial tunnelling anti-pattern*.
 
 ### Chaotic Evolution
 Let's try to reuse the timesheets list to show an employee their timesheets.

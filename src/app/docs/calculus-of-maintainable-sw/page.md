@@ -6,4 +6,3 @@ nextjs:
     description: Foundations and principles for building maintainable systems.
 ---
 
-## LOL
