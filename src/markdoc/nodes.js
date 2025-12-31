@@ -58,6 +58,21 @@ const nodes = {
       },
     },
   },
+  image: {
+    ...defaultNodes.image,
+    transform(node, config) {
+      let attributes = node.transformAttributes(config)
+      let children = node.transformChildren(config)
+
+      // Prefix src with basePath if it starts with /
+      if (attributes.src && attributes.src.startsWith('/')) {
+        const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
+        attributes.src = `${basePath}${attributes.src}`
+      }
+
+      return new Tag('img', attributes, children)
+    },
+  },
 }
 
 export default nodes
