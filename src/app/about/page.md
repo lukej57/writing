@@ -7,6 +7,5 @@ nextjs:
 ---
 
 I have broad experience in software development, but I am a thinker and a communicator, not a technologist.
-Fundamentals **illuminate**.
-Technologies **complicate**.
-My approach is to pierce the complexity of technologies with the clarity of mental models.
+Fundamentals **illuminate**, while technologies **complicate**.
+My approach is to pierce that complexity with mental models.
