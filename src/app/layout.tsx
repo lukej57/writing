@@ -23,7 +23,7 @@ const lexend = localFont({
 export const metadata: Metadata = {
   title: {
     template: '%s - LukeJ',
-    default: 'LukeJ - Practical Programming Wisdom',
+    default: 'LukeJ - Writing on principled software development, Ruby and Rails.',
   },
   description:
     'Writing on principled software development, Ruby and Rails.',
