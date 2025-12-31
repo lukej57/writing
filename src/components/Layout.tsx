@@ -47,6 +47,11 @@ function Header() {
         <Search />
       </div>
       <div className="relative flex basis-0 justify-end gap-6 sm:gap-8 md:grow">
+        <Link href="/about" aria-label="About" className="group">
+          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white font-semibold text-sm transition-transform group-hover:scale-110">
+            LJ
+          </div>
+        </Link>
       </div>
     </header>
   )
