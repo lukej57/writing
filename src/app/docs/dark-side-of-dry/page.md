@@ -7,7 +7,7 @@ nextjs:
 
 {% callout title="TL;DR" type="note" hideIcon=true %}
 Duplicating code creates technical debt, but blind deduplication simply moves the problem.
-Dependency injection enables you to synthesise the two approaches to create maintainable abstractions. 
+You need to synthesise both approaches to create maintainable abstractions. 
 {% /callout %}
 
 Software developers all know the slogan *Don't Repeat Yourself* (DRY).

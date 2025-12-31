@@ -44,4 +44,8 @@
   [inert] ::-webkit-scrollbar {
     display: none;
   }
+
+  * {
+    caret-color: transparent;
+  }
 }
