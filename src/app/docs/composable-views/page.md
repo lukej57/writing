@@ -7,7 +7,7 @@ nextjs:
 ---
 
 {% callout title="TL;DR" type="note" hideIcon=true %}
-Principled view composition maximises view maintainability in vanilla Rails.
+Principled view composition maximises the maintainability of views in vanilla Rails.
 It also reveals the limitations of ActionView, clarifying the value propositions of gems like Draper, Keynote, Phlex and ViewComponents.
 {% /callout %}
 
