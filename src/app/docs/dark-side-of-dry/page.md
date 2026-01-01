@@ -15,7 +15,7 @@ It is a standard remedy for an obvious problem: the technical debt created by du
 The fatal flaw with DRY is that it picks one side of a hidden tradeoff.
 This intellectual shortcut plays itself out as trading one kind of technical debt for another.
 
-## Implicit Horizontal Coupling
+## Duplication: Horizontal Coupling
 
 Suppose you write similar functionality in a few different places.
 This creates duplicate code with some minor differences.
@@ -40,7 +40,7 @@ At first glance, that solves the problem.
 Now you can change the code in one place.
 This is where the dark side of DRY begins.
 
-## Implicit Vertical Coupling
+## Deduplication: Vertical Coupling
 
 It turns out that not every difference is incidental.
 Some differences are essential.
@@ -76,7 +76,7 @@ NAIVE DEDUPLICATION: Vertical Coupling
 Variant changes ripple up and down
 ```
 
-## DRY Merely Rotates Coupling
+## DRY Only Rotates Coupling
 
 We have obeyed the *Don't Repeat Yourself* slogan only to transform horizontal coupling into vertical coupling. This presents the following lose-lose tradeoff.
 

@@ -7,13 +7,13 @@ nextjs:
 ---
 
 {% callout title="TL;DR" type="note" %}
-Principled view composition maxinimises maintainability in vanilla Rails.
-It also clarifies the limitations of ActionView, contextualising gems like Draper, Keynote, Phlex and ViewComponents.
+Principled composition maximises view maintainability in vanilla Rails.
+It also reveals the limitations of ActionView, contextualising gems like Draper, Keynote, Phlex and ViewComponents.
 {% /callout %}
 
-Views grow in complexity like every other part of a Rails application.
-We need to decompose views to manage them, but decomposition along the wrong axes creates **fragmentation** and technical debt.
-Instead, we need **factorisation** that splits views along the axes of page structure, HTML units and model presentation.
+Ever growing views must be decomposed into manageable units.
+Decomposition along the wrong axes creates **fragmentation** and technical debt.
+Rails applications need **factorisation** that splits views along the axes of page structure, HTML blocks and model data.
 
 ![Factorization axes diagram](/images/composable-views/axes.svg)
 
@@ -366,35 +366,27 @@ We can push the turbo frame up into the template that needs it and eliminate the
 ```
 
 ### Template-Partial Symbiosis
-When templates and partials contain the same kinds of things, you have fragmentation.
-A partial becomes an opaque page embedded in its parent.
+Hot water systems cannot prevent corrosion, but they can control it.
+They use a replaceable, sacrificial anode that corrodes *instead* of the builtin components.
+Think of templates as sacrificial anodes.
+Let everything that would break a partial's composability float up to a template. 
 
-Action templates produce a page.
-They are coupled to a controller endpoint.
-Templates can easily rely on instance variables and helper methods from the controller, because there is no expectation of reuse.
-That's why templates are a better place to put anything that would break the portability of a partial.
+This creates a symbiosis.
+When partials are essentially custom HTML elements, they can drop in to any template.
+When templates own all of the page concerns, they become easier to maintain.
+Page structure can be changed in one place, without rippling through partials into other templates.
+The structure is clear because bulky presentational HTML lives in partials.
+Separating concerns this way creates composable partials and flexible templates.
+
+This only works if your partials `yield`.
+That allows partials to be independent, rather than embedded in one another. 
+Then the template decides their composition.
 
 {% callout %}
-Hot water systems cannot prevent corrosion, but they can control it.
-They use a repalceable, sacrificial anode that corrodes *instead* of the non-replaceable, inbuilt components.
-Localised corrosion is much less of a problem than systemic corrosion.
-When partials contains all the same things that templates to, you have systemic corrosion.
-If partials are merely custom HTML elements, while templates have all the page concerns, you have controlled corrosion. 
-{% /callout %}
-
 The Rails documentation briefly [discusses](https://guides.rubyonrails.org/layouts_and_rendering.html#understanding-yield) `yield` in the context of layouts.
-The documentation does not cover using `yield` in regular partials to invert dependencies and let the caller provide context-specific content.
-That seems like a major gap in documentation to me. 
-
-#### Composable Partials
-
-This is the first sense in which we have factorised the view. The partials are now independent, rather than embedded in one another.
-
-This is the second sense in which we have factorised the view.
-Page concerns live in the template, while partials are a self-contained unit of presentation.
-
-Together, this gives us independent and composable partials.
-The flipside of this is flexible templates. 
+It does not cover using `yield` in regular partials to let templates provide context-specific content.
+This is a major gap in my opinion.
+{% /callout %}
 
 Ideally, partials are like a custom HTML element.
 They let you factor bulky HTML presentation out your templates.
@@ -466,12 +458,16 @@ This is the symbiosis.
 
  - instance variables
  - forms
- - turbo frame or stream boundaries
+ - turbo frame boundaries
+ - turbo stream identifiers
  - page parameters
  - data-test-ids
  - iteration logic
  - conditional rendering
+ - view helper calls
+ - stimulus attributes
 
+ {% callout %}
 data-test-ids are best used to factor out presentational details from testing logic in your templates
 
 Testing against completely static parts of your views is not really a problem, but it’s not much use either.
@@ -483,6 +479,7 @@ it should test something dynamic. That’s logic and since logic should gravitat
 Demonstrate that testing presentation directly is a very high noise data structure, useful as a smoke test at best.
 
 Another case is dynamic test ids that serve to indicate that the right thing is being displayed, e.g. data-test-id=”user-avatar-#{user.id}”
+{% /callout %}
 
 ### Model Presentation
 
