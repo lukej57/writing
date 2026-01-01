@@ -367,14 +367,14 @@ Here is a quick list of page concerns:
  - instance variables
  - forms
  - turbo frame boundaries
- - turbo attributes
  - turbo stream identifiers
+ - turbo attributes
+ - stimulus attributes
  - page parameters
  - data-test-ids
  - iteration logic
  - conditional rendering
  - view helper calls
- - stimulus attributes
 
  {% callout %}
 data-test-ids are best used to factor out presentational details from testing logic in your templates
@@ -398,6 +398,8 @@ TODO Example.
 
 ### View Helpers
 Moving logic up into templates *can* have positive consequences for handling view helpers, provided you have configured controller helpers to be controller-scoped, not global.
+
+You can also use `helper_method :my_method_1, :my_method_2` to create controller-scoped view helpers.
 
 {% callout %}
 Even helpers for a specific controller are available to all views everywhere by default in Rails.
@@ -615,11 +617,30 @@ end
 
 Once you remove page concerns from your partials and `yield` instead of nesting, you eliminate the interlocking constraints that wreck the evolution of your views.
 
-## Architectural Evaluation
+### Presenters' Architectural Role
 
-### ActionView's Limitations
+The problem of queries in views is almost certainly from directly accessing models from views.
+Presenters can pull this back and provide testable, scannable methods for fetching data.
+Presenters can also return plain data structures or force strictloading on the models they pass into views.
+You can have optional preloading methods hanging off presenters to provide a default and have your test scan for N+1s or at least log data access.
+It's so much easier to observe data access patterns with a PORO than a controller.
+It's still better to let the controller decide the preloading, as it's the high context orchestrator.
+
+Presenters should decouple models from views.
+That means being closed, not open delegators and staying in that lane.
+They transform data from models.
+Having them produce HTML is not much chop.
+You want ViewComponents to handle view stuff; they are so much better equipped for that.
+I discussed this in Claude somewhere.
+Ultimately, presenting models can vary across many views.
+These use cases will accumulate forever on models, but can't really be owned by a view either.
+Putting them in the model gives testability, but disorganisation, putting them in views colocates them with their use case but ruins testability and discoverability and maintainability.
+
+
+## ActionView's Limitations
  - No boundaries, separation, clear point of ownership
- - No good way to organise helpers.
+ - No good way to organise helpers. Controller-scoped or global, with no good way to test.
+ - - global view helpers make sense for image_tag and link_to, not for contextual helpers.
  - If you need template-level abstraction to handle recurring template patterns, you're screwed.
  - Missing `ApplicationView` abstraction, forcing you into using controller tests. 
  - Accumulating large amounts of logic in modules muddies ownership and therefore testing.
@@ -678,23 +699,12 @@ Deep nesting of partials without yield means that partials end up accessing page
 
 Repeating presentation doesn’t necessarily demand another partial. You can use capture blocks for local repetition and to help keep the hierarchy shallow. Grow out not down.
 
-### The Role of Presenters
-
-The problem of queries in views is almost certainly from directly accessing models from views.
-Presenters can pull this back and provide testable, scannable methods for fetching data.
-Presenters can also return plain data structures or force strictloading on the models they pass into views.
-You can have optional preloading methods hanging off presenters to provide a default and have your test scan for N+1s or at least log data access.
-It's so much easier to observe data access patterns with a PORO than a controller.
-It's still better to let the controller decide the preloading, as it's the high context orchestrator.
-
-Presenters should decouple models from views.
-That means being closed, not open delegators and staying in that lane.
-They transform data from models.
-Having them produce HTML is not much chop.
-You want ViewComponents to handle view stuff; they are so much better equipped for that.
-I discussed this in Claude somewhere.
-Ultimately, presenting models can vary across many views.
-These use cases will accumulate forever on models, but can't really be owned by a view either.
-Putting them in the model gives testability, but disorganisation, putting them in views colocates them with their use case but ruins testability and discoverability and maintainability.
 
 ## Conclusion
+Rails claims to be an MVC architecture, but unlike models and controllers, views do not get their own abstraction.
+You *can* get a lot of mileage out of ActionView, but its total lack of architectural boundaries is a major weakness for maintainability.
+The default behaviour of sharing all controllers helpers across all views is sloppy.
+It's very easy to abuse global view helpers.
+Rails is structured to accept large numbers of them.
+The team needs a crisp mental model of composable views, which they won't get from reading the documentation.
+ActionView is full of sharp, unintuitive tools that make technical debt very easy to write.
