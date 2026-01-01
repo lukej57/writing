@@ -344,21 +344,17 @@ We can in fact eliminate that partial and push its contents up to the template u
 ```
 
 ### Template-Partial Symbiosis
-Hot water systems cannot prevent corrosion, but they can control it.
-They use a replaceable, sacrificial anode that corrodes *instead* of the builtin components.
-Think of templates as sacrificial anodes.
-Let everything that would break a partial's composability float up to a template. 
-
-This creates a symbiosis.
+If you push page concerns up from partials into templates, a kind of symbiosis emerges.
 When partials are essentially custom HTML elements, they can drop in to any template.
 When templates own all of the page concerns, they become easier to maintain.
 Page structure can be changed in one place, without rippling through partials into other templates.
 The structure is clear because bulky presentational HTML lives in partials.
-Separating concerns this way creates composable partials and flexible templates.
+We get flexible templates and composable partials.
 
 This only works if your partials `yield`.
-That allows partials to be independent, rather than embedded in one another. 
-Then the template decides their composition.
+That allows:
+ 1. Partials to be independent, rather than embedded in one another, and
+ 1. Templates to decide how partials compose.
 
 {% callout %}
 The Rails documentation briefly [discusses](https://guides.rubyonrails.org/layouts_and_rendering.html#understanding-yield) `yield` in the context of layouts.
@@ -366,77 +362,18 @@ It does not cover using `yield` in regular partials to let templates provide con
 This is a major gap in my opinion.
 {% /callout %}
 
-Ideally, partials are like a custom HTML element.
-They let you factor bulky HTML presentation out your templates.
-They `yield` to let the template inject behaviour and decide page-level structure.
-They can also take an attribute bag argument to let the template set behaviour-relevant data like attributes used by turbo or stimulus.
-Partials should be composable, that means portable and yielding.
-You should be able to put them anywhere.
+### The Attribute Bag Pattern
+HTML attributes are often significant for turbo and stimulus, making them a page concern.
+Partials should accept a hash of options and splat them onto their root element.
 
+TODO Example.
 
-```haml
--# app/views/timesheets/index.html.haml
-
-- presenter = TimesheetCollectionPresenter.new(@timesheets)
-
-= render "card", title: "Timesheets for Review" do
-  = render "data_table", headers: ["Employee", "Hours", "Status", "Actions"] do
-    - presenter.each do |timesheet|
-      = render "timesheets/row", timesheet: timesheet do
-        -# Three partials deep, but we have full access to:
-        -# - @current_user (controller instance variable)
-        -# - policy() (Pundit helper)
-        -# - timesheet (from presenter.each)
-        -# - All route helpers
-
-        - if timesheet.submitted? && policy(timesheet.model).approve?
-          = form_with model: timesheet.model,
-                      url: timesheet_review_path(timesheet.model),
-                      class: "inline-actions" do |f|
-            = f.hidden_field :status
-            = f.button "Approve", value: "approved", class: "btn-sm btn-success"
-            = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
-```
-
-Structural branching in partials is a context accumulation smell, but if the structure is not affected by arguments that’s fine if the arguments are simply inputs for derived data that slots into a stable presentation structure.
-
-#### Flexible Templates
-
-Page concerns are what the page owns:
-
-layout, e.g. turbo frames
-
-params
-
-Forms (can’t nest, cannot compose, though form fields can compose). Forms submit to an endpoint, they belong to a template.
-
-controller instance variables
-
-structural logic
-
-if this then show that, else show something else
-
-Iterations over collections to render
-
-Logic heavy enough to require view helpers (which should be controller-scoped, not global)
-
-Including partials
-
-Note this is a page concern. Partials should not be including other partials wherever possible.
-
-
-Consider templates coupled to the controller and non-transferable.
-
-They don't need to be portable, but they need to be independenly changeable.
-That's why spreading a template's concern over partials does not help; it's just fragmentation.
-
-Composable partials give templates the flexibility they need.
-Templates allow partials a place to push logic.
-This is the symbiosis.
-
+### Page Concerns
+Here is a quick list of page concerns: 
  - instance variables
  - forms
  - turbo frame boundaries
+ - turbo attributes
  - turbo stream identifiers
  - page parameters
  - data-test-ids
@@ -461,7 +398,9 @@ Another case is dynamic test ids that serve to indicate that the right thing is 
 
 ### Model Presentation
 
-There remains some duplication of style logic.
+Even with all of the above, there still remains:
+ 1. Inline presentation logic in the summary bar, and
+ 1. Ssome duplication of status style logic.
 Let's add a plain PORO presenter.
 
 ```ruby
