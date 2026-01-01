@@ -615,10 +615,15 @@ end
 
 Once you remove page concerns from your partials and `yield` instead of nesting, you eliminate the interlocking constraints that wreck the evolution of your views.
 
+## Architectural Evaluation
 
+### ActionView's Limitations
+ - No boundaries, separation, clear point of ownership
+ - No good way to organise helpers.
+ - If you need template-level abstraction to handle recurring template patterns, you're screwed.
+ - Missing `ApplicationView` abstraction, forcing you into using controller tests. 
+ - Accumulating large amounts of logic in modules muddies ownership and therefore testing.
 
-
-## ActionView's Architectural Limitations
 Notice that (3) puts us back to where we started: logic-heavy partials.
 This leaves us making all helpers global or lugging around helper modules and partials everywhere.
 That would be hard to manage.
@@ -628,7 +633,6 @@ There is just no good way to manage views in vanilla Rails, because nothing owns
 Only classes can own responsibilities.
 Modules can provide logic but they can’t own anything because they can’t be instantiated and they have no boundaries.
 
-### Responsibility without Ownership
 The fundamental issue with ActionView is that it doesn’t provide a separate abstraction (class) for views.
 Models and controllers are classes.
 ActionView is mixed into controllers.
@@ -638,8 +642,6 @@ We can approximate boundaries with deliberate principles.
 This can get us a good way, though not all the way to maintainable views.
 The final piece is testing.
 That is always muddy with modules, but natural with classes.
-
-### Template-Level Abstraction
 
 If you pull logic upward toward templates and keep partials pure, you at least have some pure, portable partials.
 What of the templates?
@@ -658,25 +660,6 @@ Ultimately, once you pull everything into templates and find you need in-depth t
 You’re either creating global view helpers or lugging modules around to every controller that uses the partials.
 Either way, you get no encapsulation and no good approach to testing.
 
-### Global View Helper Soup
-If you can concentrate logic in templates, then you can extract it into controller-specific helpers or private methods.
-For example, MyBusinessThingController will automatically load MyBusinessThingHelper.
-Make sure you have config.action_controller.include_all_helpers = false in config/application.rb.
-Otherwise, every helper is loaded everywhere, papering over the lack of boundaries.
-
-Then you have view helpers in MyBusinessThingHelper that keep presentation logic out of the controller and out of views, simplifying both, without polluting the global view context with special purpose helpers.
-
-The discipline now comes in keeping partials as pure as possible.
-If they rely on `MyBusinessThingHelper` or instance variables, they will break if used anywhere else.
-Even worse, they could work somewhere else, which means another controller has view helpers with the same name and different behaviour.
-
-
-Using ViewComponents
-
-Only a class can really own something. Views are modules in rails and that is just a mistake, making them hard to test and giving them no boundaries.
-
-Convert the above example to ViewComponents.
-
 Since ViewComponents offer a way to co-locate and encapsulate logic and presentation—and test it—it makes composition much more scalable. You can really build up components from other components much more easily, while keeping the logic manageable.
 
 You can also do nice helper patterns like those seen in the primer design system view components themselves.
@@ -689,27 +672,13 @@ end
 
 Demonstrate how partials that yields can have logic and values injected via yield and avoid drilling that way. You could demonstrate argument drilling, structural branching, instance variable and view helper side channels, then finally composition via yield.
 
-Partial concerns
-
-presentation
-
-locals only
-
-non-structural logic
-
-e.g. given a piece of data, compute derived data that slots into a static structure, not data that changes the structure (like if this then render that, else render some other thing)
-
-yielding to invert dependency on contextual information
-
-yield instead of nesting more partials
-
 This keeps the partial hierarchy flat and wide, which means composable.
 
 Deep nesting of partials without yield means that partials end up accessing page-owned data through side channels like instance variables and page params, or accumulating context via arguments and structural branches.
 
 Repeating presentation doesn’t necessarily demand another partial. You can use capture blocks for local repetition and to help keep the hierarchy shallow. Grow out not down.
 
-## Architectural Role of Presenters
+### The Role of Presenters
 
 The problem of queries in views is almost certainly from directly accessing models from views.
 Presenters can pull this back and provide testable, scannable methods for fetching data.
