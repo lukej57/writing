@@ -256,6 +256,8 @@ Now we can make all of the same changes with essentially zero friction.
 The template now decides what goes into the `_timesheet_list` partial and directly controls the `_row`.
 There is no hierarchy, which means no flags and no drilling.
 
+Let's rebuild the manager's timesheet index view.
+
 ```haml
 -# app/views/timesheets/index.html.haml
 
@@ -263,23 +265,21 @@ There is no hierarchy, which means no flags and no drilling.
 
 = render "timesheets/summary_bar", timesheets: @timesheets
 
-= render "timesheets/timesheet_list", timesheets: @timesheets do |timesheet|
-  - if timesheet.submitted?
-    = form_with model: timesheet,
-                url: manager_timesheet_review_path(timesheet),
-                class: "review-form" do |f|
-      = f.hidden_field :status
-      .actions
-        = f.button "Approve", value: "approved", class: "btn-sm btn-success"
-        = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
+= turbo_frame_tag "timesheets-list", data: { turbo_action: "advance" } do
+  %ul.timesheet-list
+    - @timesheets.each do |timesheet|
+      = render "timesheets/row", timesheet: timesheet do
+        - if timesheet.submitted?
+          = form_with model: timesheet,
+                      url: manager_timesheet_review_path(timesheet),
+                      class: "review-form" do |f|
+            = f.hidden_field :status
+            .actions
+              = f.button "Approve", value: "approved", class: "btn-sm btn-success"
+              = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-There is still one hiccup when we try to evolve the page.
-The turbo frame embedded in `_timesheet_list` still does not belong in the employee view.
-We can just not to use it, but this demonstrates that the partial is not portable.
-That's because it contains page concerns.
-We can push the turbo frame up into the template that needs it and eliminate the `_timesheet_list` partial.
-
+Now let's build the employee's timesheet view.
 
 ```haml
 -# app/views/dashboard/show.html.haml
@@ -297,7 +297,11 @@ We can push the turbo frame up into the template that needs it and eliminate the
           = link_to "Edit", edit_timesheet_path(timesheet), class: "btn-sm"
 ```
 
+The change became simple. That's what we want.
 
+The only hiccup was that we did not actually use the `_timesheet_list` partial.
+That's because `_timesheet_list` really contains nothing but page concerns: a turbo frame and iteration.
+We can in fact eliminate that partial and push its contents up to the template using it.
 
 ```haml
 -# app/views/timesheets/index.html.haml
