@@ -17,8 +17,6 @@ Rails applications need **factorisation** that splits views along the axes of pa
 
 ![Factorization axes diagram](/images/composable-views/axes.svg)
 
-## Action Templates
-
 Consider an index view for timesheets. 
 
 ```haml
@@ -69,11 +67,11 @@ Consider an index view for timesheets.
               = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-## Naive Decomposition
+## Fragmentation
 
 Let's decompose this page *ontologically*.
 Whatever you can name, extract it into a partial.
-This leads to a summary bar and a list of timesheets.
+This gives us a summary bar and a list of timesheets.
 
 ```haml
 -# app/views/timesheets/index.html.haml
@@ -84,30 +82,8 @@ This leads to a summary bar and a list of timesheets.
 = render "timesheet_list", timesheets: @timesheets
 ```
 
-The summary bar extracts wholesale.
-
-```haml
--# app/views/timesheets/_summary_bar.html.haml
--# locals: (timesheets:)
-
-- total_hours = timesheets.sum(&:total_hours)
-- overtime_hours = timesheets.sum { |t| [t.total_hours - 40, 0].max }
-- pending_count = timesheets.count(&:submitted?)
-
-.summary-bar
-  .stat
-    %span.label Total Hours
-    %span.value= "%.1f" % total_hours
-  .stat
-    %span.label Overtime
-    %span.value= "%.1f" % overtime_hours
-  .stat{ class: pending_count > 0 ? "stat--alert" : nil }
-    %span.label Pending Review
-    %span.value= pending_count
-```
-
-The timesheet list contains a loop.
-The body of the loop extracts again into a `_row` partial.
+The timesheet list contains a loop, which is a kind of repetition.
+Extract the loop's body into a `_row` partial.
 
 ```haml
 -# app/views/timesheets/_timesheet_list.html.haml
@@ -143,11 +119,13 @@ The body of the loop extracts again into a `_row` partial.
         = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-This is easy to do, but hard to maintain.
+This is easy to create, but hard to maintain.
 It's what I call the *partial tunnelling anti-pattern*.
+The first problem is that future developers must dig through four files and mentally compose them to understand the page.
+The second problem is the way that pages like this evolve.
 
 ### Chaotic Evolution
-Let's try to reuse the timesheets list to show an employee their timesheets.
+Let's try to reuse the timesheets list to show an employee their timesheets on the new page below.
 
 ```haml
 -# app/views/dashboard/show.html.haml
@@ -159,9 +137,10 @@ Let's try to reuse the timesheets list to show an employee their timesheets.
   = render "timesheets/timesheet_list", timesheets: @my_timesheets
 ```
 
-It should be this easy, but when the page loads, we see the approve and reject buttons.
-We only want to show that to managers.
-Let's try to fix the issue within the current structure.
+When the page loads, we see approve and reject buttons, but they are for managers only.
+Two different pages need to adjust the behaviour of `_row`.
+All the options are bad at this point, because `_row` is a hidden implementation detail of `_timesheet_list.html.haml`.
+
 
 ```
 timesheets/index.html.haml (manager view) 
@@ -173,12 +152,10 @@ dashboard/show.html.haml   (employee view)
     └── _row.html.haml
 ```
 
-The manager view and employee view both need `_row` to adjust its behaviour, but `_row` is a hidden implementation detail of `_timesheet_list.html.haml`.
-This gives us a range of bad options.
-
 We can smuggle data down to `_row` with an instance variable or a page parameter.
 We can also drill an argument through the `_timesheet_list`.
 The `_timesheet_list` partial won't use the argument, but it's still the least surprising and most portable option, given the structure we have.
+Let's add the flag.
 
 ```haml
 -# app/views/timesheets/_timesheet_list.html.haml
@@ -218,28 +195,27 @@ Now the dashboard can hide the form.
            show_review_form: false
 ```
 
-That was a lot of work to "reuse" a partial, and it's just the beginning.
-It turns out that the employee needs to be shown an edit button that the mananger does not.
+That was a lot of work to "reuse" a partial.
+It's also just the beginning.
+Suppose we realise that the employee needs to be shown an edit button, but not the manager.
 That's another flag.
 
 The manager's timesheet view is also built for a batch processing workflow.
-The manager clicks approve or reject on each timesheet row and the turbo frame update preserves the scroll position.
-When the employee clicks the edit button, turbo tries to extract a frame from the response, causing an error.
-We have another slew of bad options:
- 1. Add `data-turbo-frame="_top"` to edit links (but only for employees)—another flag
- 1. Wrap the edit page content in the same turbo frame—couples unrelated pages
- 1. Make the turbo frame conditional: if `should_use_turbo_frame`—page concern in partial
+When the manager clicks *approve*, then turbo updates the frame, preserving the scroll position.
+When the employee clicks *edit*, then turbo tries to extract a frame from the response, causing an error.
+We have anoter problem with more bad solutions:
+ 1. Add a flag for the `data-turbo-frame="_top"` attribute on the edit link, or for the turbo frame itself, or
+ 1. Wrap the edit page content in a matching turbo frame, coupling unrelated endpoints.
 
 The developer repeatedly faces the same fork in the road.
 Invest a lot of effort to restructure, or make the situation a bit worse and move on.
 
 ## Factorisation
 
-How can we make this workable?
-The major problem was that templates could not adjust the behaviour of a nested partial.
+The major problem with fragmentation is that templates cannot  adjust the behaviour of nested partials.
 We can fix this by making partials `yield` to invert the dependency.
 
-First, let's make `_row` yield so the template can inject context-specific content.
+Let's add `yield` to the `_row` and `_timesheet_list` partials to see the effect.
 
 ```haml
 -# app/views/timesheets/_row.html.haml
@@ -261,8 +237,6 @@ First, let's make `_row` yield so the template can inject context-specific conte
       = yield
 ```
 
-Now `_timesheet_list` can yield too, giving templates full control over row content.
-
 ```haml
 -# app/views/timesheets/_timesheet_list.html.haml
 -# locals: (timesheets:)
@@ -278,7 +252,7 @@ Now `_timesheet_list` can yield too, giving templates full control over row cont
 
 ### Controlled Evolution
 
-Once we `yield`, we can add the timesheets list with an edit button instead of the approve/reject buttons—all with essentially zero friction.
+Now we can make all of the same changes with essentially zero friction.
 The template now decides what goes into the `_timesheet_list` partial and directly controls the `_row`.
 There is no hierarchy, which means no flags and no drilling.
 
