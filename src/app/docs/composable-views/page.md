@@ -13,7 +13,7 @@ It also reveals the limitations of ActionView, contextualising gems like Draper,
 
 Ever growing views must be decomposed into manageable units.
 Decomposition along the wrong axes creates **fragmentation** and technical debt.
-Rails applications need **factorisation** that splits views along the axes of page structure, HTML blocks and model data.
+Rails applications need **factorisation** that splits views along the axes of page structure, HTML blocks and derived model data.
 
 ![Factorization axes diagram](/images/composable-views/axes.svg)
 
