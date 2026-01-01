@@ -17,6 +17,8 @@ Rails applications need **factorisation** that splits views along the axes of pa
 
 ![Factorization axes diagram](/images/composable-views/axes.svg)
 
+## An Example View 
+
 Consider an index view for timesheets. 
 
 ```haml
@@ -637,7 +639,24 @@ These use cases will accumulate forever on models, but can't really be owned by 
 Putting them in the model gives testability, but disorganisation, putting them in views colocates them with their use case but ruins testability and discoverability and maintainability.
 
 
-## ActionView's Limitations
+## ActionView's Achilles Heel
+
+### Controller Testing is the wrong medium for intricate logic
+ - painfully slow and bulky
+ - must assert over HTML
+ - Massive breadth of executed code buries unhealthy data access patterns
+
+### No Template-Level Abstraction
+Suppose you have diligently applied all of the advice in this article.
+Will it work forever?
+Obviously, it will eventually fail too.
+The failure mode is that eventually duplication will emerge across templates.
+Multiple templates will need variations of the same view helper logic and partial compositions.
+How would you handle that?
+All you can do is extract to partials, but we just spent all this time getting away from that!
+Partials have no boundaries, they are extremely easy to break.
+You will wind up making all of your helpers global and diluting the architectural role of partials.
+
  - No boundaries, separation, clear point of ownership
  - No good way to organise helpers. Controller-scoped or global, with no good way to test.
  - - global view helpers make sense for image_tag and link_to, not for contextual helpers.
