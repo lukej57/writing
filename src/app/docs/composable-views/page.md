@@ -362,12 +362,6 @@ It does not cover using `yield` in regular partials to let templates provide con
 This is a major gap in my opinion.
 {% /callout %}
 
-### The Attribute Bag Pattern
-HTML attributes are often significant for turbo and stimulus, making them a page concern.
-Partials should accept a hash of options and splat them onto their root element.
-
-TODO Example.
-
 ### Page Concerns
 Here is a quick list of page concerns: 
  - instance variables
@@ -395,6 +389,53 @@ Demonstrate that testing presentation directly is a very high noise data structu
 
 Another case is dynamic test ids that serve to indicate that the right thing is being displayed, e.g. data-test-id=”user-avatar-#{user.id}”
 {% /callout %}
+
+### The Attribute Bag Pattern
+HTML attributes are often significant for turbo and stimulus, making them a page concern.
+Partials should accept a hash of options and splat them onto their root element.
+
+TODO Example.
+
+### View Helpers
+Moving logic up into templates *can* have positive consequences for handling view helpers, provided you have configured controller helpers to be controller-scoped, not global.
+
+{% callout %}
+Even helpers for a specific controller are available to all views everywhere by default in Rails.
+You can disable this so that a helper defined for one controller is available only to views rendered from that controller, by setting the following in `application.rb`.
+
+`config.action_controller.include_all_helpers = false`
+{% /callout %}
+
+Views full of logic is an obvious smell with the knee-jerk reaction to shift the logic into a view helper.
+If the logic is in a template, then it can naturally fit into a controller-scoped helper.
+The template, controller and controller helper are all coupled together and not expected to be reused.
+
+```ruby
+class MyController < ApplicationController
+  def show; end
+end
+
+module MyControllerHelper
+  def pretty_datetime(datetime)
+    return "" if datetime.blank?
+    datetime.strftime("%b %e, %Y at %l:%M%P")
+  end
+end
+```
+
+```haml
+# app/views/my_controller/show.html.haml
+%p
+  Submitted at:
+  = pretty_datetime(@timesheet.submitted_at)
+
+```
+
+When you have logic embedded in partials, you are again faced with bad options:
+ 1. Silently depend on controller-scoped view helpers, causing the partial to break if reused elsewhere, or
+ 1. Add a global view helper to `app/helpers`. 
+
+
 
 ### Model Presentation
 
