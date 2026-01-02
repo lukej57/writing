@@ -602,14 +602,14 @@ These use cases will accumulate forever on models, but can't really be owned by 
 Putting them in the model gives testability, but disorganisation, putting them in views colocates them with their use case but ruins testability and discoverability and maintainability.
 
 
-## ActionView's Achilles Heel
+## ActionView's Missing Abstraction
 
-### Controller Testing is the wrong medium for intricate logic
+Controller Testing is the wrong medium for intricate logic
  - painfully slow and bulky
  - must assert over HTML
  - Massive breadth of executed code buries unhealthy data access patterns
 
-### No Template-Level Abstraction
+No Template-Level Abstraction
 Suppose you have diligently applied all of the advice in this article.
 Will it work forever?
 Obviously, it will eventually fail too.
