@@ -121,10 +121,9 @@ Extract the loop's body into a `_row` partial.
         = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-This is easy to create, but hard to maintain.
-It's what I call the *partial tunnelling anti-pattern*.
-The first problem is that future developers must dig through four files and mentally compose them to understand the page.
-The second problem is the way that pages like this evolve.
+This is what I call the *partial tunnelling anti-pattern*.
+The first problem is that future developers must mentally compose four files to understand the page.
+The second problem is that this structure sabotages the page's evolution.
 
 ### Chaotic Evolution
 Let's try to reuse the timesheets list to show an employee their timesheets on the new page below.
@@ -139,10 +138,10 @@ Let's try to reuse the timesheets list to show an employee their timesheets on t
   = render "timesheets/timesheet_list", timesheets: @my_timesheets
 ```
 
-When the page loads, we see approve and reject buttons, but they are for managers only.
+When the page loads, we see approve and reject buttons.
+Those buttons are for managers only.
 Two different pages need to adjust the behaviour of `_row`.
-All the options are bad at this point, because `_row` is a hidden implementation detail of `_timesheet_list.html.haml`.
-
+That is quite a problem, because `_row` is a hidden implementation detail of `_timesheet_list.html.haml`.
 
 ```
 timesheets/index.html.haml (manager view) 
@@ -154,30 +153,32 @@ dashboard/show.html.haml   (employee view)
     └── _row.html.haml
 ```
 
+The options are all bad at this point.
 We can smuggle data down to `_row` with an instance variable or a page parameter.
 We can also drill an argument through the `_timesheet_list`.
-The `_timesheet_list` partial won't use the argument, but it's still the least surprising and most portable option, given the structure we have.
+Given the structure we have, drilling is the least surprising and most portable option.
 Let's add the flag.
 
 ```haml
 -# app/views/timesheets/_timesheet_list.html.haml
+-# === New flag ===
 -# locals: (timesheets:, show_review_form: true)
 
 = turbo_frame_tag "timesheets-list", data: { turbo_action: "advance" } do
   %ul.timesheet-list
     - timesheets.each do |timesheet|
-      -# Drill the flag 
+      -# === Drill the flag === 
       = render "timesheets/row", timesheet: timesheet, show_review_form: show_review_form
 ```
 
 ```haml
 -# app/views/timesheets/_row.html.haml
--# Add `show_review_form` flag
+-# === New flag ===
 -# locals: (timesheet:, show_review_form: true)
 
 ...
 
-  -# Conditionally render based on flag
+  -# === Conditional render on flag ===
   - if show_review_form && timesheet.submitted?
     = form_with model: timesheet, 
                 url: manager_timesheet_review_path(timesheet),
@@ -193,31 +194,37 @@ Now the dashboard can hide the form.
 %section.my-timesheets
   %h2 My Timesheets
   = render "timesheets/list", 
-           timesheets: @my_timesheets, 
+           timesheets: @my_timesheets,
+           -# === Adjust _row behaviour from template ===
            show_review_form: false
 ```
 
 That was a lot of work to "reuse" a partial.
 It's also just the beginning.
-Suppose we realise that the employee needs to be shown an edit button, but not the manager.
-That's another flag.
+The employee needs to be shown an edit button, but not the manager.
+Either we add another flag, or couple the first flag to two use cases.
 
-The manager's timesheet view is also built for a batch processing workflow.
-When the manager clicks *approve*, then turbo updates the frame, preserving the scroll position.
-When the employee clicks *edit*, then turbo tries to extract a frame from the response, causing an error.
-We have anoter problem with more bad solutions:
+The manager and employee also have different workflows.
+The manager approves timesheets in batches on the same page, while the employee navigates away to view a single timesheet. 
+
+When the manager clicks *approve*, turbo updates a frame, preserving the scroll position.
+When the employee clicks *edit*, turbo tries to extract a frame from the response, causing an error.
+We have more bad options:
  1. Add a flag for the `data-turbo-frame="_top"` attribute on the edit link, or for the turbo frame itself, or
- 1. Wrap the edit page content in a matching turbo frame, coupling unrelated endpoints.
+ 1. Wrap the edit page content in a matching turbo frame, coupling unrelated templates.
 
-The developer repeatedly faces the same fork in the road.
-Invest a lot of effort to restructure, or make the situation a bit worse and move on.
+This structure repeatedly leads the developer to the same fork in the road:
+  - Invest a lot of time and effort to restructure, or
+  - Make the situation a bit worse and move on.
+
+That is technical debt.
 
 ## Factorisation
 
 The major problem with fragmentation is that templates cannot  adjust the behaviour of nested partials.
 We can fix this by making partials `yield` to invert the dependency.
 
-Let's add `yield` to the `_row` and `_timesheet_list` partials to see the effect.
+Let add `yield` to `_row` and `_timesheet_list`.
 
 ```haml
 -# app/views/timesheets/_row.html.haml
@@ -236,6 +243,7 @@ Let's add `yield` to the `_row` and `_timesheet_list` partials to see the effect
   -# Yield instead of hard-coding the form
   - if block_given?
     .actions
+      -# === Add yield ===
       = yield
 ```
 
@@ -247,16 +255,16 @@ Let's add `yield` to the `_row` and `_timesheet_list` partials to see the effect
   %ul.timesheet-list
     - timesheets.each do |timesheet|
       = render "timesheets/row", timesheet: timesheet do
-        -# Yield to let the template inject row actions
+        -# === Add yield ===
         = yield timesheet
 ```
 
 
 ### Controlled Evolution
 
-Now we can make all of the same changes with essentially zero friction.
-The template now decides what goes into the `_timesheet_list` partial and directly controls the `_row`.
-There is no hierarchy, which means no flags and no drilling.
+Now we can make the same changes with zero friction.
+The template decides what goes into `_timesheet_list` and directly controls `_row`.
+There is no hierarchy and therefore no flag drilling.
 
 Let's rebuild the manager's timesheet index view.
 
@@ -291,7 +299,7 @@ Now let's build the employee's timesheet view.
 %section.my-timesheets
   %h2 My Timesheets
 
-  -# No turbo frame needed - using partials directly now
+  -# === No turbo frame needed, so don't include timesheet_list ===
   %ul.timesheet-list
     - @my_timesheets.each do |timesheet|
       = render "timesheets/row", timesheet: timesheet do
@@ -299,100 +307,55 @@ Now let's build the employee's timesheet view.
           = link_to "Edit", edit_timesheet_path(timesheet), class: "btn-sm"
 ```
 
-The change became simple. That's what we want.
-
-The only hiccup was that we did not actually use the `_timesheet_list` partial.
-That's because `_timesheet_list` really contains nothing but page concerns: a turbo frame and iteration.
-We can in fact eliminate that partial and push its contents up to the template using it.
-
-```haml
--# app/views/timesheets/index.html.haml
-
-%h1 Timesheets for Review
-
--# Summary calculations
-- total_hours = @timesheets.sum(&:total_hours)
-- overtime_hours = @timesheets.sum { |t| [t.total_hours - 40, 0].max }
-- pending_count = @timesheets.count(&:submitted?)
-
-= render "timesheets/summary_bar",
-         total_hours: "%.1f" % total_hours,
-         overtime_hours: "%.1f" % overtime_hours,
-         pending_count: pending_count,
-         pending_alert: pending_count > 0
-
--# Turbo Frame is a page concern — stays in template
-= turbo_frame_tag "timesheets-list", data: { turbo_action: "advance" } do
-  %ul.timesheet-list
-    - @timesheets.each do |timesheet|
-      - status_class = case timesheet.status
-        - when "submitted" then "badge--warning"
-        - when "approved" then "badge--success"
-        - when "rejected" then "badge--danger"
-      
-      = render "timesheets/row", 
-               timesheet: timesheet,
-               hours: "%.1f hrs" % timesheet.total_hours,
-               status_label: timesheet.status.titleize,
-               status_class: status_class do
-        -# Form is a page concern — stays in template
-        - if timesheet.submitted?
-          = form_with model: timesheet,
-                      url: timesheet_review_path(timesheet),
-                      class: "review-form" do |f|
-            = f.hidden_field :status
-            = f.button "Approve", value: "approved", class: "btn-sm btn-success"
-            = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
-```
+The only hiccup was that we did not actually use `_timesheet_list`.
+That's because it only contains non-portable page concerns (a turbo frame and iteration).
+We are better off eliminating `_timesheet_list` and and pushing its contents up to the template.
 
 ### Template-Partial Symbiosis
 If you push page concerns up from partials into templates, a kind of symbiosis emerges.
 When partials are essentially custom HTML elements, they can drop in to any template.
 When templates own all of the page concerns, they become easier to maintain.
-Page structure can be changed in one place, without rippling through partials into other templates.
-The structure is clear because bulky presentational HTML lives in partials.
-We get flexible templates and composable partials.
+Page structure changes happen in one place, without rippling into other templates via shared partials.
+The essential page structure is also clearer because HTML bulk lives in partials.
+This gives us composable partials and flexible templates.
 
-This only works if your partials `yield`.
+This only works if partials `yield`.
 That allows:
  1. Partials to be independent, rather than embedded in one another, and
  1. Templates to decide how partials compose.
 
 {% callout %}
 The Rails documentation briefly [discusses](https://guides.rubyonrails.org/layouts_and_rendering.html#understanding-yield) `yield` in the context of layouts.
-It does not cover using `yield` in regular partials to let templates provide context-specific content.
-This is a major gap in my opinion.
+It fails to mention that `yield` is essential to composable partials.
+Imagine if React's documentation never mentioned the `children` prop.
 {% /callout %}
 
 ### Page Concerns
-Here is a quick list of page concerns: 
- - instance variables
- - forms
- - turbo frame boundaries
- - turbo stream identifiers
- - turbo attributes
- - stimulus attributes
- - page parameters
- - data-test-ids
- - iteration logic
- - conditional rendering
- - view helper calls
+Here is a quick list of page concerns.
+Always use your judgment, but think twice before hardcoding these things into partials:
 
- {% callout %}
-data-test-ids are best used to factor out presentational details from testing logic in your templates
+| Page Concern | Examples |
+|--------------|---------|
+| instance variables | `@user`, `@timesheets` |
+| forms | `form_with model: @timesheet` |
+| turbo frames | `turbo_frame_tag "timesheet_#{@timesheet.id}"` |
+| turbo stream identifiers | `turbo_stream_from timesheet` |
+| turbo attributes | `data: { turbo_action: "replace" }` |
+| stimulus attributes | `data: { controller: "dropdown" }` |
+| page parameters | `params[:id]`, `params[:search]` |
+| data-test-ids | `data: { test_id: "submit-button" }` |
+| iteration logic | `timesheets.each do \|timesheet\|` |
+| conditional rendering | `if show_review_form` |
+| controller-specific view helper calls | `current_timesheet_period` |
 
-Testing against completely static parts of your views is not really a problem, but it’s not much use either.
-
-You don’t want to test against all sorts of presentational rubbish like particular HTML elements
-
-it should test something dynamic. That’s logic and since logic should gravitate toward templates then that’s where data test ids are most useful.
-
-Demonstrate that testing presentation directly is a very high noise data structure, useful as a smoke test at best.
-
-Another case is dynamic test ids that serve to indicate that the right thing is being displayed, e.g. data-test-id=”user-avatar-#{user.id}”
+{% callout %}
+If your partials contain blocks of HTML, they are essentially static.
+The point of `data-test-id`s is to anchor test assertions onto something independent of presentational details.
+Since their purpose is testing some kind of logic, they provide much more value in action templates than partials.
 {% /callout %}
 
 ### The Attribute Bag Pattern
+There is one last detail to pushing page concerns up out of partials.
 HTML attributes are often significant for turbo and stimulus, making them a page concern.
 Partials should accept a hash of options and splat them onto their root element.
 

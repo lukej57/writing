@@ -39,7 +39,7 @@ function Header() {
       )}
     >
       <div className="relative flex grow basis-0 items-center">
-        <Link href="/" aria-label="Home page" className="text-3xl font-light bg-gradient-to-b from-indigo-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent">
+        <Link href="/" aria-label="Home page" className="text-3xl font-bold bg-gradient-to-b from-indigo-400 via-sky-400 to-indigo-400 bg-clip-text text-transparent">
           λ
         </Link>
       </div>
