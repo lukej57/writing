@@ -350,16 +350,31 @@ Always use your judgment, but think twice before hardcoding these things into pa
 
 {% callout %}
 If your partials contain blocks of HTML, they are essentially static.
-The point of `data-test-id`s is to anchor test assertions onto something independent of presentational details.
+The point of a `data-test-id` is to anchor test assertions onto something independent of presentational details.
 Since their purpose is testing some kind of logic, they provide much more value in action templates than partials.
 {% /callout %}
 
 ### The Attribute Bag Pattern
 There is one last detail to pushing page concerns up out of partials.
-HTML attributes are often significant for turbo and stimulus, making them a page concern.
+HTML attributes are often significant for turbo and stimulus, making them page concerns.
 Partials should accept a hash of options and splat them onto their root element.
 
-TODO Example.
+```haml
+-# app/views/shared/_button.html.haml
+%button{ **attributes }
+  = text
+```
+
+```haml
+= render partial: "shared/button", locals: { 
+    text: "Approve", 
+    class: "btn btn--primary", 
+    data: { turbo_action: "replace", test_id: "approve-btn" }, 
+    id: "approve-button"
+  }
+```
+
+This allows the template (not the partial) to be responsible for page-relevant data attributes, while the partial remains generic and composable, just like a custom HTML element.
 
 ### View Helpers
 Moving logic up into templates *can* have positive consequences for handling view helpers, provided you have configured controller helpers to be controller-scoped, not global.
@@ -405,10 +420,26 @@ When you have logic embedded in partials, you are again faced with bad options:
 
 
 ### Model Presentation
+If we move **all** logic into view helpers, they might accumulate knowledge about models.
+That's not ideal, because that cuts across controllers and potentially into partials.
+Both circumstances force those helpers into global visibility.
+If transforming model data becomes complex, we'll also want the straightforward unit testing story of a dedicated class.
+This all leads to presenters, our third axis of factorisation.
 
-Even with all of the above, there still remains:
- 1. Inline presentation logic in the summary bar, and
- 1. Ssome duplication of status style logic.
+Recall that we had some obvious model presentation logic in `_row`. 
+
+```haml
+%li.timesheet-row{ id: dom_id(timesheet) }
+  .employee-name= timesheet.employee.name
+  .hours= "%.1f hrs" % timesheet.total_hours
+
+  - status_class = case timesheet.status
+    - when "submitted" then "badge--warning"
+    - when "approved" then "badge--success"
+    - when "rejected" then "badge--danger"
+  %span.badge{ class: status_class }= timesheet.status.titleize
+```
+
 Let's add a plain PORO presenter.
 
 ```ruby
@@ -417,8 +448,6 @@ class TimesheetPresenter
   def initialize(timesheet)
     @timesheet = timesheet
   end
-
-  delegate :employee, :submitted?, :draft?, to: :@timesheet
 
   def hours
     "%.1f hrs" % @timesheet.total_hours
@@ -439,12 +468,21 @@ class TimesheetPresenter
 end
 ```
 
-Now the status badge logic can be pulled out of both action templates.
+This leaves our partial looking a bit simpler.
 
 ```haml
--# app/views/timesheets/index.html.haml
+- presented_timesheet = TimesheetPresenter.new(timesheet)
 
-%h1 Timesheets for Review
+%li.timesheet-row{ id: dom_id(timesheet) }
+  .employee-name= presented_timesheet.employee.name
+  .hours= presented_timesheet.hours
+  %span.badge{ class: presented_timesheet.status_badge_class }= presented_timesheet.status_label
+```
+
+There is a subtler section of model presentation logic in the summary bar. 
+
+```haml
+-# app/views/timesheets/_summary_bar.html.haml
 
 - total_hours = @timesheets.sum(&:total_hours)
 - overtime_hours = @timesheets.sum { |t| [t.total_hours - 40, 0].max }
@@ -455,54 +493,10 @@ Now the status badge logic can be pulled out of both action templates.
          overtime_hours: "%.1f" % overtime_hours,
          pending_count: pending_count,
          pending_alert: pending_count > 0
-
-= turbo_frame_tag "timesheets-list", data: { turbo_action: "advance" } do
-  %ul.timesheet-list
-    - @timesheets.each do |timesheet|
-      - presenter = TimesheetPresenter.new(timesheet)
-
-      = render "timesheets/row", timesheet: presenter do
-        - if presenter.submitted?
-          = form_with model: timesheet,
-                      url: timesheet_review_path(timesheet),
-                      class: "review-form" do |f|
-            = f.hidden_field :status
-            = f.button "Approve", value: "approved", class: "btn-sm btn-success"
-            = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-```haml
--# app/views/dashboard/show.html.haml
-
-%h1 Dashboard
-
-%section.my-timesheets
-  %h2 My Timesheets
-
-  %ul.timesheet-list
-    - @my_timesheets.each do |timesheet|
-      - presenter = TimesheetPresenter.new(timesheet)
-
-      = render "timesheets/row", timesheet: presenter do
-        - if presenter.draft?
-          = link_to "Edit", edit_timesheet_path(timesheet), class: "btn-sm"
-```
-
-```haml
--# app/views/timesheets/_row.html.haml
--# locals: (timesheet:)
-
-%li.timesheet-row{ id: dom_id(timesheet) }
-  .employee-name= timesheet.employee.name
-  .hours= timesheet.hours
-  %span.badge{ class: timesheet.status_badge_class }= timesheet.status_label
-
-  - if block_given?
-    .actions
-      = yield
-```
-
-Notice we still have inline logic for the summary bar.
+This is presentation of a timesheet **collection**.
+This can work in concern with the individual `TimesheetPresenter`.
 
 ```ruby
 # app/presenters/timesheet_collection_presenter.rb
@@ -532,161 +526,109 @@ class TimesheetCollectionPresenter
   end
 
   def each
-    @timesheets.each { |t| yield TimesheetPresenter.new(t) }
+    @timesheets.each { |t| yield t, TimesheetPresenter.new(t) }
   end
 end
 ```
 
+TODO: Refine this...
+
 ```haml
 -# app/views/timesheets/index.html.haml
 
-- presenter = TimesheetCollectionPresenter.new(@timesheets)
+- presented_timesheets = TimesheetCollectionPresenter.new(@timesheets)
 
 %h1 Timesheets for Review
 
 = render "timesheets/summary_bar",
-         total_hours: presenter.total_hours,
-         overtime_hours: presenter.overtime_hours,
-         pending_count: presenter.pending_count,
-         pending_alert: presenter.pending_alert?
+         total_hours: presented_timesheets.total_hours,
+         overtime_hours: presented_timesheets.overtime_hours,
+         pending_count: presented_timesheets.pending_count,
+         pending_alert: presented_timesheets.pending_alert?
 
 = turbo_frame_tag "timesheets-list", data: { turbo_action: "advance" } do
   %ul.timesheet-list
-    - presenter.each do |timesheet|
-      = render "timesheets/row", timesheet: timesheet do
+    - presented_timesheets.each do |timesheet, presenter|
+      = render "timesheets/row", timesheet: timesheet, presenter: presenter do
         - if timesheet.submitted?
-          = form_with model: timesheet.model,
-                      url: timesheet_review_path(timesheet.model),
+          = form_with model: timesheet,
+                      url: timesheet_review_path(timesheet),
                       class: "review-form" do |f|
             = f.hidden_field :status
             = f.button "Approve", value: "approved", class: "btn-sm btn-success"
             = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-```haml
--# app/views/dashboard/show.html.haml
-
-- presenter = TimesheetCollectionPresenter.new(@my_timesheets)
-
-%h1 Dashboard
-
-%section.my-timesheets
-  %h2 My Timesheets
-  
-  %ul.timesheet-list
-    - presenter.each do |timesheet|
-      = render "timesheets/row", timesheet: timesheet do
-        - if timesheet.draft?
-          = link_to "Edit", edit_timesheet_path(timesheet.model), class: "btn-sm"
-```
-
-Once you remove page concerns from your partials and `yield` instead of nesting, you eliminate the interlocking constraints that wreck the evolution of your views.
-
 ### Presenters' Architectural Role
 
-The problem of queries in views is almost certainly from directly accessing models from views.
-Presenters can pull this back and provide testable, scannable methods for fetching data.
-Presenters can also return plain data structures or force strictloading on the models they pass into views.
-You can have optional preloading methods hanging off presenters to provide a default and have your test scan for N+1s or at least log data access.
-It's so much easier to observe data access patterns with a PORO than a controller.
-It's still better to let the controller decide the preloading, as it's the high context orchestrator.
+Presenters:
+ 1. Decouple views from models, and
+ 1. Can offer optional preload scopes.
 
-Presenters should decouple models from views.
-That means being closed, not open delegators and staying in that lane.
-They transform data from models.
-Having them produce HTML is not much chop.
-You want ViewComponents to handle view stuff; they are so much better equipped for that.
-I discussed this in Claude somewhere.
-Ultimately, presenting models can vary across many views.
-These use cases will accumulate forever on models, but can't really be owned by a view either.
-Putting them in the model gives testability, but disorganisation, putting them in views colocates them with their use case but ruins testability and discoverability and maintainability.
+They provide closed interfaces, exposing only what the view needs and nothing more.
+Their job is to transform data from models into shapes the views can consume.
+Generating HTML is not their responsibility.
+If a presenter renders markup, it starts overlapping with tools like ViewComponents, which are specifically designed to render views.
+ViewComponents are classes that render views, while presenters are classes that prepare data for views.
+This clear division improves testability.
+It is straightforward to test a presenter that returns structured data, such as { status: :overdue, days: 5 }.
+Testing a presenter that returns HTML is harder, because it requires parsing DOM or matching strings, which complicates unit testing and turns it into more of an integration test.
+The "query problem" is related but distinct.
+Directly accessing models from views spreads out data queries unpredictably.
+Presenters help solve this by providing explicit methods for fetching data, enabling strict-loading, and supporting optional preloading hooks.
+With presenters, data access becomes observable and testable in a plain Ruby object, which is not possible when data is pulled through the controller or view.
+The controller still decides what gets preloaded, since it has the context about which code paths are relevant.
+The "accumulation problem" is what presenters really solve.
+Display logic for a model can be scattered across many views.
+Storing this logic on the model makes it testable but unorganized.
+Placing it in views ties it to each use case but reduces discoverability and maintainability.
+Presenters offer a solution: a place for testable, discoverable, and presentation-scoped logic.
 
+```ruby
+class TimesheetPresenter
+  def self.preload_scope
+    Timesheet.includes(:employee, shifts: :breaks)
+  end
+end
+
+# Controller
+@timesheet = TimesheetPresenter.preload_scope.find(params[:id])
+@presenter = TimesheetPresenter.new(@timesheet)
+```
+
+```ruby
+@presenter = TimesheetPresenter.new(timesheet, preloaded: [:shifts, :employee])
+```
 
 ## ActionView's Missing Abstraction
 
-Controller Testing is the wrong medium for intricate logic
- - painfully slow and bulky
- - must assert over HTML
- - Massive breadth of executed code buries unhealthy data access patterns
+The fundamental limitation of ActionView is that it doesn't provide a class-based abstraction for views. While models and controllers are classes with clear boundaries, ActionView is mixed into controllers. This missing `ApplicationView` abstraction creates several problems:
 
-No Template-Level Abstraction
-Suppose you have diligently applied all of the advice in this article.
-Will it work forever?
-Obviously, it will eventually fail too.
-The failure mode is that eventually duplication will emerge across templates.
-Multiple templates will need variations of the same view helper logic and partial compositions.
-How would you handle that?
-All you can do is extract to partials, but we just spent all this time getting away from that!
-Partials have no boundaries, they are extremely easy to break.
-You will wind up making all of your helpers global and diluting the architectural role of partials.
+**No Encapsulation or Boundaries**
+- View helpers are either controller-scoped or global, with no middle ground
+- Modules provide logic but can't own responsibilities since they can't be instantiated
+- Method conflicts between mixed-in modules are common and hard to debug
 
- - No boundaries, separation, clear point of ownership
- - No good way to organise helpers. Controller-scoped or global, with no good way to test.
- - - global view helpers make sense for image_tag and link_to, not for contextual helpers.
- - If you need template-level abstraction to handle recurring template patterns, you're screwed.
- - Missing `ApplicationView` abstraction, forcing you into using controller tests. 
- - Accumulating large amounts of logic in modules muddies ownership and therefore testing.
+**Poor Testing Story**
+- Template logic must be tested through slow, bulky controller tests that assert over HTML
+- No way to unit test view logic in isolation
+- Unhealthy data access patterns get buried in the breadth of executed code
 
-Notice that (3) puts us back to where we started: logic-heavy partials.
-This leaves us making all helpers global or lugging around helper modules and partials everywhere.
-That would be hard to manage.
-Imagine including three different partials into your template, then having to include three different view helper modules into your controller to make them work.
-You still then have the problem of mixins overwriting each other’s methods, which could be likely for truly generic components appearing across pages.
-There is just no good way to manage views in vanilla Rails, because nothing owns the view responsibility.
-Only classes can own responsibilities.
-Modules can provide logic but they can’t own anything because they can’t be instantiated and they have no boundaries.
+**Duplication Without Good Solutions**
+- When templates share patterns, you must either:
+  - Create global helpers (polluting the namespace)
+  - Include helper modules in every controller that needs them
+  - Fall back to logic-heavy partials (defeating the purpose of composition)
 
-The fundamental issue with ActionView is that it doesn’t provide a separate abstraction (class) for views.
-Models and controllers are classes.
-ActionView is mixed into controllers.
-The lack of any architectural boundary makes architecture a DIY affair.
-All sorts of anti-patterns are very easy in views.
-We can approximate boundaries with deliberate principles.
-This can get us a good way, though not all the way to maintainable views.
-The final piece is testing.
-That is always muddy with modules, but natural with classes.
+With proper view classes, you could:
+- **Encapsulate** related template logic, helpers, and partials together
+- **Test** view logic directly without controller overhead
+- **Compose** views from other view objects with clear ownership
+- **Inherit** common functionality through class hierarchies
+- **Namespace** helpers naturally within their view classes
 
-If you pull logic upward toward templates and keep partials pure, you at least have some pure, portable partials.
-What of the templates?
-There are two problems.
-The first is that you are still stuck testing the template’s logic via controllers tests.
-The second and larger problem is that if duplication emerges across templates, you’ll need to create a partial and accompanying helpers.
-We’re back to where we started: partials full of logic.
-Either each partial has a matching helper that you include in your controllers, or you make them all global.
-In practice, you’ll get a random mix of ad hoc approaches.
-Some people will invent something; others will copy it.
-The only constant is that nobody really knows what they are doing.
-Rails simply does not offer a good way to manage UI components out of the box.
-This is where ViewComponents or Phlex can answer both problems.
-
-Ultimately, once you pull everything into templates and find you need in-depth testing and/or deduplication across pages, then you have no good solution.
-You’re either creating global view helpers or lugging modules around to every controller that uses the partials.
-Either way, you get no encapsulation and no good approach to testing.
-
-Since ViewComponents offer a way to co-locate and encapsulate logic and presentation—and test it—it makes composition much more scalable. You can really build up components from other components much more easily, while keeping the logic manageable.
-
-You can also do nice helper patterns like those seen in the primer design system view components themselves.
-
-render(Primer::Beta::ButtonGroup.new(size: size)) do |component|
-  component.with_button { "Button 1" }
-  component.with_button { "Button 2" }
-  component.with_button { "Button 3" }
-end
-
-Demonstrate how partials that yields can have logic and values injected via yield and avoid drilling that way. You could demonstrate argument drilling, structural branching, instance variable and view helper side channels, then finally composition via yield.
-
-This keeps the partial hierarchy flat and wide, which means composable.
-
-Deep nesting of partials without yield means that partials end up accessing page-owned data through side channels like instance variables and page params, or accumulating context via arguments and structural branches.
-
-Repeating presentation doesn’t necessarily demand another partial. You can use capture blocks for local repetition and to help keep the hierarchy shallow. Grow out not down.
-
+This is why ViewComponents and Phlex have emerged—they provide the missing abstraction that lets views be first-class citizens with proper boundaries, testing, and composition patterns.
 
 ## Conclusion
-Rails claims to be an MVC architecture, but unlike models and controllers, views do not get their own abstraction.
-You *can* get a lot of mileage out of ActionView, but its total lack of architectural boundaries is a major weakness for maintainability.
-The default behaviour of sharing all controllers helpers across all views is sloppy.
-It's very easy to abuse global view helpers.
-Rails is structured to accept large numbers of them.
-The team needs a crisp mental model of composable views, which they won't get from reading the documentation.
-ActionView is full of sharp, unintuitive tools that make technical debt very easy to write.
+
+Rails claims to be MVC, but views lack their own abstraction. While you can build maintainable views with disciplined use of ActionView, the lack of architectural boundaries makes it far too easy to create tangled, untestable view code. The solution isn't more conventions—it's the missing piece of the architecture: real view classes.
