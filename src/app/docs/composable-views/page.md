@@ -1,21 +1,26 @@
 ---
-title: Composable Views in Vanilla Rails
+title: Maintainable Views in Vanilla Rails (WIP)
 nextjs:
   metadata:
-    title: Composable Views in Rails
+    title: Maintainable Views in Rails
     description: Using Only Templates, Partials and PORO Presenters.
 ---
 
 {% callout title="TL;DR" type="note" %}
-Principled composition maximises view maintainability in vanilla Rails.
+Giving clear, non-overlapping roles to templates, partials and PORO presenters maximises view maintainability in vanilla Rails.
 It also reveals the limitations of ActionView, contextualising gems like Draper, Keynote, Phlex and ViewComponents.
 {% /callout %}
 
-Ever growing views must be decomposed into manageable units.
+Ever growing views must be decomposed into manageable units, but not all approaches are equal.
 Decomposition along the wrong axes creates **fragmentation** and technical debt.
-Rails applications need **factorisation** that splits views along the axes of page structure, HTML blocks and derived model data.
+Rails applications need **factorisation** that splits views along the axes of page behaviour, presentational HTML and derived model data.
 
 ![Factorization axes diagram](/images/composable-views/axes.svg)
+
+This factorisation gives you:
+ - Flexible templates, 
+ - Composable partials, and
+ - Models decoupled from views.
 
 ## An Example View 
 
@@ -314,20 +319,24 @@ We are better off eliminating `_timesheet_list` and and pushing its contents up 
 ### Template-Partial Symbiosis
 If you push page concerns up from partials into templates, a kind of symbiosis emerges.
 When partials are essentially custom HTML elements, they can drop in to any template.
-When templates own all of the page concerns, they become easier to maintain.
-Page structure changes happen in one place, without rippling into other templates via shared partials.
+When templates own all of the page concerns, you can change them *locally*.
+Page behaviour changes happen in one place, without rippling into other templates via shared partials.
 The essential page structure is also clearer because HTML bulk lives in partials.
-This gives us composable partials and flexible templates.
+This gives us flexible templates and composable partials.
 
-This only works if partials `yield`.
-That allows:
- 1. Partials to be independent, rather than embedded in one another, and
- 1. Templates to decide how partials compose.
+A partial is composable if you can:
+  1. Put the partial inside anything, and
+  1. Put anything inside the partial.
+
+Plain HTML gives you (1) and (2) comes from using `yield`.
 
 {% callout %}
-The Rails documentation briefly [discusses](https://guides.rubyonrails.org/layouts_and_rendering.html#understanding-yield) `yield` in the context of layouts.
-It fails to mention that `yield` is essential to composable partials.
-Imagine if React's documentation never mentioned the `children` prop.
+Occasionally, it makes sense to create a semi-composable partial that does not `yield`.
+This is similar to a self-closing HTML tag  like `<br />`.
+A good example is making form fields reusable.
+You can package up a few form fields into a partial that does not `yield`, then
+drop it into any form.
+It is intended to be a leaf node and should not nest other partials.
 {% /callout %}
 
 ### Page Concerns
