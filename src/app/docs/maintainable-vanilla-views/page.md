@@ -17,11 +17,6 @@ Rails applications need **factorisation** that splits views along the axes of pa
 
 ![Factorization axes diagram](/images/composable-views/axes.svg)
 
-This factorisation gives you:
- - Flexible templates, 
- - Composable partials, and
- - Models decoupled from views.
-
 ## An Example View 
 
 Consider an index view for timesheets. 
