@@ -619,6 +619,8 @@ If you put substantial behaviour into partials you rely on global view helpers o
 Testing, designing an API, adding flexibility with DI and inheritance to vary collaborates--all the ways you manage complex behaviour become morea and more difficult to do and therefore to maintain.
 A partial simply cannot fill the shoes of a class as behaviour grows.
 
+TODO: Refine point that the verbs of maintainability become increasingly costly for a partial versus a class.
+
 The fundamental limitation of ActionView is that it doesn't provide a class-based abstraction for views. While models and controllers are classes with clear boundaries, ActionView is mixed into controllers. This missing `ApplicationView` abstraction creates several problems:
 
 **No Encapsulation or Boundaries**
