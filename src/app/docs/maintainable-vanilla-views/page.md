@@ -380,69 +380,69 @@ Partials should accept a hash of options and splat them onto their root element.
 
 This allows the template (not the partial) to be responsible for page-relevant data attributes, while the partial remains generic and composable, just like a custom HTML element.
 
-# List Example
+### List Example
 The following refactor keeps all logic out of the partials, making them very easy to reuse and change.
 
 Before:
 
 ```haml
-    -# Column 2: Shortcode reference sidebar
-    .w-80
-      .bg-white.rounded-lg.shadow-sm.p-4.h-full.overflow-auto
-        %h3.text-lg.font-semibold.mb-4 Shortcode Reference
-        %p.text-sm.text-gray-600.mb-4
-          Use these shortcodes in your template to display dynamic content.
+.w-80
+  .bg-white.rounded-lg.shadow-sm.p-4.h-full.overflow-auto
+    %h3.text-lg.font-semibold.mb-4 Shortcode Reference
+    %p.text-sm.text-gray-600.mb-4
+      Use these shortcodes in your template to display dynamic content.
 
-        .space-y-4.pb-4
-          .shortcode-section
-            %h4.font-medium.text-sm.mb-2 Layout
-            %ul.text-sm.space-y-1
-              %li
-                %code.bg-gray-100.px-2.py-1.rounded.text-xs {% section "dark" %}
-              %li
-                %code.bg-gray-100.px-2.py-1.rounded.text-xs {% section "light" %}
-              %li
-                %code.bg-gray-100.px-2.py-1.rounded.text-xs {% endsection %}
+    .space-y-4.pb-4
+      .shortcode-section
+        %h4.font-medium.text-sm.mb-2 Layout
+        %ul.text-sm.space-y-1
+          %li
+            %code.bg-gray-100.px-2.py-1.rounded.text-xs [[ section "dark" ]]
+          %li
+            %code.bg-gray-100.px-2.py-1.rounded.text-xs [[ section "light" ]]
+          %li
+            %code.bg-gray-100.px-2.py-1.rounded.text-xs [[ endsection ]]
 
-          .shortcode-section
-            %h4.font-medium.text-sm.mb-2 Components
-            %ul.text-sm.space-y-1
-              %li
-                %code.bg-gray-100.px-2.py-1.rounded.text-xs {% cta_button "Text" {{link}} %}
-              %li
-                %code.bg-gray-100.px-2.py-1.rounded.text-xs {% app_store_links %}
+      .shortcode-section
+        %h4.font-medium.text-sm.mb-2 Components
+        %ul.text-sm.space-y-1
+          %li
+            %code.bg-gray-100.px-2.py-1.rounded.text-xs [[ cta_button "Text" {{link}} ]]
+          %li
+            %code.bg-gray-100.px-2.py-1.rounded.text-xs [[ app_store_links ]]
 
-          .shortcode-section
-            %h4.font-medium.text-sm.mb-2 Variables
-            %ul.text-sm.space-y-1
-              - @available_dynamic_fields.sort.each do |field|
-                %li
-                  %code.bg-gray-100.px-2.py-1.rounded.text-xs {{#{field}}}
+      .shortcode-section
+        %h4.font-medium.text-sm.mb-2 Variables
+        %ul.text-sm.space-y-1
+          - @available_dynamic_fields.sort.each do |field|
+            %li
+              %code.bg-gray-100.px-2.py-1.rounded.text-xs {{#{field}}}
 ```
 
 After:
 
 ```haml
-    .w-80
-      .bg-white.rounded-lg.shadow-sm.p-4.h-full.overflow-auto
-        %h3.text-lg.font-semibold.mb-4 Shortcode Reference
-        %p.text-sm.text-gray-600.mb-4
-          Use these shortcodes in your template to display dynamic content.
+.w-80
+  .bg-white.rounded-lg.shadow-sm.p-4.h-full.overflow-auto
+    %h3.text-lg.font-semibold.mb-4 Shortcode Reference
+    %p.text-sm.text-gray-600.mb-4
+      Use these shortcodes in your template to display dynamic content.
 
-        .space-y-4.pb-4
-          = render "shortcode_section", title: "Layout" do
-            = render "shortcode_item", code: '{% section "dark" %}'
-            = render "shortcode_item", code: '{% section "light" %}'
-            = render "shortcode_item", code: '{% endsection %}'
+    .space-y-4.pb-4
+      = render "shortcode_section", title: "Layout" do
+        = render "shortcode_item", code: '[[ section "dark" ]]'
+        = render "shortcode_item", code: '[[ section "light" ]]'
+        = render "shortcode_item", code: '[[ endsection ]]'
 
-          = render "shortcode_section", title: "Components" do
-            = render "shortcode_item", code: '{% cta_button "Text" {{link}} %}'
-            = render "shortcode_item", code: '{% app_store_links %}'
+      = render "shortcode_section", title: "Components" do
+        = render "shortcode_item", code: '[[ cta_button "Text" {{link}} ]]'
+        = render "shortcode_item", code: '[[ app_store_links ]]'
 
-          = render "shortcode_section", title: "Variables" do
-            - @available_dynamic_fields.sort.each do |field|
-              = render "shortcode_item", code: "{{#{field}}}"
+      = render "shortcode_section", title: "Variables" do
+        - @available_dynamic_fields.sort.each do |field|
+          = render "shortcode_item", code: "{{#{field}}}"
 ```
+
 
 ### View Helpers
 Moving logic up into templates *can* have positive consequences for handling view helpers, provided you have configured controller helpers to be controller-scoped, not global.
