@@ -60,7 +60,7 @@ export function Hero() {
             />
             <div className="relative">
               <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-                Writing on principled software development, Ruby and Rails.
+                Writing on principled software development.
               </h1>
               <p className="mt-3 text-2xl tracking-tight text-slate-600">
                 by Luke Jeremy
