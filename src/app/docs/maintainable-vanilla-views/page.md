@@ -7,13 +7,15 @@ nextjs:
 ---
 
 {% callout title="TL;DR" type="note" %}
-Giving clear, non-overlapping roles to templates, partials and PORO presenters maximises view maintainability in vanilla Rails.
-It also reveals the limitations of ActionView, contextualising gems like Draper, Keynote, Phlex and ViewComponents.
+Implementing distinct roles for templates and partials is the strongest lever for maintainable views in *vanilla* Rails.
+Baseline maintainability comes from composable partials and flexible templates.
+The second lever is offloading logic into PORO presenters and view helpers.
+Finally, ActionView becomes the limiting factor, with gems like Draper, Keynote, Phlex and ViewComponents offering a third lever.
 {% /callout %}
 
 Ever growing views must be decomposed into manageable units, but not all approaches are equal.
 Decomposition along the wrong axes creates **fragmentation** and technical debt.
-Rails applications need **factorisation** that splits views along the axes of page behaviour, presentational HTML and derived model data.
+Rails views need **factorisation** that splits views along the axes of page behaviour, presentational HTML and derived model data.
 
 ![Factorization axes diagram](/images/composable-views/axes.svg)
 
@@ -312,18 +314,22 @@ That's because it only contains non-portable page concerns (a turbo frame and it
 We are better off eliminating `_timesheet_list` and and pushing its contents up to the template.
 
 ### Template-Partial Symbiosis
-If you push page concerns up from partials into templates, a kind of symbiosis emerges.
-When partials are essentially custom HTML elements, they can drop in to any template.
-When templates own all of the page concerns, you can change them *locally*.
-Page behaviour changes happen in one place, without rippling into other templates via shared partials.
-The essential page structure is also clearer because HTML bulk lives in partials.
-This gives us flexible templates and composable partials.
-
-A partial is composable if you can:
+If you push page concerns up from partials into templates, a symbiosis emerges.
+Partials essentially become custom HTML elements.
+That makes a partial composable, which means you can:
   1. Put the partial inside anything, and
   1. Put anything inside the partial.
 
-Plain HTML gives you (1) and (2) comes from using `yield`.
+Restricting partials to plain HTML gives you the first property, while using `yield` gives you the second.
+
+Meanwhile, templates that own all of their page behaviour can be changed independently.
+Since page behaviour is local to the template, changing it can't ripple into other templates via shared partials.
+This makes the templates flexible.
+
+This template-partial symbiosis gives us composable partials and flexible templates, 
+The essential page structure is also clearer because HTML bulk lives in partials.
+This gives us flexible templates and composable partials.
+
 
 {% callout %}
 Occasionally, it makes sense to create a semi-composable partial that does not `yield`.
