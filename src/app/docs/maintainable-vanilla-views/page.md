@@ -226,10 +226,10 @@ Hardcoding nested partials **instantly** creates technical debt.
 
 ## Factorisation
 
-The major problem with fragmentation is that templates cannot  adjust the behaviour of nested partials.
+The major problem with fragmentation is that templates cannot adjust the behaviour of nested partials.
 We can fix this by making partials `yield` to throw control back to the template.
 
-Let add `yield` to `_row` and `_timesheet_list`.
+Let's add `yield` to both `_row` and `_timesheet_list`.
 
 ```haml
 -# app/views/timesheets/_row.html.haml
@@ -248,7 +248,6 @@ Let add `yield` to `_row` and `_timesheet_list`.
   -# Yield instead of hard-coding the accept/reject buttons
   - if block_given?
     .actions
-      -# === Add yield ===
       = yield
 ```
 
@@ -259,19 +258,17 @@ Let add `yield` to `_row` and `_timesheet_list`.
 = turbo_frame_tag "timesheets-list", data: { turbo_action: "advance" } do
   %ul.timesheet-list
     - timesheets.each do |timesheet|
-      = render "timesheets/row", timesheet: timesheet do
-        -# === Add yield ===
-        = yield timesheet
+      = yield timesheet
 ```
 
 
 ### Controlled Evolution
 
 Now we can make the same changes with zero friction.
-The template decides what goes into `_timesheet_list` and directly controls `_row`.
-There is no hierarchy and therefore no flag drilling.
+The template has full control over what goes inside `_timesheet_list`, including which partials to use.
+There is no hierarchy conflict and therefore no flag drilling.
 
-Let's rebuild the manager's timesheet index view.
+Let's rebuild the manager's timesheet index view using both partials:
 
 ```haml
 -# app/views/timesheets/index.html.haml
@@ -280,21 +277,21 @@ Let's rebuild the manager's timesheet index view.
 
 = render "timesheets/summary_bar", timesheets: @timesheets
 
-= turbo_frame_tag "timesheets-list", data: { turbo_action: "advance" } do
-  %ul.timesheet-list
-    - @timesheets.each do |timesheet|
-      = render "timesheets/row", timesheet: timesheet do
-        - if timesheet.submitted?
-          = form_with model: timesheet,
-                      url: manager_timesheet_review_path(timesheet),
-                      class: "review-form" do |f|
-            = f.hidden_field :status
-            .actions
-              = f.button "Approve", value: "approved", class: "btn-sm btn-success"
-              = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
+= render "timesheets/timesheet_list", timesheets: @timesheets do |timesheet|
+  = render "timesheets/row", timesheet: timesheet do
+    - if timesheet.submitted?
+      = form_with model: timesheet,
+                  url: manager_timesheet_review_path(timesheet),
+                  class: "review-form" do |f|
+        = f.hidden_field :status
+        .actions
+          = f.button "Approve", value: "approved", class: "btn-sm btn-success"
+          = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-Now let's build the employee's timesheet view.
+Now let's build the employee's timesheet view with:
+  1. No turbo frame, and
+  1. An edit button instead of accept and reject buttons.
 
 ```haml
 -# app/views/dashboard/show.html.haml
@@ -304,7 +301,6 @@ Now let's build the employee's timesheet view.
 %section.my-timesheets
   %h2 My Timesheets
 
-  -# === No turbo frame needed, so don't include timesheet_list ===
   %ul.timesheet-list
     - @my_timesheets.each do |timesheet|
       = render "timesheets/row", timesheet: timesheet do
@@ -312,35 +308,29 @@ Now let's build the employee's timesheet view.
           = link_to "Edit", edit_timesheet_path(timesheet), class: "btn-sm"
 ```
 
-The only hiccup was that we did not actually use `_timesheet_list`.
-That's because it only contains non-portable page concerns (a turbo frame and iteration).
-We are better off eliminating `_timesheet_list` and and pushing its contents up to the template.
+Painless.
+Interestingly, we didn't reuse `_timesheet_list` in the employee view.
+That is not surprising, because it contains nothing but page concerns.
+Sharing it between pages would only create unmaintainable interlocking constraints.
+We are better off inlining `_timesheet_list` directly into the manager's view.
 
 ### Template-Partial Symbiosis
-If you push page concerns up from partials into templates, a symbiosis emerges.
-Partials essentially become custom HTML elements.
-That makes a partial composable, which means you can:
+If you push page concerns up into templates, partials essentially become custom HTML elements.
+
+Partials containing plain HTML and a `yield` have two great properties. You can:
   1. Put the partial inside anything, and
   1. Put anything inside the partial.
 
-Restricting partials to plain HTML gives you the first property, while using `yield` gives you the second.
+Meanwhile, templates that own all of their page's behaviour can be changed independently, without rippling into other pages via partials.
+This makes templates flexible, while the abstraction of HTML makes their logic more readable.
 
-Meanwhile, templates that own all of their page behaviour can be changed independently.
-Since page behaviour is local to the template, changing it can't ripple into other templates via shared partials.
-This makes the templates flexible.
-
-This template-partial symbiosis gives us composable partials and flexible templates, 
-The essential page structure is also clearer because HTML bulk lives in partials.
-This gives us flexible templates and composable partials.
-
+This template-partial symbiosis turns partials into technical assets, while keeping your templates flexible and decoupled.
 
 {% callout %}
 Occasionally, it makes sense to create a semi-composable partial that does not `yield`.
-This is similar to a self-closing HTML tag  like `<br />`.
-A good example is making form fields reusable.
-You can package up a few form fields into a partial that does not `yield`, then
-drop it into any form.
-It is intended to be a leaf node and should not nest other partials.
+This is like `<br />` in HTML.
+It is designed just to slot into other elements.
+For example, a group of form fields, an icon, or content for a card that displays `heading:` and `subtitle:` locals.
 {% /callout %}
 
 ### Page Concerns
@@ -362,15 +352,17 @@ Always use your judgment, but think twice before hardcoding these things into pa
 | controller-specific view helper calls | `current_timesheet_period` |
 
 {% callout %}
-If your partials contain blocks of HTML, they are essentially static.
-The point of a `data-test-id` is to anchor test assertions onto something independent of presentational details.
-Since their purpose is testing some kind of logic, they provide much more value in action templates than partials.
+Tests assert over some kind of logic.
+Those assertions become fragile if they depend on logically irrelevant HTML.
+This is the problem solved by `data-test-id` attributes.
+This is all irrelevant to partials that are plain HTML, because they are completely static.
+Push `data-test-id` attributes up into templates.
 {% /callout %}
 
 ### The Attribute Bag Pattern
-There is one last detail to pushing page concerns up out of partials.
-HTML attributes are often significant for turbo and stimulus, making them page concerns.
-Partials should accept a hash of options and splat them onto their root element.
+Notice that some of those page concerns are HTML attributes.
+This is where the line blurs, because Turbo and Stimulus attach behaviour to elements carrying those attributes.
+This kind of page concern can be pushed up using the attribute bag pattern.
 
 ```haml
 -# app/views/shared/_button.html.haml
@@ -388,70 +380,6 @@ Partials should accept a hash of options and splat them onto their root element.
 ```
 
 This allows the template (not the partial) to be responsible for page-relevant data attributes, while the partial remains generic and composable, just like a custom HTML element.
-
-### List Example
-The following refactor keeps all logic out of the partials, making them very easy to reuse and change.
-
-Before:
-
-```haml
-.w-80
-  .bg-white.rounded-lg.shadow-sm.p-4.h-full.overflow-auto
-    %h3.text-lg.font-semibold.mb-4 Shortcode Reference
-    %p.text-sm.text-gray-600.mb-4
-      Use these shortcodes in your template to display dynamic content.
-
-    .space-y-4.pb-4
-      .shortcode-section
-        %h4.font-medium.text-sm.mb-2 Layout
-        %ul.text-sm.space-y-1
-          %li
-            %code.bg-gray-100.px-2.py-1.rounded.text-xs [[ section "dark" ]]
-          %li
-            %code.bg-gray-100.px-2.py-1.rounded.text-xs [[ section "light" ]]
-          %li
-            %code.bg-gray-100.px-2.py-1.rounded.text-xs [[ endsection ]]
-
-      .shortcode-section
-        %h4.font-medium.text-sm.mb-2 Components
-        %ul.text-sm.space-y-1
-          %li
-            %code.bg-gray-100.px-2.py-1.rounded.text-xs [[ cta_button "Text" {{link}} ]]
-          %li
-            %code.bg-gray-100.px-2.py-1.rounded.text-xs [[ app_store_links ]]
-
-      .shortcode-section
-        %h4.font-medium.text-sm.mb-2 Variables
-        %ul.text-sm.space-y-1
-          - @available_dynamic_fields.sort.each do |field|
-            %li
-              %code.bg-gray-100.px-2.py-1.rounded.text-xs {{#{field}}}
-```
-
-After:
-
-```haml
-.w-80
-  .bg-white.rounded-lg.shadow-sm.p-4.h-full.overflow-auto
-    %h3.text-lg.font-semibold.mb-4 Shortcode Reference
-    %p.text-sm.text-gray-600.mb-4
-      Use these shortcodes in your template to display dynamic content.
-
-    .space-y-4.pb-4
-      = render "shortcode_section", title: "Layout" do
-        = render "shortcode_item", code: '[[ section "dark" ]]'
-        = render "shortcode_item", code: '[[ section "light" ]]'
-        = render "shortcode_item", code: '[[ endsection ]]'
-
-      = render "shortcode_section", title: "Components" do
-        = render "shortcode_item", code: '[[ cta_button "Text" {{link}} ]]'
-        = render "shortcode_item", code: '[[ app_store_links ]]'
-
-      = render "shortcode_section", title: "Variables" do
-        - @available_dynamic_fields.sort.each do |field|
-          = render "shortcode_item", code: "{{#{field}}}"
-```
-
 
 ### View Helpers
 Moving logic up into templates *can* have positive consequences for handling view helpers, provided you have configured controller helpers to be controller-scoped, not global.
@@ -636,86 +564,19 @@ TODO: Refine this...
             = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-### Presenters' Architectural Role
-
-Presenters:
- 1. Decouple views from models, and
- 1. Can offer optional preload scopes.
-
-They provide closed interfaces, exposing only what the view needs and nothing more.
-Their job is to transform data from models into shapes the views can consume.
-Generating HTML is not their responsibility.
-If a presenter renders markup, it starts overlapping with tools like ViewComponents, which are specifically designed to render views.
-ViewComponents are classes that render views, while presenters are classes that prepare data for views.
-This clear division improves testability.
-It is straightforward to test a presenter that returns structured data, such as { status: :overdue, days: 5 }.
-Testing a presenter that returns HTML is harder, because it requires parsing DOM or matching strings, which complicates unit testing and turns it into more of an integration test.
-The "query problem" is related but distinct.
-Directly accessing models from views spreads out data queries unpredictably.
-Presenters help solve this by providing explicit methods for fetching data, enabling strict-loading, and supporting optional preloading hooks.
-With presenters, data access becomes observable and testable in a plain Ruby object, which is not possible when data is pulled through the controller or view.
-The controller still decides what gets preloaded, since it has the context about which code paths are relevant.
-The "accumulation problem" is what presenters really solve.
-Display logic for a model can be scattered across many views.
-Storing this logic on the model makes it testable but unorganized.
-Placing it in views ties it to each use case but reduces discoverability and maintainability.
-Presenters offer a solution: a place for testable, discoverable, and presentation-scoped logic.
-
-```ruby
-class TimesheetPresenter
-  def self.preload_scope
-    Timesheet.includes(:employee, shifts: :breaks)
-  end
-end
-
-# Controller
-@timesheet = TimesheetPresenter.preload_scope.find(params[:id])
-@presenter = TimesheetPresenter.new(@timesheet)
-```
-
-```ruby
-@presenter = TimesheetPresenter.new(timesheet, preloaded: [:shifts, :employee])
-```
-
 ## ActionView's Missing Abstraction
 
-In some sense, ActionView just renders a view, given some information.
-It is functionality that `ApplicationController` employs and having a separate abstraction for it is not immediately obvious.
-However, view behaviour grows.
-Once it is substantial, classes give you a single point of ownership for DI, testability, a coherent API (impossible without encapsulation).
-If you put substantial behaviour into partials you rely on global view helpers operating in the view context.
-Testing, designing an API, adding flexibility with DI and inheritance to vary collaborates--all the ways you manage complex behaviour become morea and more difficult to do and therefore to maintain.
-A partial simply cannot fill the shoes of a class as behaviour grows.
+Suppose you implement this article's advice.
+Inevitably, patterns will emerge across your templates.
+Some combination of partials and view helpers will start to repeat.
+What then?
+You could create a partial with global view helpers, but that recreates the original problem.
+Behaviour that cuts across pages could become complex and widely used.
+Partials are not up to the task of maintaining complex behaviour, which requires:
+ - A clear owner that runs quickly in a unit test,
+ - Public methods that return easy-to-test data structures,
+ - An API that streamlines the use case, but hides implementation details, and
+ - Internal state to enable explicit, constructor-based dependency injection.
 
-TODO: Refine point that the verbs of maintainability become increasingly costly for a partial versus a class.
-
-The fundamental limitation of ActionView is that it doesn't provide a class-based abstraction for views. While models and controllers are classes with clear boundaries, ActionView is mixed into controllers. This missing `ApplicationView` abstraction creates several problems:
-
-**No Encapsulation or Boundaries**
-- View helpers are either controller-scoped or global, with no middle ground
-- Modules provide logic but can't own responsibilities since they can't be instantiated
-- Method conflicts between mixed-in modules are common and hard to debug
-
-**Poor Testing Story**
-- Template logic must be tested through slow, bulky controller tests that assert over HTML
-- No way to unit test view logic in isolation
-- Unhealthy data access patterns get buried in the breadth of executed code
-
-**Duplication Without Good Solutions**
-- When templates share patterns, you must either:
-  - Create global helpers (polluting the namespace)
-  - Include helper modules in every controller that needs them
-  - Fall back to logic-heavy partials (defeating the purpose of composition)
-
-With proper view classes, you could:
-- **Encapsulate** related template logic, helpers, and partials together
-- **Test** view logic directly without controller overhead
-- **Compose** views from other view objects with clear ownership
-- **Inherit** common functionality through class hierarchies
-- **Namespace** helpers naturally within their view classes
-
-This is why ViewComponents and Phlex have emerged—they provide the missing abstraction that lets views be first-class citizens with proper boundaries, testing, and composition patterns.
-
-## Conclusion
-
-Rails claims to be MVC, but views lack their own abstraction. While you can build maintainable views with disciplined use of ActionView, the lack of architectural boundaries makes it far too easy to create tangled, untestable view code. The solution isn't more conventions—it's the missing piece of the architecture: real view classes.
+This sounds nothing like partial and exactly like a class, but there is no `ApplicationView`.
+This is ActionView's missing abstraction.
