@@ -571,12 +571,15 @@ Inevitably, patterns will emerge across your templates.
 Some combination of partials and view helpers will start to repeat.
 What then?
 You could create a partial with global view helpers, but that recreates the original problem.
-Behaviour that cuts across pages could become complex and widely used.
-Partials are not up to the task of maintaining complex behaviour, which requires:
+Partials loaded with behaviour kill maintainability.
+Furthermore, behaviour that cuts across pages could become complex and widely used.
+This is a task for a real behavioural abstraction, which requires:
  - A clear owner that runs quickly in a unit test,
  - Public methods that return easy-to-test data structures,
  - An API that streamlines the use case, but hides implementation details, and
  - Internal state to enable explicit, constructor-based dependency injection.
 
-This sounds nothing like partial and exactly like a class, but there is no `ApplicationView`.
-This is ActionView's missing abstraction.
+This sounds nothing like a partial and exactly like a class.
+This is where ActionView becomes the bottleneck.
+Mixing tons of behaviour into controllers simply does not cut it, but there is no `ApplicationView` to save the day.
+Taking maintainability to the next level can be done with gems like Draper, KeyNote, Phlex and ViewComponents, but that's a discussion for another day.
