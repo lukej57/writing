@@ -7,21 +7,24 @@ nextjs:
 ---
 
 {% callout title="TL;DR" type="note" %}
-Implementing distinct roles for templates and partials is the strongest lever for maintainable views in *vanilla* Rails.
-Baseline maintainability comes from composable partials and flexible templates.
-The second lever is offloading logic into PORO presenters and view helpers.
-Finally, ActionView becomes the limiting factor, with gems like Draper, Keynote, Phlex and ViewComponents offering a third lever.
+Maintainable views in *vanilla* Rails rest on:
+  1. Pushing behavioural concerns up into templates, and
+  1. Pulling presentational concerns down into partials.
+
+This makes your templates **flexible** and your partials **composable**.
+The next step is offloading logic from templates into view helpers and PORO presenters.
+Finally, ActionView itself limits maintainability, motivating gems like Draper, Keynote, Phlex and ViewComponents.
 {% /callout %}
 
 Ever growing views must be decomposed into manageable units, but not all approaches are equal.
 Decomposition along the wrong axes creates **fragmentation** and technical debt.
-Rails views need **factorisation** that splits views along the axes of page behaviour, presentational HTML and derived model data.
+Rails views need **factorisation** that cuts along the axes of page behaviour, presentational HTML and derived model data.
 
 ![Factorization axes diagram](/images/composable-views/axes.svg)
 
 ## An Example View 
 
-Consider an index view for timesheets. 
+Consider a timesheet index view with approve and decline buttons for managers. 
 
 ```haml
 -# app/views/timesheets/index.html.haml
@@ -123,12 +126,12 @@ Extract the loop's body into a `_row` partial.
         = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-This is what I call the *partial tunnelling anti-pattern*.
+This is the *partial tunnelling anti-pattern*.
 The first problem is that future developers must mentally compose four files to understand the page.
 The second problem is that this structure sabotages the page's evolution.
 
 ### Chaotic Evolution
-Let's try to reuse the timesheets list to show an employee their timesheets on the new page below.
+Let's try to reuse the timesheets list to show an employee their timesheets on a new page.
 
 ```haml
 -# app/views/dashboard/show.html.haml
@@ -140,10 +143,8 @@ Let's try to reuse the timesheets list to show an employee their timesheets on t
   = render "timesheets/timesheet_list", timesheets: @my_timesheets
 ```
 
-When the page loads, we see approve and reject buttons.
-Those buttons are for managers only.
-Two different pages need to adjust the behaviour of `_row`.
-That is quite a problem, because `_row` is a hidden implementation detail of `_timesheet_list.html.haml`.
+When the page loads, we see the approve and reject buttons which are for managers only.
+Now two different pages need to adjust the behaviour of `_row`, which is a hidden implementation detail of `_timesheet_list.html.haml`.
 
 ```
 timesheets/index.html.haml (manager view) 
@@ -159,7 +160,7 @@ The options are all bad at this point.
 We can smuggle data down to `_row` with an instance variable or a page parameter.
 We can also drill an argument through the `_timesheet_list`.
 Given the structure we have, drilling is the least surprising and most portable option.
-Let's add the flag.
+Let's add a flag.
 
 ```haml
 -# app/views/timesheets/_timesheet_list.html.haml
@@ -188,7 +189,7 @@ Let's add the flag.
                 ...
 ```
 
-Now the dashboard can hide the form.
+Now the employee dashboard can hide the buttons by setting the flag.
 
 ```haml
 -# app/views/dashboard/show.html.haml
@@ -204,27 +205,29 @@ Now the dashboard can hide the form.
 That was a lot of work to "reuse" a partial.
 It's also just the beginning.
 The employee needs to be shown an edit button, but not the manager.
-Either we add another flag, or couple the first flag to two use cases.
+We either add another flag, or couple the first flag to two use cases.
 
 The manager and employee also have different workflows.
 The manager approves timesheets in batches on the same page, while the employee navigates away to view a single timesheet. 
 
-When the manager clicks *approve*, turbo updates a frame, preserving the scroll position.
-When the employee clicks *edit*, turbo tries to extract a frame from the response, causing an error.
+When the manager clicks *approve*, turbo updates a frame.
+When the employee clicks *edit*, that breaks.
+The edit page was built separately, without any consideration of the turbo frame in the manager's view.
+
 We have more bad options:
- 1. Add a flag for the `data-turbo-frame="_top"` attribute on the edit link, or for the turbo frame itself, or
+ 1. Escape the turbo frame with a `data-turbo-frame="_top"` attribute on the edit link, or
  1. Wrap the edit page content in a matching turbo frame, coupling unrelated templates.
 
-This structure repeatedly leads the developer to the same fork in the road:
-  - Invest a lot of time and effort to restructure, or
+This structure puts the developer in the same dilemma again and again:
+  - Either invest a lot of time and effort to restructure, or
   - Make the situation a bit worse and move on.
 
-That is technical debt.
+Hardcoding nested partials **instantly** creates technical debt.
 
 ## Factorisation
 
 The major problem with fragmentation is that templates cannot  adjust the behaviour of nested partials.
-We can fix this by making partials `yield` to invert the dependency.
+We can fix this by making partials `yield` to throw control back to the template.
 
 Let add `yield` to `_row` and `_timesheet_list`.
 
@@ -242,7 +245,7 @@ Let add `yield` to `_row` and `_timesheet_list`.
     - when "rejected" then "badge--danger"
   %span.badge{ class: status_class }= timesheet.status.titleize
 
-  -# Yield instead of hard-coding the form
+  -# Yield instead of hard-coding the accept/reject buttons
   - if block_given?
     .actions
       -# === Add yield ===
