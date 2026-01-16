@@ -13,7 +13,7 @@ Maintainable views in *vanilla* Rails rest on:
 
 This makes your templates **flexible** and your partials **composable**.
 The next step is offloading logic from templates into view helpers and PORO presenters.
-Finally, ActionView itself limits maintainability, motivating gems like Draper, Keynote, Phlex and ViewComponents.
+Finally, ActionView becomes the bottleneck, motivating gems like Draper, Keynote, Phlex and ViewComponents.
 {% /callout %}
 
 Ever growing views must be decomposed into manageable units, but not all approaches are equal.
