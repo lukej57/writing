@@ -14,5 +14,6 @@ nextjs:
  - Query object gives higher flexibility and testability, better for managing behavioural complexity.
  - What does compositional really mean? 
    - Orthogonal
-   - No materialisation or side effects 
+   - No materialisation or side effects
+   - Product is the sum of its parts and nothing more
  - Co-location of preloader scopes and instance methods that depend on them in small, atomic modules.
