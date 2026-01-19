@@ -45,12 +45,6 @@ This is where the dark side of DRY begins.
 It turns out that not every difference is incidental.
 Some differences are essential.
 The path of least resistance here is to parameterise the abstraction and let each caller pass an argument for their use case.
-Then, when the next essential difference arises, you have to write the new client code and change the common code in lockstep.
-That’s a problem you didn’t have when the code was duplicated.
-Over time, the common code grows large branches or becomes overly generic to manage all of its uncommon behaviour.
-It is easier to find, but harder to understand than the duplicated code.
-Now you are at constant risk of unintended ripple effects.
-That’s tech debt too—the thing you were trying to eliminate with DRY.
 
 ```
 NAIVE DEDUPLICATION: Vertical Coupling
@@ -76,6 +70,13 @@ NAIVE DEDUPLICATION: Vertical Coupling
 Variant changes ripple up and down
 ```
 
+Then, when the next essential difference arises, you have to write the new client code and change the common code in lockstep.
+That’s a problem you didn’t have when the code was duplicated.
+Over time, the common code grows large branches or becomes overly generic to manage all of its uncommon behaviour.
+It is easier to find, but harder to understand than the duplicated code.
+Now you are at constant risk of unintended ripple effects.
+That’s tech debt too—the thing you were trying to eliminate with DRY.
+
 ## DRY Only Rotates Coupling
 
 We have obeyed the *Don't Repeat Yourself* slogan only to transform horizontal coupling into vertical coupling. This presents the following lose-lose tradeoff.
@@ -87,12 +88,12 @@ We have obeyed the *Don't Repeat Yourself* slogan only to transform horizontal c
 
 ## DRY+DI Transforms the Tradeoff
 The problem on each side of the duplication-abstraction tradeoff comes down to displacing code from its natural context.
-Duplicated code anchors copies of general behaviour to specific contexts unnecessarily.
+Anchoring general behaviour to specific contexts creates unnecessary code duplication.
 Conversely, deduplicated code separates unique behaviours from their origin.
-We need to put everything where it is easiest to maintain.
+We need to put behaviour where it belongs to restore maintainability.
 
-That means pulling invariants down into a class, while pushing variants back up to the call site.
-You can achieve this by having your class accept **behaviour** from callers, not just data.
-Clients pass the behaviour they require as a class through the constructor.
+That means pulling invariants down into an abstraction, while pushing variants back up to the call site.
+You can achieve this by having your abstraction accept **behaviour** from callers, not just data.
+For example, clients can pass the behaviour they require as a class through a constructor.
 This makes both axes of change maintainable.
 The technique is called [dependency injection](https://en.wikipedia.org/wiki/Dependency_injection) and it is fundamental for developing maintainable, object-oriented systems.
