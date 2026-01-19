@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partial Tunneling Anti-Pattern Visualization</title>
+    <style>
+        body {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            padding: 40px;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+            font-weight: 600;
+        }
+
+        .file-box {
+            border: 2px solid #666;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            background: white;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .file-name {
+            position: absolute;
+            top: -12px;
+            left: 15px;
+            background: white;
+            padding: 0 8px;
+            color: #0066cc;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .render-call {
+            background: #e8f4fd;
+            border: 1px dashed #4a90e2;
+            border-radius: 4px;
+            padding: 12px;
+            margin: 10px 0;
+            font-size: 14px;
+            color: #2c5282;
+            position: relative;
+        }
+
+        .render-arrow {
+            position: absolute;
+            right: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #4a90e2;
+            font-size: 20px;
+        }
+
+        .nested-partial {
+            margin-left: 40px;
+            opacity: 0.95;
+        }
+
+        .deep-nested {
+            margin-left: 80px;
+            opacity: 0.9;
+        }
+
+        .actual-content {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .legend {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin-top: 40px;
+            font-size: 13px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-box {
+            width: 30px;
+            height: 20px;
+            border: 1px solid #999;
+            border-radius: 3px;
+        }
+
+        .tunnel-indicator {
+            position: absolute;
+            left: -10px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #ff6b6b 0%, #ffd93d 50%, #6bcf7f 100%);
+            border-radius: 2px;
+        }
+
+        .depth-indicator {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            font-size: 11px;
+            color: #999;
+            font-weight: bold;
+        }
+
+        .problem-note {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 30px 0;
+            font-size: 14px;
+            color: #856404;
+        }
+
+        .problem-note strong {
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Partial Tunneling Anti-Pattern</h2>
+
+        <div class="file-box">
+            <span class="file-name">index.html.haml</span>
+            <span class="depth-indicator">Level 1</span>
+            <div class="actual-content">%h1 Timesheets for Review</div>
+            <div class="render-call">
+                = render "summary_bar"
+                <span class="render-arrow">→</span>
+            </div>
+            <div class="render-call">
+                = render "timesheet_list"
+                <span class="render-arrow">→</span>
+            </div>
+        </div>
+
+        <div class="file-box nested-partial">
+            <span class="tunnel-indicator"></span>
+            <span class="file-name">_timesheet_list.html.haml</span>
+            <span class="depth-indicator">Level 2</span>
+            <div class="actual-content">= turbo_frame_tag "timesheets-list"</div>
+            <div class="actual-content">%ul.timesheet-list</div>
+            <div class="render-call">
+                - timesheets.each do |timesheet|<br>
+                &nbsp;&nbsp;= render "row"
+                <span class="render-arrow">→</span>
+            </div>
+        </div>
+
+        <div class="file-box deep-nested">
+            <span class="tunnel-indicator"></span>
+            <span class="file-name">_row.html.haml</span>
+            <span class="depth-indicator">Level 3</span>
+            <div class="actual-content">%li.timesheet-row</div>
+            <div class="actual-content">.employee-name</div>
+            <div class="actual-content">.hours</div>
+            <div class="actual-content">%span.badge (status logic)</div>
+            <div class="actual-content">= form_with (approval form)</div>
+        </div>
+
+        <div class="problem-note">
+            <strong>Problems with this pattern:</strong>
+            <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                <li>Mental overhead: Need to compose 4 files to understand one page</li>
+                <li>Navigation fatigue: Constant file jumping during development</li>
+                <li>Evolution sabotage: Structure makes changes harder</li>
+                <li>Lost context: Each partial has less information about its purpose</li>
+            </ul>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-box" style="background: white;"></div>
+                <span>Original file</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box" style="background: #e8f4fd;"></div>
+                <span>Render call</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box" style="background: #f0f0f0;"></div>
+                <span>Actual content</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
