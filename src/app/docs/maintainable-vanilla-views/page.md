@@ -9,11 +9,11 @@ nextjs:
 {% callout title="TL;DR" type="note" %}
 Maintainable views in *vanilla* Rails rest on:
   1. Pushing behavioural concerns up into templates, and
-  1. Pulling presentational concerns down into partials.
+  1. Pulling presentational details down into partials.
 
 This makes your templates **flexible** and your partials **composable**.
-The next step is offloading logic from templates into view helpers and PORO presenters.
-Finally, ActionView becomes the bottleneck, motivating gems like Draper, Keynote, Phlex and ViewComponents.
+The next step is offloading logic from templates into controller-scoped view helpers and PORO presenters.
+Finally, ActionView becomes the maintainability bottleneck, motivating gems like Draper, Keynote, Phlex and ViewComponents.
 {% /callout %}
 
 Ever growing views must be decomposed into manageable units, but not all approaches are equal.
@@ -128,7 +128,7 @@ Extract the loop's body into a `_row` partial.
 
 This is the *partial tunnelling anti-pattern*.
 The first problem is that future developers must mentally compose four files to understand the page.
-The second problem is that this structure sabotages the page's evolution.
+The second problem is that this structure abotages derails the page's evolution.
 
 ### Chaotic Evolution
 Let's try to reuse the timesheets list to show an employee their timesheets on a new page.
@@ -203,20 +203,21 @@ Now the employee dashboard can hide the buttons by setting the flag.
 ```
 
 That was a lot of work to "reuse" a partial.
-It's also just the beginning.
-The employee needs to be shown an edit button, but not the manager.
+This is the first sign that the nested partial structure is a liability.
+There is more to come.
+Suppose the employee needs to be shown an edit button for the timesheet, but not the manager.
 We either add another flag, or couple the first flag to two use cases.
 
-The manager and employee also have different workflows.
+Soon we realise that the manager and employee also have different workflows.
 The manager approves timesheets in batches on the same page, while the employee navigates away to view a single timesheet. 
 
 When the manager clicks *approve*, turbo updates a frame.
 When the employee clicks *edit*, that breaks.
 The edit page was built separately, without any consideration of the turbo frame in the manager's view.
 
-We have more bad options:
+Again, we have bad options:
  1. Escape the turbo frame with a `data-turbo-frame="_top"` attribute on the edit link, or
- 1. Wrap the edit page content in a matching turbo frame, coupling unrelated templates.
+ 1. Wrap the edit page in a matching turbo frame, coupling unrelated templates.
 
 This structure puts the developer in the same dilemma again and again:
   - Either invest a lot of time and effort to restructure, or
@@ -328,9 +329,10 @@ This template-partial symbiosis turns partials into technical assets, while keep
 
 {% callout %}
 Occasionally, it makes sense to create a semi-composable partial that does not `yield`.
-This is like `<br />` in HTML.
+This is like `<br />` or `<img ...>` in HTML.
 It is designed just to slot into other elements.
 For example, a group of form fields, an icon, or content for a card that displays `heading:` and `subtitle:` locals.
+Partials like these can be more suited to using locals as named slots for rendered HTML instead of `yield`. 
 {% /callout %}
 
 ### Page Concerns
@@ -426,10 +428,9 @@ When you have logic embedded in partials, you are again faced with bad options:
 
 ### Model Presentation
 If we move **all** logic into view helpers, they might accumulate knowledge about models.
-That's not ideal, because that cuts across controllers and potentially into partials.
-Both circumstances force those helpers into global visibility.
-If transforming model data becomes complex, we'll also want the straightforward unit testing story of a dedicated class.
-This all leads to presenters, our third axis of factorisation.
+That's not ideal, because it may cut across controllers, forcing you to use global view helpers.
+If transforming model data becomes complex, we also want the straightforward unit testing story of a dedicated class.
+This all leads to presenters.
 
 Recall that we had some obvious model presentation logic in `_row`. 
 
@@ -473,7 +474,7 @@ class TimesheetPresenter
 end
 ```
 
-This leaves our partial looking a bit simpler.
+This simplifies the partial and decouples it from the model. 
 
 ```haml
 - presented_timesheet = TimesheetPresenter.new(timesheet)
@@ -484,102 +485,30 @@ This leaves our partial looking a bit simpler.
   %span.badge{ class: presented_timesheet.status_badge_class }= presented_timesheet.status_label
 ```
 
-There is a subtler section of model presentation logic in the summary bar. 
+There are still some flaws:
+  1. The summary bar presents over a collection of timesheets, and
+  1. We could push the presenter creation up into the template, if we use the attribute bag pattern instead of `dom_id` directly.
 
-```haml
--# app/views/timesheets/_summary_bar.html.haml
-
-- total_hours = @timesheets.sum(&:total_hours)
-- overtime_hours = @timesheets.sum { |t| [t.total_hours - 40, 0].max }
-- pending_count = @timesheets.count(&:submitted?)
-
-= render "timesheets/summary_bar",
-         total_hours: "%.1f" % total_hours,
-         overtime_hours: "%.1f" % overtime_hours,
-         pending_count: pending_count,
-         pending_alert: pending_count > 0
-```
-
-This is presentation of a timesheet **collection**.
-This can work in concern with the individual `TimesheetPresenter`.
-
-```ruby
-# app/presenters/timesheet_collection_presenter.rb
-class TimesheetCollectionPresenter
-  OVERTIME_THRESHOLD = 40
-
-  def initialize(timesheets)
-    @timesheets = timesheets
-  end
-
-  # Summary stats
-
-  def total_hours
-    "%.1f" % @timesheets.sum(&:total_hours)
-  end
-
-  def overtime_hours
-    "%.1f" % @timesheets.sum { |t| [t.total_hours - OVERTIME_THRESHOLD, 0].max }
-  end
-
-  def pending_count
-    @timesheets.count(&:submitted?)
-  end
-
-  def pending_alert?
-    pending_count > 0
-  end
-
-  def each
-    @timesheets.each { |t| yield t, TimesheetPresenter.new(t) }
-  end
-end
-```
-
-TODO: Refine this...
-
-```haml
--# app/views/timesheets/index.html.haml
-
-- presented_timesheets = TimesheetCollectionPresenter.new(@timesheets)
-
-%h1 Timesheets for Review
-
-= render "timesheets/summary_bar",
-         total_hours: presented_timesheets.total_hours,
-         overtime_hours: presented_timesheets.overtime_hours,
-         pending_count: presented_timesheets.pending_count,
-         pending_alert: presented_timesheets.pending_alert?
-
-= turbo_frame_tag "timesheets-list", data: { turbo_action: "advance" } do
-  %ul.timesheet-list
-    - presented_timesheets.each do |timesheet, presenter|
-      = render "timesheets/row", timesheet: timesheet, presenter: presenter do
-        - if timesheet.submitted?
-          = form_with model: timesheet,
-                      url: timesheet_review_path(timesheet),
-                      class: "review-form" do |f|
-            = f.hidden_field :status
-            = f.button "Approve", value: "approved", class: "btn-sm btn-success"
-            = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
-```
+I will leave that for the sake of brevity.
 
 ## ActionView's Missing Abstraction
 
-Suppose you implement this article's advice.
-Inevitably, patterns will emerge across your templates.
-Some combination of partials and view helpers will start to repeat.
+Suppose you diligently implement all of this advice.
+Inevitably, patterns will emerge **across** your templates.
+Some compositions of partials and view helpers will repeat in similar ways.
 What then?
-You could create a partial with global view helpers, but that recreates the original problem.
-Partials loaded with behaviour kill maintainability.
+You could extract the patterns into partials with global view helpers, but this puts us back to square one.
+We are again faced with the original problem: partials lack the abilities required to manage behaviour.
 Furthermore, behaviour that cuts across pages could become complex and widely used.
-This is a task for a real behavioural abstraction, which requires:
+This is a task for a real behavioural abstraction that provides:
  - A clear owner that runs quickly in a unit test,
  - Public methods that return easy-to-test data structures,
- - An API that streamlines the use case, but hides implementation details, and
- - Internal state to enable explicit, constructor-based dependency injection.
+ - An API that streamlines various use cases, but hides implementation details, and
+ - Internal state to enable dependency injection.
 
-This sounds nothing like a partial and exactly like a class.
-This is where ActionView becomes the bottleneck.
-Mixing tons of behaviour into controllers simply does not cut it, but there is no `ApplicationView` to save the day.
-Taking maintainability to the next level can be done with gems like Draper, KeyNote, Phlex and ViewComponents, but that's a discussion for another day.
+This does not sound anything like a partial or a template.
+It sounds exactly like a class.
+This is where ActionView becomes the maintainability bottleneck.
+There is no `ApplicationView`.
+Taking maintainability further is requires at least one view abstraction.
+This starts the discussion of gems like Draper, KeyNote, Phlex and ViewComponents.
