@@ -322,10 +322,13 @@ Partials containing plain HTML and a `yield` have two great properties. You can:
   1. Put the partial inside anything, and
   1. Put anything inside the partial.
 
-Meanwhile, templates that own all of their page's behaviour can be changed independently, without rippling into other pages via partials.
+Meanwhile, templates that own all of their page's behaviour can be changed independently, without rippling into other pages via shared partials.
 This makes templates flexible, while the abstraction of HTML makes their logic more readable.
 
-This template-partial symbiosis turns partials into technical assets, while keeping your templates flexible and decoupled.
+This dynamic pushes work up into templates.
+Instead of a template including an opaque blob that does a lot, it now compose smaller pieces.
+The layered composition creates many "seams" where the template can use its own logic and state to customise the output.
+This eliminates the problem of templates struggling to vary behaviour that is buried inside nested partials.
 
 {% callout %}
 Occasionally, it makes sense to create a semi-composable partial that does not `yield`.
