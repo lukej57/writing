@@ -329,6 +329,8 @@ This dynamic pushes work up into templates.
 Instead of a template including an opaque blob that does a lot, it now compose smaller pieces.
 The layered composition creates many "seams" where the template can use its own logic and state to customise the output.
 This eliminates the problem of templates struggling to vary behaviour that is buried inside nested partials.
+This is composition over hierarchy.
+Instead of creating fixed hierarchies of partials that must work everywhere, we enable templates to compose on-the-fly whichever hierarchy they happen to need. 
 
 {% callout %}
 Occasionally, it makes sense to create a semi-composable partial that does not `yield`.
