@@ -357,8 +357,8 @@ Partials like these can be more suited to using locals as named slots for render
 
 ### Page Concerns
 Here is a quick list of page concerns.
-Always use your judgment, but think twice before hardcoding these things into partials.
-They make partials less portable and hide details that communicate how a page behaves.
+Always use your judgment, but consider pushing these things up toward templates.
+That will make your templates more flexible and your partials more composable.
 
 | Page Concern | Examples |
 |--------------|---------|
@@ -390,6 +390,8 @@ This kind of page concern can be pushed up using the attribute bag pattern.
 
 ```haml
 -# app/views/shared/_button.html.haml
+- text = local_assigns[:text]
+- attributes = local_assigns.except(:text).symbolize_keys
 %button{ **attributes }
   = text
 ```
