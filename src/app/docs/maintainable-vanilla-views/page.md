@@ -9,16 +9,16 @@ nextjs:
 {% callout title="TL;DR" type="note" %}
 Maintainable views in *vanilla* Rails rest on:
   1. Pushing behavioural concerns up into templates, and
-  1. Pulling presentational details down into partials.
+  1. Pulling presentational details down into partials that `yield`.
 
 This makes your templates **flexible** and your partials **composable**.
 The next step is offloading logic from templates into controller-scoped view helpers and PORO presenters.
-Finally, ActionView becomes the maintainability bottleneck, motivating gems like Draper, Keynote, Phlex and ViewComponents.
+Finally, ActionView becomes the maintainability bottleneck, motivating gems like Phlex and ViewComponents.
 {% /callout %}
 
 Ever growing views must be decomposed into manageable units, but not all approaches are equal.
 Decomposition along the wrong axes creates **fragmentation** and technical debt.
-Rails views need **factorisation** that cuts along the axes of page behaviour, presentational HTML and derived model data.
+Rails views need **factorisation** that cuts along the axes of page behaviour, presentational HTML and data derived from models.
 
 ![Factorization axes diagram](/images/composable-views/axes.svg)
 
@@ -127,8 +127,9 @@ Extract the loop's body into a `_row` partial.
 ```
 
 This is the *partial tunnelling anti-pattern*.
-The first problem is that future developers must mentally compose four files to understand the page.
-The second problem is that this structure abotages derails the page's evolution.
+The first problem is that since the partials contain behaviour, you can't ignore them.
+That means future developers must mentally compose all four files to understand the page.
+The second problem is that this structure wrecks the page's evolution.
 
 ### Chaotic Evolution
 Let's try to reuse the timesheets list to show an employee their timesheets on a new page.
@@ -322,6 +323,9 @@ Partials containing plain HTML and a `yield` have two great properties. You can:
   1. Put the partial inside anything, and
   1. Put anything inside the partial.
 
+Partials like this make it easy to deduplicate blocks of HTML, because you can put them anywhere. Overloaded partials couple HTML that you want to behaviour you don't. 
+
+
 Meanwhile, templates that own all of their page's behaviour can be changed independently, without rippling into other pages via shared partials.
 This makes templates flexible, while the abstraction of HTML makes their logic more readable.
 
@@ -333,16 +337,17 @@ This is composition over hierarchy.
 Instead of creating fixed hierarchies of partials that must work everywhere, we enable templates to compose on-the-fly whichever hierarchy they happen to need. 
 
 {% callout %}
-Occasionally, it makes sense to create a semi-composable partial that does not `yield`.
+Eventually, it makes sense to create a partial whose only purpose is to fill a `yield` slot.
+These blind partials do not yield, making them semi-composable.
 This is like `<br />` or `<img ...>` in HTML.
-It is designed just to slot into other elements.
-For example, a group of form fields, an icon, or content for a card that displays `heading:` and `subtitle:` locals.
+Some examples might be: a group of form fields, an icon, or content for a card that displays `heading:` and `subtitle:` locals.
 Partials like these can be more suited to using locals as named slots for rendered HTML instead of `yield`. 
 {% /callout %}
 
 ### Page Concerns
 Here is a quick list of page concerns.
-Always use your judgment, but think twice before hardcoding these things into partials:
+Always use your judgment, but think twice before hardcoding these things into partials.
+They make partials less portable and hide details that communicate how a page behaves.
 
 | Page Concern | Examples |
 |--------------|---------|
@@ -351,6 +356,7 @@ Always use your judgment, but think twice before hardcoding these things into pa
 | turbo frames | `turbo_frame_tag "timesheet_#{@timesheet.id}"` |
 | turbo stream identifiers | `turbo_stream_from timesheet` |
 | turbo attributes | `data: { turbo_action: "replace" }` |
+| route helpers | `edit_timesheet_path(timesheet)` |
 | stimulus attributes | `data: { controller: "dropdown" }` |
 | page parameters | `params[:id]`, `params[:search]` |
 | data-test-ids | `data: { test_id: "submit-button" }` |
@@ -389,6 +395,7 @@ This kind of page concern can be pushed up using the attribute bag pattern.
 This allows the template (not the partial) to be responsible for page-relevant data attributes, while the partial remains generic and composable, just like a custom HTML element.
 
 ### View Helpers
+This puts a low ceiling on the amount of complexity you can manage.
 Moving logic up into templates *can* have positive consequences for handling view helpers, provided you have configured controller helpers to be controller-scoped, not global.
 
 You can also use `helper_method :my_method_1, :my_method_2` to create controller-scoped view helpers.
@@ -429,12 +436,11 @@ When you have logic embedded in partials, you are again faced with bad options:
  1. Silently depend on controller-scoped view helpers, causing the partial to break if reused elsewhere, or
  1. Add a global view helper to `app/helpers`. 
 
-
-
 ### Model Presentation
 If we move **all** logic into view helpers, they might accumulate knowledge about models.
 That's not ideal, because it may cut across controllers, forcing you to use global view helpers.
-If transforming model data becomes complex, we also want the straightforward unit testing story of a dedicated class.
+Transforming model data can become complex too.
+In that case, we want the straightforward unit testing story of a dedicated class.
 This all leads to presenters.
 
 Recall that we had some obvious model presentation logic in `_row`. 
@@ -490,14 +496,39 @@ This simplifies the partial and decouples it from the model.
   %span.badge{ class: presented_timesheet.status_badge_class }= presented_timesheet.status_label
 ```
 
-There are still some flaws:
-  1. The summary bar presents over a collection of timesheets, and
-  1. We could push the presenter creation up into the template, if we use the attribute bag pattern instead of `dom_id` directly.
+We could improve this.
+The `dom_id` call is coupling the partial to the model, rather than the presenter.
+If we use the attribute bag pattern, we can push the `dom_id` call and the presenter instatiation up to the parent.
 
-I will leave that for the sake of brevity.
+#### Open vs Closed Presenters
+It's tempting to have your presenter inherit from `SimpleDelegator`.
+That gives you an *open* presenter, where method calls fall through to the underlying model.
+This trades maintainability for convenience.
+
+My take on presenters is that they have two goals:
+  1. Offload model-specific presentation logic from views, and
+  2. Decouple views from models.
+
+Open presenters lose the second property, exposing a major implementation detail that limits their versatility.
+Closed presenters can easily present STI variations of a base model.
+They can even present a concern that cuts across many models.
+Open presenters cannot handle these use cases.
+
+{% callout %}
+If you need to access a bunch of attributes on the underlying model, you can package them into a `T::Struct` and deliver them from a method.
+{% /callout %}
+
 
 ## ActionView's Missing Abstraction
 
+This school of thought gives partials a very minor role.
+There is some flexibility here.
+Generally, the more widely a partial is shared, the thinner it needs to be.
+Once you have substantial behaviour widely shared, you need a behvioural abstraction like a class.
+That means substantial amounts of logic will accumuluate in templates.
+View helpers ease the pain of writing code inside views, but 
+Patterns of logic and presentational composition will across your templates.
+Then what do you do?
 Suppose you diligently implement all of this advice.
 Inevitably, patterns will emerge **across** your templates.
 Some compositions of partials and view helpers will repeat in similar ways.
