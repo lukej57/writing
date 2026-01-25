@@ -323,18 +323,29 @@ Partials containing plain HTML and a `yield` have two great properties. You can:
   1. Put the partial inside anything, and
   1. Put anything inside the partial.
 
-Partials like this make it easy to deduplicate blocks of HTML, because you can put them anywhere. Overloaded partials couple HTML that you want to behaviour you don't. 
+Partials like this make it easy to avoid duplicating blocks of HTML, because you can put them anywhere. Overloaded partials couple portable HTML non-portable behaviour. 
 
+Templates no longer pass data into blobs of imported behaviour.
+Instead, templates implement behaviour directly and weave it into a composition of partials.
+The composition-over-hierarchy approach is endlessly flexible.
 
-Meanwhile, templates that own all of their page's behaviour can be changed independently, without rippling into other pages via shared partials.
+```haml
+= render "shared/card" do
+  = turbo_frame_tag "timesheet_#{@timesheet.id}" do
+    = render "shared/card_header" do
+      - if can_edit?(@timesheet)
+        = link_to "Edit", edit_timesheet_path(@timesheet)
+    = render "shared/card_body" do
+      - @timesheet.entries.each do |entry|
+        = render "shared/list_item" do
+          %span= format_work_date(entry.date)
+          - if entry.approved?
+            %span.badge Approved
+```
+
+Now templates own all of their behaviour.
+They can be changed independently, without rippling into other pages via shared partials.
 This makes templates flexible, while the abstraction of HTML makes their logic more readable.
-
-This dynamic pushes work up into templates.
-Instead of a template including an opaque blob that does a lot, it now compose smaller pieces.
-The layered composition creates many "seams" where the template can use its own logic and state to customise the output.
-This eliminates the problem of templates struggling to vary behaviour that is buried inside nested partials.
-This is composition over hierarchy.
-Instead of creating fixed hierarchies of partials that must work everywhere, we enable templates to compose on-the-fly whichever hierarchy they happen to need. 
 
 {% callout %}
 Eventually, it makes sense to create a partial whose only purpose is to fill a `yield` slot.
