@@ -1,10 +1,17 @@
 ---
-title: Maintainable Views in Vanilla Rails
+title: Maintainable Views in Vanilla Rails (WIP)
 nextjs:
   metadata:
     title: Maintainable Views in Rails
     description: Using Only Templates, Partials and PORO Presenters.
 ---
+
+{% callout title="Warning" type="warning" %}
+This article may change significantly.
+It will form the basis of a talk I will give at BrisRails in late February.
+Until then, consider everything tentative.
+{% /callout %}
+
 
 {% callout title="TL;DR" type="note" %}
 Views in vanilla Rails can easily descend into chaos, but maintainability can be preserved by:
