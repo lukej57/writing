@@ -1,5 +1,5 @@
 ---
-title: Maintainable Views in Vanilla Rails (WIP)
+title: Maintainable Views in Vanilla Rails
 nextjs:
   metadata:
     title: Maintainable Views in Rails
@@ -446,7 +446,7 @@ For compatibility with Rails' strict locals, use an explicit `attributes` parame
          }
 ```
 
-This hybrid approach is arguably cleaner, because you don't have to filter out non-attribute paramters. 
+This is arguable cleaner, since separates parameters and attributes without logic. 
 
 ### View Helpers
 Pushing behaviour up into templates means templates accumulate code.
@@ -469,8 +469,8 @@ config.action_controller.include_all_helpers = false
 ### Model Presentation
 View logic is not always view-specific.
 It often transforms data from models for presentation.
-This can easily cut across controllers and become complex.
-We can simplify view helpers and make this logic easy to test with presenters.
+This logic goes anywhere a model is displayed, which could cut across controllers.
+If we introduce presenters, we can make this logic easy to test and reuse, while slimming down view helpers.
 
 Recall that we had some obvious model presentation logic in `_row`. 
 
@@ -495,16 +495,18 @@ class TimesheetPresenter
     @timesheet = timesheet
   end
 
+  # Law of demeter
+  # Prefer views don't reach into the underlying model.
   def employee_name
     @timesheet.employee.name
   end
 
-  def hours
-    "%.1f hrs" % @timesheet.total_hours
-  end
-
   def status_label
     @timesheet.status.titleize
+  end
+
+  def hours
+    "%.1f hrs" % @timesheet.total_hours
   end
 
   def status_badge_class
@@ -521,63 +523,61 @@ end
 This simplifies the partial and decouples it from the model. 
 
 ```haml
--# locals: (timesheet:, attributes: {})
+-# locals: (presented_timesheet:, attributes: {})
 
 %li.timesheet-row{ **attributes }
-  .employee-name= timesheet.employee_name
-  .hours= timesheet.hours
-  %span.badge{ class: timesheet.status_badge_class }= timesheet.status_label
+  .employee-name= presented_timesheet.employee_name
+  .hours= presented_timesheet.hours
+  %span.badge{ class: presented_timesheet.status_badge_class }= presented_timesheet.status_label
 ```
-
-We could improve this.
-The `dom_id` call is coupling the partial to the model, rather than the presenter.
-If we use the attribute bag pattern, we can push the `dom_id` call and the presenter instatiation up to the parent.
 
 #### Open vs Closed Presenters
 It's tempting to have your presenter inherit from `SimpleDelegator`.
 That gives you an *open* presenter, where method calls fall through to the underlying model.
-This trades maintainability for convenience.
+That would allow us to remove the `employee_name` method from the `TimesheetPresenter`.
+This is convenient, but it reduces maintainability.
 
 My take on presenters is that they have two goals:
   1. Offload model-specific presentation logic from views, and
   2. Decouple views from models.
 
-Open presenters lose the second property, exposing a major implementation detail that limits their versatility.
+Open presenters lose the second property.
+They expose a major implementation detail and that limits their versatility.
 Closed presenters can easily present STI variations of a base model.
 They can even present a concern that cuts across many models.
 Open presenters cannot handle these use cases.
 
 {% callout %}
-If you need to access a bunch of attributes on the underlying model, you can package them into a `T::Struct` and deliver them from a method.
+If you need to access a bunch of attributes on the underlying model, you can package them into a `T::Struct` and deliver it from a method.
+This concentrates data access logic into a single method that is easy to instrument for performance issues.
 {% /callout %}
 
 
-## ActionView's Missing Abstraction
+## Remaining Challenges
+Flattening partials and composing them in templates is a major win for maintainability.
+That's primarily because it prevents the technical debt of hardcoded partial hierarchies.
+Unfortunately, this system alone still leaves some major problems unsolved.
 
-This school of thought gives partials a very minor role.
-There is some flexibility here.
-Generally, the more widely a partial is shared, the thinner it needs to be.
-Once you have substantial behaviour widely shared, you need a behvioural abstraction like a class.
-That means substantial amounts of logic will accumuluate in templates.
-View helpers ease the pain of writing code inside views, but 
-Patterns of logic and presentational composition will across your templates.
-Then what do you do?
-Suppose you diligently implement all of this advice.
-Inevitably, patterns will emerge **across** your templates.
-Some compositions of partials and view helpers will repeat in similar ways.
-What then?
-You could extract the patterns into partials with global view helpers, but this puts us back to square one.
-We are again faced with the original problem: partials lack the abilities required to manage behaviour.
-Furthermore, behaviour that cuts across pages could become complex and widely used.
-This is a task for a real behavioural abstraction that provides:
+### Gray Areas
+The idea is to give partials the very minor role of HTML abstraction, with minimal if any logic.
+That makes partials maximally reusable, but many partials are not indended to be shared widely.
+It is very easy to make the argument for fatter partials *now* and thinner ones *later*.
+Getting this right relies heavily on developers having a refined intuition for composition-over-hierarchy.
+In practice, this is simply not as maintainble as a good abstraction.
+A good abstraction creates a recognisable pattern that gives you a decent maintainability baseline, even if copied blindly.
+
+### ActionView's Missing Abstraction
+The intuitive impulse to load behaviour into partials comes from the fact that we *want* UI components, but in vanilla Rails we *get* partials.
+Thin, composable partials are great, but they cannot actually solve the much larger problem of maintaining substantial UI behaviour.
+Patterns can and will appear **across** templates.
+Maintaining that behaviour is vastly easier when logic has:
  - A clear owner that runs quickly in a unit test,
  - Public methods that return easy-to-test data structures,
- - An API that streamlines various use cases, but hides implementation details, and
+ - An API that streamlines use cases but hides the implementation details, and
  - Internal state to enable dependency injection.
 
-This does not sound anything like a partial or a template.
-It sounds exactly like a class.
-This is where ActionView becomes the maintainability bottleneck.
-There is no `ApplicationView`.
-Taking maintainability further is requires at least one view abstraction.
-This starts the discussion of gems like Draper, KeyNote, Phlex and ViewComponents.
+This sounds nothing like a partial or a template, but exactly like a class.
+This is the `ApplicationView` abstraction that ActionView forgot.
+If you don't have this, then you circle back around to overloaded partials, confusing gray areas and chaotic evolution.
+Taking maintainability to the next level requires a proper view abstraction.
+This is the context and motivation for gems like Phlex and ViewComponents.
