@@ -15,7 +15,7 @@ Until then, consider everything tentative.
 
 
 {% callout title="TL;DR" type="note" %}
-Views in vanilla Rails can easily descend into chaos, but maintainability can be preserved by:
+Views in vanilla Rails can easily descend into chaos, but some maintainability can be preserved by:
   1. Pushing behavioural concerns up into templates, and
   1. Pulling presentational details down into partials that `yield`.
 
