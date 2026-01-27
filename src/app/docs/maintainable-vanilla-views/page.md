@@ -9,7 +9,7 @@ nextjs:
 {% callout title="Warning" type="warning" %}
 This article may change significantly.
 It is probably verbose and incomplete.
-It underpins a talk I will give at BrisRails in late February.
+It underpins a talk I will give at BrisRails in late February 2026
 Until then, consider everything tentative.
 {% /callout %}
 
