@@ -7,16 +7,18 @@ nextjs:
 ---
 
 {% callout title="TL;DR" type="note" %}
-Maintainable views in *vanilla* Rails rest on:
+Views in vanilla Rails can easily descend into chaos, but maintainability can be preserved by:
   1. Pushing behavioural concerns up into templates, and
   1. Pulling presentational details down into partials that `yield`.
 
 This makes your templates **flexible** and your partials **composable**.
 The next step is offloading logic from templates into controller-scoped view helpers and PORO presenters.
-Finally, ActionView becomes the maintainability bottleneck, motivating gems like Phlex and ViewComponents.
+When an application outgrows this structure, ActionView itself becomes the maintainability bottleneck.
+This motivates gems like Phlex and ViewComponents.
 {% /callout %}
 
-Ever growing views must be decomposed into manageable units, but not all approaches are equal.
+Growing views must be decomposed to manage cognitive load.
+However, decomposition does not necessarily improve maintainability.
 Decomposition along the wrong axes creates **fragmentation** and technical debt.
 Rails views need **factorisation** that cuts along the axes of page behaviour, presentational HTML and data derived from models.
 
@@ -126,10 +128,18 @@ Extract the loop's body into a `_row` partial.
         = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-This is the *partial tunnelling anti-pattern*.
+This is the final structure.
+
+```
+timesheets/index.html.haml
+└── _timesheet_list.html.haml
+    └── _row.html.haml
+```
+
+
 The first problem is that since the partials contain behaviour, you can't ignore them.
 That means future developers must mentally compose all four files to understand the page.
-The second problem is that this structure wrecks the page's evolution.
+The second problem is this creates a fixed hierarchy that is hard to adapt to different use cases.
 
 ### Chaotic Evolution
 Let's try to reuse the timesheets list to show an employee their timesheets on a new page.
@@ -160,8 +170,7 @@ dashboard/show.html.haml   (employee view)
 The options are all bad at this point.
 We can smuggle data down to `_row` with an instance variable or a page parameter.
 We can also drill an argument through the `_timesheet_list`.
-Given the structure we have, drilling is the least surprising and most portable option.
-Let's add a flag.
+Given the structure we have, drilling a flag is the least surprising and most portable option.
 
 ```haml
 -# app/views/timesheets/_timesheet_list.html.haml
@@ -204,14 +213,14 @@ Now the employee dashboard can hide the buttons by setting the flag.
 ```
 
 That was a lot of work to "reuse" a partial.
+In fact, we had to rework it, because we couldn't reuse it.
 This is the first sign that the nested partial structure is a liability.
 There is more to come.
+
 Suppose the employee needs to be shown an edit button for the timesheet, but not the manager.
 We either add another flag, or couple the first flag to two use cases.
-
-Soon we realise that the manager and employee also have different workflows.
-The manager approves timesheets in batches on the same page, while the employee navigates away to view a single timesheet. 
-
+Soon we realise that the manager and employee have different workflows.
+The manager approves timesheets in batches on the same page, while the employee navigates away to view their timesheet. 
 When the manager clicks *approve*, turbo updates a frame.
 When the employee clicks *edit*, that breaks.
 The edit page was built separately, without any consideration of the turbo frame in the manager's view.
@@ -224,7 +233,7 @@ This structure puts the developer in the same dilemma again and again:
   - Either invest a lot of time and effort to restructure, or
   - Make the situation a bit worse and move on.
 
-Hardcoding nested partials **instantly** creates technical debt.
+Hardcoded nested partials creates technical debt.
 
 ## Factorisation
 
@@ -291,7 +300,11 @@ Let's rebuild the manager's timesheet index view using both partials:
           = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-Now let's build the employee's timesheet view with:
+This produces the same view as before, but now:
+  1. The partials are not aware of each other, and
+  2. Their composition can be seen at a glance in the index view.
+
+Now let's rebuild the employee's timesheet view, with:
   1. No turbo frame, and
   1. An edit button instead of accept and reject buttons.
 
@@ -310,24 +323,30 @@ Now let's build the employee's timesheet view with:
           = link_to "Edit", edit_timesheet_path(timesheet), class: "btn-sm"
 ```
 
-Painless.
+That's it. There is almost nothing to do.
+
 Interestingly, we didn't reuse `_timesheet_list` in the employee view.
-That is not surprising, because it contains nothing but page concerns.
-Sharing it between pages would only create unmaintainable interlocking constraints.
-We are better off inlining `_timesheet_list` directly into the manager's view.
+That is not surprising, because it contains nothing but page concerns: iteration and a turbo frame.
+Sharing it between pages would only create interlocking constraints.
+We can inline the content of `_timesheet_list` into the manager's view.
 
-### Template-Partial Symbiosis
-If you push page concerns up into templates, partials essentially become custom HTML elements.
-
-Partials containing plain HTML and a `yield` have two great properties. You can:
+### Templates Orchestrate. Partials Render.
+If you push page concerns up into templates, partials become little more than custom HTML elements.
+A partial containing plain HTML and a `yield` has two great properties. You can:
   1. Put the partial inside anything, and
   1. Put anything inside the partial.
 
-Partials like this make it easy to avoid duplicating blocks of HTML, because you can put them anywhere. Overloaded partials couple portable HTML non-portable behaviour. 
+Partials like this make it easy to avoid duplicating blocks of HTML, because you can put them anywhere.
+Conversely, overloaded partials couple generic HTML to context-specific behaviour. 
+This forces rampant duplication of HTML fragments.
 
-Templates no longer pass data into blobs of imported behaviour.
+This affects templates too. Templates no longer pass data into blobs of imported behaviour.
 Instead, templates implement behaviour directly and weave it into a composition of partials.
-The composition-over-hierarchy approach is endlessly flexible.
+Hierarchies are brittle, while compositions are endlessly flexible.
+
+Consider the example of a card.
+The card below is full of logic and page concerns.
+The partials are not coupled to any of it, or each other, nor do they obscure the behaviour at work.
 
 ```haml
 = render "shared/card" do
@@ -343,13 +362,13 @@ The composition-over-hierarchy approach is endlessly flexible.
             %span.badge Approved
 ```
 
-Now templates own all of their behaviour.
-They can be changed independently, without rippling into other pages via shared partials.
+The templates composes the partials and owns its behaviour.
+It can be changed independently, without rippling into other pages via shared partials.
 This makes templates flexible, while the abstraction of HTML makes their logic more readable.
 
 {% callout %}
 Eventually, it makes sense to create a partial whose only purpose is to fill a `yield` slot.
-These blind partials do not yield, making them semi-composable.
+These blind partials do not `yield`, making them semi-composable.
 This is like `<br />` or `<img ...>` in HTML.
 Some examples might be: a group of form fields, an icon, or content for a card that displays `heading:` and `subtitle:` locals.
 Partials like these can be more suited to using locals as named slots for rendered HTML instead of `yield`. 
@@ -385,8 +404,8 @@ Push `data-test-id` attributes up into templates.
 
 ### The Attribute Bag Pattern
 Notice that some of those page concerns are HTML attributes.
-This is where the line blurs, because Turbo and Stimulus attach behaviour to elements carrying those attributes.
-This kind of page concern can be pushed up using the attribute bag pattern.
+Turbo and Stimulus attach behaviour to elements carrying those attributes.
+This can be pushed up using the attribute bag pattern.
 
 ```haml
 -# app/views/shared/_button.html.haml
@@ -405,56 +424,53 @@ This kind of page concern can be pushed up using the attribute bag pattern.
   }
 ```
 
-This allows the template (not the partial) to be responsible for page-relevant data attributes, while the partial remains generic and composable, just like a custom HTML element.
+This allows the template (not the partial) to be responsible for page-relevant data attributes, while the partial remains generic and composable.
+
+For compatibility with Rails' strict locals, use an explicit `attributes` parameter:
+
+```haml
+-# app/views/shared/_button.html.haml
+-# locals: (text:, attributes: {})
+
+%button{ **attributes }
+  = text
+```
+
+```haml
+= render "shared/button",
+         text: "Approve",
+         attributes: {
+           class: "btn btn--primary",
+           data: { turbo_action: "replace", test_id: "approve-btn" },
+           id: "approve-button"
+         }
+```
+
+This hybrid approach is arguably cleaner, because you don't have to filter out non-attribute paramters. 
 
 ### View Helpers
-This puts a low ceiling on the amount of complexity you can manage.
-Moving logic up into templates *can* have positive consequences for handling view helpers, provided you have configured controller helpers to be controller-scoped, not global.
-
-You can also use `helper_method :my_method_1, :my_method_2` to create controller-scoped view helpers.
+Pushing behaviour up into templates means templates accumulate code.
+Code written directly in views is hard to discover, read and maintain.
+It's even hard to write if you are using HAML.
+You can ease the burden slightly by pulling logic into view helpers, but the benefits are slim.
+Code becomes easier to read and write.
+You can scope the helpers to a single controller with the right configuration, instead of adding ever more global heleprs to `app/helpers.rb`.
+However, you still have no encapsulation and no straightforward unit testing story.
+View helpers are a weak solution to maintaining view logic.
 
 {% callout %}
 Even helpers for a specific controller are available to all views everywhere by default in Rails.
 You can disable this so that a helper defined for one controller is available only to views rendered from that controller, by setting the following in `application.rb`.
 
-`config.action_controller.include_all_helpers = false`
+config.action_controller.include_all_helpers = false
 {% /callout %}
 
-Views full of logic is an obvious smell with the knee-jerk reaction to shift the logic into a view helper.
-If the logic is in a template, then it can naturally fit into a controller-scoped helper.
-The template, controller and controller helper are all coupled together and not expected to be reused.
-
-```ruby
-class MyController < ApplicationController
-  def show; end
-end
-
-module MyControllerHelper
-  def pretty_datetime(datetime)
-    return "" if datetime.blank?
-    datetime.strftime("%b %e, %Y at %l:%M%P")
-  end
-end
-```
-
-```haml
-# app/views/my_controller/show.html.haml
-%p
-  Submitted at:
-  = pretty_datetime(@timesheet.submitted_at)
-
-```
-
-When you have logic embedded in partials, you are again faced with bad options:
- 1. Silently depend on controller-scoped view helpers, causing the partial to break if reused elsewhere, or
- 1. Add a global view helper to `app/helpers`. 
 
 ### Model Presentation
-If we move **all** logic into view helpers, they might accumulate knowledge about models.
-That's not ideal, because it may cut across controllers, forcing you to use global view helpers.
-Transforming model data can become complex too.
-In that case, we want the straightforward unit testing story of a dedicated class.
-This all leads to presenters.
+View logic is not always view-specific.
+It often transforms data from models for presentation.
+This can easily cut across controllers and become complex.
+We can simplify view helpers and make this logic easy to test with presenters.
 
 Recall that we had some obvious model presentation logic in `_row`. 
 
@@ -479,6 +495,10 @@ class TimesheetPresenter
     @timesheet = timesheet
   end
 
+  def employee_name
+    @timesheet.employee.name
+  end
+
   def hours
     "%.1f hrs" % @timesheet.total_hours
   end
@@ -501,12 +521,12 @@ end
 This simplifies the partial and decouples it from the model. 
 
 ```haml
-- presented_timesheet = TimesheetPresenter.new(timesheet)
+-# locals: (timesheet:, attributes: {})
 
-%li.timesheet-row{ id: dom_id(timesheet) }
-  .employee-name= presented_timesheet.employee.name
-  .hours= presented_timesheet.hours
-  %span.badge{ class: presented_timesheet.status_badge_class }= presented_timesheet.status_label
+%li.timesheet-row{ **attributes }
+  .employee-name= timesheet.employee_name
+  .hours= timesheet.hours
+  %span.badge{ class: timesheet.status_badge_class }= timesheet.status_label
 ```
 
 We could improve this.
