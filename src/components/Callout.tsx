@@ -36,7 +36,7 @@ export function Callout({
   type?: keyof typeof styles
   icon?: keyof typeof icons
 }) {
-  let IconComponent = icons['lightbulb']
+  let IconComponent = type === 'warning' ? icons['warning'] : icons['lightbulb']
 
   return (
     <div className={clsx('my-8 flex rounded-3xl p-6', styles[type].container)}>
