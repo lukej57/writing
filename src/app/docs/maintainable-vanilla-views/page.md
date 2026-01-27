@@ -8,6 +8,7 @@ nextjs:
 
 {% callout title="Warning" type="warning" %}
 This article may change significantly.
+It is probably verbose and incomplete.
 It underpins a talk I will give at BrisRails in late February.
 Until then, consider everything tentative.
 {% /callout %}
@@ -337,7 +338,7 @@ That is not surprising, because it contains nothing but page concerns: iteration
 Sharing it between pages would only create interlocking constraints.
 We can inline the content of `_timesheet_list` into the manager's view.
 
-### Templates Orchestrate. Partials Render.
+### Template-Partial Symbiosis
 If you push page concerns up into templates, partials become little more than custom HTML elements.
 A partial containing plain HTML and a `yield` has two great properties. You can:
   1. Put the partial inside anything, and
@@ -369,9 +370,9 @@ The partials are not coupled to any of it, or each other, nor do they obscure th
             %span.badge Approved
 ```
 
-The templates composes the partials and owns its behaviour.
+The template composes the partials and owns its behaviour.
 It can be changed independently, without rippling into other pages via shared partials.
-This makes templates flexible, while the abstraction of HTML makes their logic more readable.
+This makes templates flexible, while abstracting HTML declutters the logic.
 
 {% callout %}
 Eventually, it makes sense to create a partial whose only purpose is to fill a `yield` slot.
@@ -563,20 +564,27 @@ This concentrates data access logic into a single method that is easy to instrum
 ## Remaining Challenges
 Flattening partials and composing them in templates is a major win for maintainability.
 That's primarily because it prevents the technical debt of hardcoded partial hierarchies.
-Unfortunately, this system alone still leaves some major problems unsolved.
+Unfortunately, this system alone leaves some major problems unsolved.
 
-### Gray Areas
-The idea is to give partials the very minor role of HTML abstraction, with minimal if any logic.
-That makes partials maximally reusable, but many partials are not indended to be shared widely.
-It is very easy to make the argument for fatter partials *now* and thinner ones *later*.
-Getting this right relies heavily on developers having a refined intuition for composition-over-hierarchy.
-In practice, this is simply not as maintainble as a good abstraction.
-A good abstraction creates a recognisable pattern that gives you a decent maintainability baseline, even if copied blindly.
+### Gray Areas: Inevitable and Confusing
+The idea is to give partials the very minor role of HTML abstraction, with minimal logic.
+You could think of them like a module: unencapsulated and hard to test.
+Therefore, they're good for some simple, pure logic, like slotting some plain data into a HTML structure.
+That makes partials maximally reusable, but it immediately pushes duplication into templates.
+Furthermore, not every partial is designed to be shared widely.
+If you only have partials and templates at your disposal, rigid enforcement of minimal partials is a hard sell.
+You have to apply it gradually: fatter partials *now* and thinner ones *later*.
+As use cases vary and diverge, partials should get thinner and simpler as you push variations upward into templates.
+This is essentially dependency injection for views, but the lack of encapsulation makes this approach so nuanced and technical that it is hard to apply.
+Building a team of partial experts is much more difficult than leveraging a good abstraction.
+A good abstraction creates a recognisable pattern that gives you a decent baseline, even if copied in a hurry.
 
 ### ActionView's Missing Abstraction
 The intuitive impulse to load behaviour into partials comes from the fact that we *want* UI components, but in vanilla Rails we *get* partials.
 Thin, composable partials are great, but they cannot actually solve the much larger problem of maintaining substantial UI behaviour.
 Patterns can and will appear **across** templates.
+In fact, thinning partials to this degree rapidly accelerates that process.
+When view-owned logic builds up, view helpers offer an incredibly weak solution.
 Maintaining that behaviour is vastly easier when logic has:
  - A clear owner that runs quickly in a unit test,
  - Public methods that return easy-to-test data structures,
