@@ -569,7 +569,7 @@ Unfortunately, this system alone leaves some major problems unsolved.
 ### Gray Areas: Inevitable and Confusing
 The idea is to give partials the very minor role of HTML abstraction, with minimal logic.
 You could think of them like a module: unencapsulated and hard to test.
-Therefore, they're good for some simple, pure logic, like slotting some plain data into a HTML structure.
+They're good for some simple, pure logic, like slotting some plain data into a HTML structure.
 That makes partials maximally reusable, but it immediately pushes duplication into templates.
 Furthermore, not every partial is designed to be shared widely.
 If you only have partials and templates at your disposal, rigid enforcement of minimal partials is a hard sell.
