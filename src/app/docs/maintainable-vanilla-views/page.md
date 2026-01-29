@@ -356,9 +356,8 @@ Partials like this make it easy to avoid duplicating blocks of HTML, because you
 Conversely, overloaded partials couple generic HTML to context-specific behaviour. 
 This forces rampant duplication of HTML fragments.
 
-Then Templates no longer pass data into blobs of imported behaviour.
-Instead, templates implement behaviour directly and weave it into a composition of partials.
-Hierarchies are brittle, while compositions are endlessly flexible.
+Templates no longer pass data into blobs of imported behaviour.
+Instead, they weave behaviour into a flexible composition of partials.
 
 Consider the example of a card.
 The card below is full of logic and page concerns.
@@ -378,8 +377,7 @@ The partials are not coupled to any of it, or each other, nor do they obscure th
             %span.badge Approved
 ```
 
-The template composes the partials and owns its behaviour.
-It can be changed independently, without rippling into other pages via shared partials.
+Others templates can use the partials in a completely different way, without putting any constraints on each other.
 This makes templates flexible, while abstracting HTML declutters the logic.
 
 {% callout %}
