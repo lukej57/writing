@@ -241,7 +241,7 @@ This structure puts the developer in the same dilemma again and again:
   - Either invest a lot of time and effort to restructure, or
   - Make the situation a bit worse and move on.
 
-Hardcoded nested partials creates technical debt.
+Hardcoding nested partials creates technical debt, boxing developers into lose-lose dilemmas.
 
 ## Factorisation
 
@@ -279,7 +279,6 @@ Let's add `yield` to both `_row` and `_timesheet_list`.
     - timesheets.each do |timesheet|
       = yield timesheet
 ```
-
 
 ### Controlled Evolution
 
@@ -338,9 +337,16 @@ That is not surprising, because it contains nothing but page concerns: iteration
 Sharing it between pages would only create interlocking constraints.
 We can inline the content of `_timesheet_list` into the manager's view.
 
+{% callout %}
+If you have built views of significant complexity through nesting, it is unlikely that `yield` alone will save the day.
+Partials are not encapsulated and can easily reach up into their context.
+Having partials `yield` allows you to leverage the composability of a partial, but if the partial does not compose well (becuase it's full of code, instance variables, page parameters and forms), then you have not gained much.
+{% /callout %}
+
 ### Template-Partial Symbiosis
-If you push page concerns up into templates, partials become little more than custom HTML elements.
-A partial containing plain HTML and a `yield` has two great properties. You can:
+If you push page concerns up into templates, partials might be left with only some minimal code to slot plain data into some HTML.
+They essentially become custom HTML elements.
+A partial containing mostly plain HTML and a `yield` has two great properties. You can:
   1. Put the partial inside anything, and
   1. Put anything inside the partial.
 
@@ -348,7 +354,7 @@ Partials like this make it easy to avoid duplicating blocks of HTML, because you
 Conversely, overloaded partials couple generic HTML to context-specific behaviour. 
 This forces rampant duplication of HTML fragments.
 
-This affects templates too. Templates no longer pass data into blobs of imported behaviour.
+Then Templates no longer pass data into blobs of imported behaviour.
 Instead, templates implement behaviour directly and weave it into a composition of partials.
 Hierarchies are brittle, while compositions are endlessly flexible.
 
@@ -561,38 +567,26 @@ This concentrates data access logic into a single method that is easy to instrum
 {% /callout %}
 
 
-## Remaining Challenges
-Flattening partials and composing them in templates is a major win for maintainability.
-That's primarily because it prevents the technical debt of hardcoded partial hierarchies.
-Unfortunately, this system alone leaves some major problems unsolved.
-
-### Gray Areas: Inevitable and Confusing
+## ActionView's Missing Abstraction
 The idea is to give partials the very minor role of HTML abstraction, with minimal logic.
-You could think of them like a module: unencapsulated and hard to test.
-They're good for some simple, pure logic, like slotting some plain data into a HTML structure.
-That makes partials maximally reusable, but it immediately pushes duplication into templates.
-Furthermore, not every partial is designed to be shared widely.
-If you only have partials and templates at your disposal, rigid enforcement of minimal partials is a hard sell.
-You have to apply it gradually: fatter partials *now* and thinner ones *later*.
-As use cases vary and diverge, partials should get thinner and simpler as you push variations upward into templates.
-This is essentially dependency injection for views, but the lack of encapsulation makes this approach so nuanced and technical that it is hard to apply.
-Building a team of partial experts is much more difficult than leveraging a good abstraction.
-A good abstraction creates a recognisable pattern that gives you a decent baseline, even if copied in a hurry.
+That makes partials composable, but it immediately pushes duplicate behaviour up into templates.
+How do you deal with that duplication?
+You can't.
+There is nowhere for it to go, except right back into partials.
+Partials have no encapsulation and they are hard to test. 
+Once you load behaviour back into partials, composability degrades again.
+You are stuck in a lose-lose tradeoff.
+You have to introduce something new to overcome it. 
 
-### ActionView's Missing Abstraction
-The intuitive impulse to load behaviour into partials comes from the fact that we *want* UI components, but in vanilla Rails we *get* partials.
-Thin, composable partials are great, but they cannot actually solve the much larger problem of maintaining substantial UI behaviour.
-Patterns can and will appear **across** templates.
-In fact, thinning partials to this degree rapidly accelerates that process.
-When view-owned logic builds up, view helpers offer an incredibly weak solution.
-Maintaining that behaviour is vastly easier when logic has:
+What would that something need to provide?
+Substiantial view logic needs:
  - A clear owner that runs quickly in a unit test,
  - Public methods that return easy-to-test data structures,
- - An API that streamlines use cases but hides the implementation details, and
+ - An API that streamlines the use cases but hides the implementation, and
  - Internal state to enable dependency injection.
 
-This sounds nothing like a partial or a template, but exactly like a class.
-This is the `ApplicationView` abstraction that ActionView forgot.
-If you don't have this, then you circle back around to overloaded partials, confusing gray areas and chaotic evolution.
-Taking maintainability to the next level requires a proper view abstraction.
-This is the context and motivation for gems like Phlex and ViewComponents.
+If you have all of those things, you can maintain and compose behaviour.
+That sounds nothing like a partial or a template, but exactly like a class.
+What we need is the `ApplicationView` that ActionView forgot.
+That is how you take maintainability to the next level.
+That is the context and motivation for gems like Phlex and ViewComponents.
