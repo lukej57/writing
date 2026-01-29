@@ -574,12 +574,11 @@ How do you deal with that duplication?
 You can't.
 There is nowhere for it to go, except right back into partials.
 Partials have no encapsulation and they are hard to test. 
-Once you load behaviour back into partials, composability degrades again.
+These limitations all but guarantee that composability will degrade if behaviour creeps back into partials.
 You are stuck in a lose-lose tradeoff.
 You have to introduce something new to overcome it. 
 
-What would that something need to provide?
-Substiantial view logic needs:
+That something would need to provide the following things for view behaviour:
  - A clear owner that runs quickly in a unit test,
  - Public methods that return easy-to-test data structures,
  - An API that streamlines the use cases but hides the implementation, and
@@ -587,6 +586,5 @@ Substiantial view logic needs:
 
 If you have all of those things, you can maintain and compose behaviour.
 That sounds nothing like a partial or a template, but exactly like a class.
-What we need is the `ApplicationView` that ActionView forgot.
-That is how you take maintainability to the next level.
-That is the context and motivation for gems like Phlex and ViewComponents.
+What we need is the missing `ApplicationView` abstraction.
+That is how you take maintainability to the next level, which is the motivation to consider gems like Phlex and ViewComponents.
