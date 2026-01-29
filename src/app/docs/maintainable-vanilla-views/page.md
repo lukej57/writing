@@ -341,7 +341,8 @@ We can inline the content of `_timesheet_list` into the manager's view.
 {% callout %}
 If you have built views of significant complexity through nesting, it is unlikely that `yield` alone will save the day.
 Partials are not encapsulated and can easily reach up into their context.
-Having partials `yield` allows you to leverage the composability of a partial, but if the partial does not compose well (becuase it's full of code, instance variables, page parameters and forms), then you have not gained much.
+Having partials `yield` allows you to leverage a partial's composability.
+That composability might be zero for a partial full of code, instance variables, page parameters and forms for example.
 {% /callout %}
 
 ### Template-Partial Symbiosis
