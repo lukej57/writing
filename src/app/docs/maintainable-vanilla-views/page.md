@@ -334,7 +334,7 @@ Now let's rebuild the employee's timesheet view, with:
 That's it. There is almost nothing to do.
 
 Interestingly, we didn't reuse `_timesheet_list` in the employee view.
-That is not surprising, because it contains nothing but page concerns: iteration and a turbo frame.
+That is not surprising, because it contains nothing but page concerns.
 Sharing it between pages would only create interlocking constraints.
 We can inline the content of `_timesheet_list` into the manager's view.
 
