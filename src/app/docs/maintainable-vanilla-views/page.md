@@ -22,7 +22,7 @@ Views in vanilla Rails can easily descend into chaos, but some maintainability c
 This makes your templates **flexible** and your partials **composable**.
 The next step is offloading logic from templates into controller-scoped view helpers and PORO presenters.
 When an application outgrows this structure, ActionView itself becomes the maintainability bottleneck.
-This motivates gems like Phlex and ViewComponents.
+This is where gems like Phlex and ViewComponents can help.
 {% /callout %}
 
 Growing views must be decomposed to manage cognitive load.
@@ -221,7 +221,8 @@ Now the employee dashboard can hide the buttons by setting the flag.
 ```
 
 That was a lot of work to "reuse" a partial.
-In fact, we had to rework it, because we couldn't reuse it.
+In fact, we couldn't reuse it.
+We had to rework it.
 This is the first sign that the nested partial structure is a liability.
 There is more to come.
 
