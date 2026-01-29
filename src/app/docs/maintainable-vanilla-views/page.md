@@ -425,27 +425,6 @@ This can be pushed up using the attribute bag pattern.
 
 ```haml
 -# app/views/shared/_button.html.haml
-- text = local_assigns[:text]
-- attributes = local_assigns.except(:text).symbolize_keys
-%button{ **attributes }
-  = text
-```
-
-```haml
-= render partial: "shared/button", locals: { 
-    text: "Approve", 
-    class: "btn btn--primary", 
-    data: { turbo_action: "replace", test_id: "approve-btn" }, 
-    id: "approve-button"
-  }
-```
-
-This allows the template (not the partial) to be responsible for page-relevant data attributes, while the partial remains generic and composable.
-
-For compatibility with Rails' strict locals, use an explicit `attributes` parameter:
-
-```haml
--# app/views/shared/_button.html.haml
 -# locals: (text:, attributes: {})
 
 %button{ **attributes }
@@ -462,7 +441,7 @@ For compatibility with Rails' strict locals, use an explicit `attributes` parame
          }
 ```
 
-This is arguable cleaner, since separates parameters and attributes without logic. 
+This allows the template (not the partial) to be responsible for page-relevant data attributes, while the partial remains generic and composable.
 
 ### View Helpers
 Pushing behaviour up into templates means templates accumulate code.
@@ -470,15 +449,15 @@ Code written directly in views is hard to discover, read and maintain.
 It's even hard to write if you are using HAML.
 You can ease the burden slightly by pulling logic into view helpers, but the benefits are slim.
 Code becomes easier to read and write.
-You can scope the helpers to a single controller with the right configuration, instead of adding ever more global heleprs to `app/helpers.rb`.
+You can scope the helpers to a single controller with the right configuration.
 However, you still have no encapsulation and no straightforward unit testing story.
 View helpers are a weak solution to maintaining view logic.
 
 {% callout %}
 Even helpers for a specific controller are available to all views everywhere by default in Rails.
-You can disable this so that a helper defined for one controller is available only to views rendered from that controller, by setting the following in `application.rb`.
+You can disable this so that a helper defined for one controller is scoped to that controller, by setting the following in `application.rb`.
 
-config.action_controller.include_all_helpers = false
+`config.action_controller.include_all_helpers = false`
 {% /callout %}
 
 
