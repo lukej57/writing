@@ -386,7 +386,7 @@ This makes templates flexible, while abstracting HTML declutters the logic.
 Eventually, it makes sense to create a partial whose only purpose is to fill a `yield` slot.
 These blind partials do not `yield`, making them semi-composable.
 This is like `<br />` or `<img ...>` in HTML.
-Some examples might be: a group of form fields, an icon, or content for a card that displays `heading:` and `subtitle:` locals.
+Some examples might be: a group of form fields, an icon, or a heading for card.
 Partials like these can be more suited to using locals as named slots for rendered HTML instead of `yield`. 
 {% /callout %}
 
