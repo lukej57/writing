@@ -32,6 +32,8 @@ Rails views need **factorisation** that cuts along the axes of page behaviour, p
 
 ![Factorization axes diagram](/images/composable-views/axes.svg)
 
+How far can this approach take us toward views that are both complex and maintainable?
+
 ## An Example View 
 
 Consider a timesheet index view with approve and decline buttons for managers. 
