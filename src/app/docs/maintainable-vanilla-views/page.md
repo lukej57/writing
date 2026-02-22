@@ -57,25 +57,25 @@ Consider a timesheet index view with approve and decline buttons for managers.
     %span.label Pending Review
     %span.value= pending_count
 
--# === Turbo Frame (page concern) ===
-= turbo_frame_tag "timesheets-list", data: { turbo_action: "advance" } do
-  %ul.timesheet-list
-    -# === Iteration logic ===
-    - @timesheets.each do |timesheet|
-      %li.timesheet-row{ id: dom_id(timesheet) }
+-# === Iteration logic ===
+%ul.timesheet-list
+  - @timesheets.each do |timesheet|
+    -# === Turbo Frame (page concern) ===
+    = turbo_frame_tag dom_id(timesheet) do
+      %li.timesheet-row
         .employee-name= timesheet.employee.name
         .hours= "%.1f hrs" % timesheet.total_hours
 
-        -# === Model presentation ===        
+        -# === Model presentation ===
         - status_class = case timesheet.status
           - when "submitted" then "badge--warning"
           - when "approved" then "badge--success"
           - when "rejected" then "badge--danger"
         %span.badge{ class: status_class }= timesheet.status.titleize
-        
+
         -# === Form (page concern) ===
         - if timesheet.submitted?
-          = form_with model: timesheet, 
+          = form_with model: timesheet,
                       url: manager_timesheet_review_path(timesheet),
                       class: "review-form" do |f|
             = f.hidden_field :status
