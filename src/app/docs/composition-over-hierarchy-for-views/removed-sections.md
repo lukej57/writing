@@ -4,6 +4,21 @@ These sections were removed from `page.md` to narrow the article's scope to comp
 
 ---
 
+### Model Presentation
+
+The status badge logic appeared in the initial example view, the fragmentation `_row`, and the factorisation `_row`.
+
+```haml
+-# === Model presentation ===
+- status_class = case timesheet.status
+  - when "submitted" then "badge--warning"
+  - when "approved" then "badge--success"
+  - when "rejected" then "badge--danger"
+%span.badge{ class: status_class }= timesheet.status.titleize
+```
+
+---
+
 ### Summary Bar
 
 From the initial example view:

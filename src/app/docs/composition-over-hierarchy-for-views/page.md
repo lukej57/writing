@@ -40,13 +40,6 @@ Consider a timesheet index view with approve and decline buttons for managers.
         .employee-name= timesheet.employee.name
         .hours= "%.1f hrs" % timesheet.total_hours
 
-        -# === Model presentation ===
-        - status_class = case timesheet.status
-          - when "submitted" then "badge--warning"
-          - when "approved" then "badge--success"
-          - when "rejected" then "badge--danger"
-        %span.badge{ class: status_class }= timesheet.status.titleize
-
         -# === Form (page concern) ===
         - if timesheet.submitted?
           = form_with model: timesheet,
@@ -92,12 +85,6 @@ Extract the loop's body into a `_row` partial.
 %li.timesheet-row
   .employee-name= timesheet.employee.name
   .hours= "%.1f hrs" % timesheet.total_hours
-
-  - status_class = case timesheet.status
-    - when "submitted" then "badge--warning"
-    - when "approved" then "badge--success"
-    - when "rejected" then "badge--danger"
-  %span.badge{ class: status_class }= timesheet.status.titleize
 
   - if timesheet.submitted?
     = form_with model: timesheet,
@@ -231,12 +218,6 @@ Let's add `yield` to both `_row` and `_timesheet_list`.
 %li.timesheet-row{ id: dom_id(timesheet) }
   .employee-name= timesheet.employee.name
   .hours= "%.1f hrs" % timesheet.total_hours
-
-  - status_class = case timesheet.status
-    - when "submitted" then "badge--warning"
-    - when "approved" then "badge--success"
-    - when "rejected" then "badge--danger"
-  %span.badge{ class: status_class }= timesheet.status.titleize
 
   -# Yield instead of hard-coding the accept/reject buttons
   - if block_given?
