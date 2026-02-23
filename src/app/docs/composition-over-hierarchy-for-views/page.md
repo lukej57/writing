@@ -383,9 +383,9 @@ They serve no purpose on purely presentational partials, which are completely st
 {% /callout %}
 
 ### The Attribute Bag Pattern
-Notice that some of those page concerns are HTML attributes.
-Turbo and Stimulus attach behaviour to elements carrying those attributes.
-This can be pushed up using the attribute bag pattern.
+Turbo and Stimulus attach behaviour to elements via HTML attributes.
+If those attributes are hardcoded inside a partial, the partial owns the behaviour and the template cannot change it.
+To cede control of those attributes to the page, accept them as a local and splat them onto the element.
 
 ```haml
 -# app/views/shared/_button.html.haml
@@ -405,5 +405,5 @@ This can be pushed up using the attribute bag pattern.
          }
 ```
 
-This allows the template (not the partial) to be responsible for page-relevant data attributes, while the partial remains generic and composable.
+Now the template controls which Turbo and Stimulus behaviours are attached, while the partial remains generic and composable.
 
