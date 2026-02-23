@@ -393,3 +393,7 @@ Now the template controls which Turbo and Stimulus behaviours are attached, whil
 Making partials this thin demonstrates maximum composability.
 The trade-off is that the behaviour and structure forced up into templates will quickly become duplicated.
 The full scope of maintaining Rails views is beyond this article.
+
+The point is that fixed hierarchies push you into the same trap described in [The Dark Side of DRY](/docs/dark-side-of-dry).
+You either fragment what is related, or fuse what is unrelated.
+The backend solution is dependency injection, while the front end solution is `yield`.
