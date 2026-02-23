@@ -98,32 +98,32 @@ Extract the loop's body into a `_row` partial.
 
 %ul.timesheet-list
   - timesheets.each do |timesheet|
-    = render "row", timesheet: timesheet
+    = turbo_frame_tag dom_id(timesheet) do
+      = render "row", timesheet: timesheet
 ```
 
 ```haml
 -# app/views/timesheets/_row.html.haml
 -# locals: (timesheet:)
 
-= turbo_frame_tag dom_id(timesheet) do
-  %li.timesheet-row
-    .employee-name= timesheet.employee.name
-    .hours= "%.1f hrs" % timesheet.total_hours
+%li.timesheet-row
+  .employee-name= timesheet.employee.name
+  .hours= "%.1f hrs" % timesheet.total_hours
 
-    - status_class = case timesheet.status
-      - when "submitted" then "badge--warning"
-      - when "approved" then "badge--success"
-      - when "rejected" then "badge--danger"
-    %span.badge{ class: status_class }= timesheet.status.titleize
+  - status_class = case timesheet.status
+    - when "submitted" then "badge--warning"
+    - when "approved" then "badge--success"
+    - when "rejected" then "badge--danger"
+  %span.badge{ class: status_class }= timesheet.status.titleize
 
-    - if timesheet.submitted?
-      = form_with model: timesheet,
-                  url: manager_timesheet_review_path(timesheet),
-                  class: "review-form" do |f|
-        = f.hidden_field :status
-        .actions
-          = f.button "Approve", value: "approved", class: "btn-sm btn-success"
-          = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
+  - if timesheet.submitted?
+    = form_with model: timesheet,
+                url: manager_timesheet_review_path(timesheet),
+                class: "review-form" do |f|
+      = f.hidden_field :status
+      .actions
+        = f.button "Approve", value: "approved", class: "btn-sm btn-success"
+        = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
 This is the final structure.
@@ -177,8 +177,9 @@ Given the structure we have, drilling a flag is the least surprising and most po
 
 %ul.timesheet-list
   - timesheets.each do |timesheet|
-    -# === Drill the flag ===
-    = render "timesheets/row", timesheet: timesheet, show_review_form: show_review_form
+    = turbo_frame_tag dom_id(timesheet) do
+      -# === Drill the flag ===
+      = render "timesheets/row", timesheet: timesheet, show_review_form: show_review_form
 ```
 
 ```haml
@@ -186,15 +187,14 @@ Given the structure we have, drilling a flag is the least surprising and most po
 -# === New flag ===
 -# locals: (timesheet:, show_review_form: true)
 
-= turbo_frame_tag dom_id(timesheet) do
-  ...
+...
 
-    -# === Conditional render on flag ===
-    - if show_review_form && timesheet.submitted?
-      = form_with model: timesheet,
-                  url: manager_timesheet_review_path(timesheet),
-                  class: "review-form" do |f|
-                  ...
+  -# === Conditional render on flag ===
+  - if show_review_form && timesheet.submitted?
+    = form_with model: timesheet,
+                url: manager_timesheet_review_path(timesheet),
+                class: "review-form" do |f|
+                ...
 ```
 
 Now the employee dashboard can hide the buttons by setting the flag.
@@ -267,7 +267,8 @@ Let's add `yield` to both `_row` and `_timesheet_list`.
 
 %ul.timesheet-list
   - timesheets.each do |timesheet|
-    = yield timesheet
+    = turbo_frame_tag dom_id(timesheet) do
+      = yield timesheet
 ```
 
 ### Controlled Evolution
@@ -285,18 +286,16 @@ Let's rebuild the manager's timesheet index view using both partials:
 
 = render "timesheets/summary_bar", timesheets: @timesheets
 
-%ul.timesheet-list
-  - @timesheets.each do |timesheet|
-    = turbo_frame_tag dom_id(timesheet) do
-      = render "timesheets/row", timesheet: timesheet do
-        - if timesheet.submitted?
-          = form_with model: timesheet,
-                      url: manager_timesheet_review_path(timesheet),
-                      class: "review-form" do |f|
-            = f.hidden_field :status
-            .actions
-              = f.button "Approve", value: "approved", class: "btn-sm btn-success"
-              = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
+= render "timesheets/timesheet_list", timesheets: @timesheets do |timesheet|
+  = render "timesheets/row", timesheet: timesheet do
+    - if timesheet.submitted?
+      = form_with model: timesheet,
+                  url: manager_timesheet_review_path(timesheet),
+                  class: "review-form" do |f|
+        = f.hidden_field :status
+        .actions
+          = f.button "Approve", value: "approved", class: "btn-sm btn-success"
+          = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
 This produces the same view as before, but now:
@@ -325,9 +324,8 @@ Now let's rebuild the employee's timesheet view, with:
 That's it. There is almost nothing to do.
 
 Interestingly, we didn't reuse `_timesheet_list` in the employee view.
-That is not surprising, because it contains nothing but page concerns.
+That is not surprising, because it contains page concerns — specifically the turbo frame — that would break the employee's edit link.
 Sharing it between pages would only create interlocking constraints.
-We can inline the content of `_timesheet_list` into the manager's view.
 
 {% callout %}
 If you have built views of significant complexity through nesting, it is unlikely that `yield` alone will save the day.
