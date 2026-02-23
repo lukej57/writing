@@ -388,3 +388,8 @@ To cede control of those attributes to the page, accept them as a local and spla
 
 Now the template controls which Turbo and Stimulus behaviours are attached, while the partial remains generic and composable.
 
+## Conclusion
+
+Making partials this thin demonstrates maximum composability.
+The trade-off is that the behaviour and structure forced up into templates will quickly become duplicated.
+The full scope of maintaining Rails views is beyond this article.

@@ -8,5 +8,6 @@
 
 {% quick-link title="The Dark Side of DRY" icon="warning" href="/docs/dark-side-of-dry" description="How the \"Don't Repeat Yourself\" principle can lead to implicit coupling and technical debt." /%}
 
-<!-- {% quick-link title="Maintainable Views in Vanilla Rails (WIP)" icon="installation" href="/docs/maintainable-vanilla-views" description="Using only templates, partials and PORO presenters to manage view complexity without fragmentation." /%} -->
-<!-- {% /quick-links %} -->
+{% quick-link title="Composition-over-Hierarchy in Vanilla Rails Views" icon="installation" href="/docs/composition-over-hierarchy-for-views" description="How yielding partials and pushing behaviour into templates prevents the maintainability nightmare of fixed hierarchical views." /%}
+
+{% /quick-links %}
