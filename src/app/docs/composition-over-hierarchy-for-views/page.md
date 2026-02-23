@@ -366,24 +366,20 @@ That will make your templates more flexible and your partials more composable.
 | Page Concern | Examples |
 |--------------|---------|
 | instance variables | `@user`, `@timesheets` |
-| forms | `form_with model: @timesheet` |
-| turbo frames | `turbo_frame_tag "timesheet_#{@timesheet.id}"` |
-| turbo stream identifiers | `turbo_stream_from timesheet` |
-| turbo attributes | `data: { turbo_action: "replace" }` |
-| route helpers | `edit_timesheet_path(timesheet)` |
-| stimulus attributes | `data: { controller: "dropdown" }` |
 | page parameters | `params[:id]`, `params[:search]` |
-| data-test-ids | `data: { test_id: "submit-button" }` |
 | iteration logic | `timesheets.each do \|timesheet\|` |
-| conditional rendering | `if show_review_form` |
+| conditional rendering | `if timesheet.submitted?` |
 | controller-specific view helper calls | `current_timesheet_period` |
 
 {% callout %}
-Tests assert over some kind of logic.
-Those assertions become fragile if they depend on logically irrelevant HTML.
-This is the problem solved by `data-test-id` attributes.
-This is all irrelevant to partials that are plain HTML, because they are completely static.
-Push `data-test-id` attributes up into templates.
+Turbo frame IDs must be unique within a page.
+Use `dom_id` or similar dynamic naming to guarantee this.
+A hardcoded frame ID in a partial will cause clashes if the partial is rendered more than once.
+{% /callout %}
+
+{% callout %}
+`data-test-id` attributes support tests, so they belong wherever there is logic to test.
+They serve no purpose on purely presentational partials, which are completely static and always produce the same HTML.
 {% /callout %}
 
 ### The Attribute Bag Pattern
