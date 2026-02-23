@@ -4,6 +4,33 @@ These sections were removed from `page.md` to narrow the article's scope to comp
 
 ---
 
+### Summary Bar
+
+From the initial example view:
+
+```haml
+-# === Model collection presentation ===
+- total_hours = @timesheets.sum(&:total_hours)
+- overtime_hours = @timesheets.sum { |t| [t.total_hours - 40, 0].max }
+- pending_count = @timesheets.count(&:submitted?)
+
+.summary-bar
+  .stat
+    %span.label Total Hours
+    %span.value= "%.1f" % total_hours
+  .stat
+    %span.label Overtime
+    %span.value= "%.1f" % overtime_hours
+  .stat{ class: pending_count > 0 ? "stat--alert" : nil }
+    %span.label Pending Review
+    %span.value= pending_count
+```
+
+Used in the fragmentation index as `= render "summary_bar", timesheets: @timesheets`
+and in the factorisation index as `= render "timesheets/summary_bar", timesheets: @timesheets`.
+
+---
+
 ### View Helpers
 Pushing behaviour up into templates means templates accumulate code.
 Code written directly in views is hard to discover, read and maintain.

@@ -20,7 +20,7 @@ This is not a complete solution, but demonstrates that composition-over-hierarch
 Growing views must be decomposed to manage cognitive load.
 However, decomposition does not necessarily improve maintainability.
 Decomposition along the wrong axes creates **fragmentation** and technical debt.
-Rails views need **factorisation** that cuts along the axes of page behaviour, presentational HTML and data derived from models.
+Rails views need **factorisation** that cuts along the axes that can meaningfully change independently.
 
 ## An Example View 
 
@@ -30,22 +30,6 @@ Consider a timesheet index view with approve and decline buttons for managers.
 -# app/views/timesheets/index.html.haml
 
 %h1 Timesheets for Review
-
--# === Model collection presentation ===
-- total_hours = @timesheets.sum(&:total_hours)
-- overtime_hours = @timesheets.sum { |t| [t.total_hours - 40, 0].max }
-- pending_count = @timesheets.count(&:submitted?)
-
-.summary-bar
-  .stat
-    %span.label Total Hours
-    %span.value= "%.1f" % total_hours
-  .stat
-    %span.label Overtime
-    %span.value= "%.1f" % overtime_hours
-  .stat{ class: pending_count > 0 ? "stat--alert" : nil }
-    %span.label Pending Review
-    %span.value= pending_count
 
 -# === Iteration logic ===
 %ul.timesheet-list
@@ -78,14 +62,13 @@ Consider a timesheet index view with approve and decline buttons for managers.
 
 Let's decompose this page *ontologically*.
 Whatever you can name, extract it into a partial.
-This gives us a summary bar and a list of timesheets.
+This gives us a list of timesheets.
 
 ```haml
 -# app/views/timesheets/index.html.haml
 
 %h1 Timesheets for Review
 
-= render "summary_bar", timesheets: @timesheets
 = render "timesheet_list", timesheets: @timesheets
 ```
 
@@ -136,7 +119,7 @@ timesheets/index.html.haml
 
 
 The first problem is that since the partials contain behaviour, you can't ignore them.
-That means future developers must mentally compose all four files to understand the page.
+That means future developers must mentally compose all three files to understand the page.
 The second problem is this creates a fixed hierarchy that is hard to adapt to different use cases.
 
 ### Chaotic Evolution
@@ -283,8 +266,6 @@ Let's rebuild the manager's timesheet index view using both partials:
 -# app/views/timesheets/index.html.haml
 
 %h1 Timesheets for Review
-
-= render "timesheets/summary_bar", timesheets: @timesheets
 
 = render "timesheets/timesheet_list", timesheets: @timesheets do |timesheet|
   = render "timesheets/row", timesheet: timesheet do
