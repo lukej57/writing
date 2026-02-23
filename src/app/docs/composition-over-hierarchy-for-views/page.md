@@ -1,8 +1,8 @@
 ---
-title: Composition Over Hierarchy in Vanilla Rails Views
+title: Composition-over-Hierarchy in Vanilla Rails Views
 nextjs:
   metadata:
-    title: Composition Over Hierarchy in Vanilla Rails Views
+    title: Composition-over-Hierarchy in Vanilla Rails Views
     description: Using Only Templates, Partials and PORO Presenters.
 ---
 
@@ -13,6 +13,8 @@ Views in vanilla Rails can easily descend into chaos, but some maintainability c
   1. Pulling presentational details down into partials that `yield`.
 
 This makes your templates **flexible** and your partials **composable**.
+
+This is not a complete solution, but demonstrates that composition-over-hierarchy prevents the maintainability nightmare of fixed hierarchical views.
 {% /callout %}
 
 Growing views must be decomposed to manage cognitive load.
