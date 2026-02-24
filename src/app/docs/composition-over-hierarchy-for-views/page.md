@@ -397,3 +397,5 @@ The full scope of maintaining Rails views is beyond this article.
 The point is that fixed hierarchies push you into the same trap described in [The Dark Side of DRY](/docs/dark-side-of-dry).
 You either fragment what is related, or fuse what is unrelated.
 The backend solution is dependency injection, while the front end solution is `yield`.
+
+This concept applies regardless of your view system. Whether you're using React, Vue, Svelte, or something else, composition is the right approach for views.
