@@ -104,10 +104,7 @@ timesheets/index.html.haml
     └── _row.html.haml
 ```
 
-
-The first problem is that since the partials contain behaviour, you can't ignore them.
-That means future developers must mentally compose all three files to understand the page.
-The second problem is this creates a fixed hierarchy that is hard to adapt to different use cases.
+The problem is this creates a fixed hierarchy that is hard to adapt to different use cases.
 
 ### Chaotic Evolution
 Let's try to reuse the timesheets list to show an employee their timesheets on a new page.
@@ -286,8 +283,7 @@ Now let's rebuild the employee's timesheet view, with:
 That's it. There is almost nothing to do.
 
 Interestingly, we didn't reuse `_timesheet_list` in the employee view.
-That is not surprising, because it contains page concerns — specifically the turbo frame — that would break the employee's edit link.
-Sharing it between pages would only create interlocking constraints.
+If we needed something in that partial, we could reuse it by pushing the turbo frame up to the original template.
 
 {% callout %}
 If you have built views of significant complexity through nesting, it is unlikely that `yield` alone will save the day.
@@ -297,9 +293,9 @@ That composability might be zero for a partial full of code, instance variables,
 {% /callout %}
 
 ### Template-Partial Symbiosis
-If you push page concerns up into templates, partials might be left with only some minimal code to slot plain data into some HTML.
-They essentially become custom HTML elements.
-A partial containing mostly plain HTML and a `yield` has two great properties. You can:
+If you push page concerns up into templates, partials might be left with only minimal code that slots plain data into static HTML.
+Partials like that are essentially custom HTML elements.
+When you add `yield`, you get two great properties. You can:
   1. Put the partial inside anything, and
   1. Put anything inside the partial.
 
@@ -307,9 +303,7 @@ Partials like this make it easy to avoid duplicating blocks of HTML, because you
 Conversely, overloaded partials couple generic HTML to context-specific behaviour. 
 This forces rampant duplication of HTML fragments.
 
-Templates no longer pass data into blobs of imported behaviour.
-Instead, they weave behaviour into a flexible composition of partials.
-
+Once you do this, templates weave behaviour into a composition of partials.
 Consider the example of a card.
 The card below is full of logic and page concerns.
 The partials are not coupled to any of it, or each other, nor do they obscure the behaviour at work.
