@@ -1,0 +1,395 @@
+---
+title: Composition-over-Hierarchy in Vanilla Rails Views
+nextjs:
+  metadata:
+    title: Composition-over-Hierarchy in Vanilla Rails Views
+    description: Using Only Templates, Partials and PORO Presenters.
+---
+
+
+{% callout title="TL;DR" type="note" %}
+Views in vanilla Rails can easily descend into chaos, but some maintainability can be preserved by:
+  1. Pushing behavioural concerns up into templates, and
+  1. Pulling presentational details down into partials that `yield`.
+
+This makes your templates **flexible** and your partials **composable**.
+
+This is not a complete solution, but demonstrates that composition-over-hierarchy prevents the maintainability nightmare of fixed hierarchical views.
+{% /callout %}
+
+Growing views must be decomposed to manage cognitive load.
+However, decomposition does not necessarily improve maintainability.
+Decomposition along the wrong axes creates **fragmentation** and technical debt.
+Rails views need **factorisation** that cuts along the axes that can meaningfully change independently.
+
+## An Example View 
+
+Consider a timesheet index view with approve and decline buttons for managers. 
+
+```haml
+-# app/views/timesheets/index.html.haml
+
+%h1 Timesheets for Review
+
+-# === Iteration logic ===
+%ul.timesheet-list
+  - @timesheets.each do |timesheet|
+    -# === Turbo Frame (page concern) ===
+    = turbo_frame_tag dom_id(timesheet) do
+      %li.timesheet-row
+        .employee-name= timesheet.employee.name
+        .hours= "%.1f hrs" % timesheet.total_hours
+
+        -# === Form (page concern) ===
+        - if timesheet.submitted?
+          = form_with model: timesheet,
+                      url: manager_timesheet_review_path(timesheet),
+                      class: "review-form" do |f|
+            = f.hidden_field :status
+            .actions
+              = f.button "Approve", value: "approved", class: "btn-sm btn-success"
+              = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
+```
+
+## Fragmentation
+
+Let's decompose this page *ontologically*.
+Whatever you can name, extract it into a partial.
+This gives us a list of timesheets.
+
+```haml
+-# app/views/timesheets/index.html.haml
+
+%h1 Timesheets for Review
+
+= render "timesheet_list", timesheets: @timesheets
+```
+
+The timesheet list contains a loop, which is a kind of repetition.
+Extract the loop's body into a `_row` partial.
+
+```haml
+-# app/views/timesheets/_timesheet_list.html.haml
+-# locals: (timesheets:)
+
+%ul.timesheet-list
+  - timesheets.each do |timesheet|
+    = turbo_frame_tag dom_id(timesheet) do
+      = render "row", timesheet: timesheet
+```
+
+```haml
+-# app/views/timesheets/_row.html.haml
+-# locals: (timesheet:)
+
+%li.timesheet-row
+  .employee-name= timesheet.employee.name
+  .hours= "%.1f hrs" % timesheet.total_hours
+
+  - if timesheet.submitted?
+    = form_with model: timesheet,
+                url: manager_timesheet_review_path(timesheet),
+                class: "review-form" do |f|
+      = f.hidden_field :status
+      .actions
+        = f.button "Approve", value: "approved", class: "btn-sm btn-success"
+        = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
+```
+
+This is the final structure.
+
+```
+timesheets/index.html.haml
+└── _timesheet_list.html.haml
+    └── _row.html.haml
+```
+
+The problem is this creates a fixed hierarchy that is hard to adapt to different use cases.
+
+### Chaotic Evolution
+Let's try to reuse the timesheets list to show an employee their timesheets on a new page.
+
+```haml
+-# app/views/dashboard/show.html.haml
+
+%h1 Dashboard
+
+%section.my-timesheets
+  %h2 My Timesheets
+  = render "timesheets/timesheet_list", timesheets: @my_timesheets
+```
+
+When the page loads, we see the approve and reject buttons which are for managers only.
+Now two different pages need to adjust the behaviour of `_row`, which is a hidden implementation detail of `_timesheet_list.html.haml`.
+
+```
+timesheets/index.html.haml (manager view) 
+└── _timesheet_list.html.haml
+    └── _row.html.haml
+
+dashboard/show.html.haml   (employee view)
+└── _timesheet_list.html.haml
+    └── _row.html.haml
+```
+
+The options are all bad at this point.
+We can smuggle data down to `_row` with an instance variable or a page parameter.
+We can also drill an argument through the `_timesheet_list`.
+Given the structure we have, drilling a flag is the least surprising and most portable option.
+
+```haml
+-# app/views/timesheets/_timesheet_list.html.haml
+-# === New flag ===
+-# locals: (timesheets:, show_review_form: true)
+
+%ul.timesheet-list
+  - timesheets.each do |timesheet|
+    = turbo_frame_tag dom_id(timesheet) do
+      -# === Drill the flag ===
+      = render "timesheets/row", timesheet: timesheet, show_review_form: show_review_form
+```
+
+```haml
+-# app/views/timesheets/_row.html.haml
+-# === New flag ===
+-# locals: (timesheet:, show_review_form: true)
+
+...
+
+  -# === Conditional render on flag ===
+  - if show_review_form && timesheet.submitted?
+    = form_with model: timesheet,
+                url: manager_timesheet_review_path(timesheet),
+                class: "review-form" do |f|
+                ...
+```
+
+Now the employee dashboard can hide the buttons by setting the flag.
+
+```haml
+-# app/views/dashboard/show.html.haml
+
+%section.my-timesheets
+  %h2 My Timesheets
+  = render "timesheets/list", 
+           timesheets: @my_timesheets,
+           -# === Adjust _row behaviour from template ===
+           show_review_form: false
+```
+
+That was a lot of work to "reuse" a partial.
+In fact, we couldn't reuse it.
+We had to rework it.
+This is the first sign that the nested partial structure is a liability.
+There is more to come.
+
+Suppose the employee needs to be shown an edit button for the timesheet, but not the manager.
+We either add another flag, or couple the first flag to two use cases.
+Soon we realise that the manager and employee have different workflows.
+The manager approves timesheets in batches on the same page, while the employee navigates away to view their timesheet. 
+When the manager clicks *approve*, turbo updates a frame.
+When the employee clicks *edit*, that breaks.
+The edit page was built separately, without any consideration of the turbo frame in the manager's view.
+
+Again, we have bad options:
+ 1. Escape the turbo frame with a `data-turbo-frame="_top"` attribute on the edit link, or
+ 1. Wrap the edit page in a matching turbo frame, coupling unrelated templates.
+
+This structure puts the developer in the same dilemma again and again:
+  - Either invest a lot of time and effort to restructure, or
+  - Make the situation a bit worse and move on.
+
+Hardcoding nested partials creates technical debt, boxing developers into lose-lose dilemmas.
+
+## Factorisation
+
+The major problem with fragmentation is that templates cannot adjust the behaviour of nested partials.
+We can fix this by making partials `yield` to throw control back to the template.
+
+Let's add `yield` to both `_row` and `_timesheet_list`.
+
+```haml
+-# app/views/timesheets/_row.html.haml
+-# locals: (timesheet:)
+
+%li.timesheet-row{ id: dom_id(timesheet) }
+  .employee-name= timesheet.employee.name
+  .hours= "%.1f hrs" % timesheet.total_hours
+
+  -# Yield instead of hard-coding the accept/reject buttons
+  - if block_given?
+    .actions
+      = yield
+```
+
+```haml
+-# app/views/timesheets/_timesheet_list.html.haml
+-# locals: (timesheets:)
+
+%ul.timesheet-list
+  - timesheets.each do |timesheet|
+    = turbo_frame_tag dom_id(timesheet) do
+      = yield timesheet
+```
+
+### Controlled Evolution
+
+Now we can make the same changes with zero friction.
+The template has full control over what goes inside `_timesheet_list`, including which partials to use.
+There is no hierarchy conflict and therefore no flag drilling.
+
+Let's rebuild the manager's timesheet index view using both partials:
+
+```haml
+-# app/views/timesheets/index.html.haml
+
+%h1 Timesheets for Review
+
+= render "timesheets/timesheet_list", timesheets: @timesheets do |timesheet|
+  = render "timesheets/row", timesheet: timesheet do
+    - if timesheet.submitted?
+      = form_with model: timesheet,
+                  url: manager_timesheet_review_path(timesheet),
+                  class: "review-form" do |f|
+        = f.hidden_field :status
+        .actions
+          = f.button "Approve", value: "approved", class: "btn-sm btn-success"
+          = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
+```
+
+This produces the same view as before, but now:
+  1. The partials are not aware of each other, and
+  2. Their composition can be seen at a glance in the index view.
+
+Now let's rebuild the employee's timesheet view, with:
+  1. No turbo frame, and
+  1. An edit button instead of accept and reject buttons.
+
+```haml
+-# app/views/dashboard/show.html.haml
+
+%h1 Dashboard
+
+%section.my-timesheets
+  %h2 My Timesheets
+
+  %ul.timesheet-list
+    - @my_timesheets.each do |timesheet|
+      = render "timesheets/row", timesheet: timesheet do
+        - if timesheet.draft?
+          = link_to "Edit", edit_timesheet_path(timesheet), class: "btn-sm"
+```
+
+That's it. There is almost nothing to do.
+
+Interestingly, we didn't reuse `_timesheet_list` in the employee view.
+If we needed something in that partial, we could reuse it by pushing the turbo frame up to the original template.
+
+{% callout %}
+If you have built views of significant complexity through nesting, it is unlikely that `yield` alone will save the day.
+Partials are not encapsulated and can easily reach up into their context.
+Having partials `yield` allows you to leverage a partial's composability.
+That composability might be zero for a partial full of code, instance variables, page parameters and forms for example.
+{% /callout %}
+
+### Template-Partial Symbiosis
+If you push page concerns up into templates, partials might be left with only minimal code that slots plain data into static HTML.
+Partials like that are essentially custom HTML elements.
+When you add `yield`, you get two great properties. You can:
+  1. Put the partial inside anything, and
+  1. Put anything inside the partial.
+
+Partials like this make it easy to avoid duplicating blocks of HTML, because you can put them anywhere.
+Conversely, overloaded partials couple generic HTML to context-specific behaviour. 
+This forces rampant duplication of HTML fragments.
+
+Once you do this, templates weave behaviour into a composition of partials.
+Consider the example of a card.
+The card below is full of logic and page concerns.
+The partials are not coupled to any of it, or each other, nor do they obscure the behaviour at work.
+
+```haml
+= render "shared/card" do
+  = turbo_frame_tag "timesheet_#{@timesheet.id}" do
+    = render "shared/card_header" do
+      - if can_edit?(@timesheet)
+        = link_to "Edit", edit_timesheet_path(@timesheet)
+    = render "shared/card_body" do
+      - @timesheet.entries.each do |entry|
+        = render "shared/list_item" do
+          %span= format_work_date(entry.date)
+          - if entry.approved?
+            %span.badge Approved
+```
+
+Others templates can use the partials in a completely different way, without putting any constraints on each other.
+This makes templates flexible, while abstracting HTML declutters the logic.
+
+{% callout %}
+Eventually, it makes sense to create a partial whose only purpose is to fill a `yield` slot.
+These blind partials do not `yield`, making them semi-composable.
+This is like `<br />` or `<img ...>` in HTML.
+Some examples might be: a group of form fields, an icon, or a heading for card.
+Partials like these can be more suited to using locals as named slots for rendered HTML instead of `yield`. 
+{% /callout %}
+
+### Page Concerns
+Here is a quick list of page concerns.
+Always use your judgment, but consider pushing these things up toward templates.
+That will make your templates more flexible and your partials more composable.
+
+| Page Concern | Examples |
+|--------------|---------|
+| instance variables | `@user`, `@timesheets` |
+| page parameters | `params[:id]`, `params[:search]` |
+| iteration logic | `timesheets.each do \|timesheet\|` |
+| conditional rendering | `if timesheet.submitted?` |
+| controller-specific view helper calls | `current_timesheet_period` |
+
+{% callout %}
+Turbo frame IDs must be unique within a page.
+Use `dom_id` or similar dynamic naming to guarantee this.
+A hardcoded frame ID in a partial will cause clashes if the partial is rendered more than once.
+{% /callout %}
+
+{% callout %}
+`data-test-id` attributes support tests, so they belong wherever there is logic to test.
+They serve no purpose on purely presentational partials, which are completely static and always produce the same HTML.
+{% /callout %}
+
+### The Attribute Bag Pattern
+Turbo and Stimulus attach behaviour to elements via HTML attributes.
+If those attributes are hardcoded inside a partial, the partial owns the behaviour and the template cannot change it.
+To cede control of those attributes to the page, accept them as a local and splat them onto the element.
+
+```haml
+-# app/views/shared/_button.html.haml
+-# locals: (text:, attributes: {})
+
+%button{ **attributes }
+  = text
+```
+
+```haml
+= render "shared/button",
+         text: "Approve",
+         attributes: {
+           class: "btn btn--primary",
+           data: { turbo_action: "replace", test_id: "approve-btn" },
+           id: "approve-button"
+         }
+```
+
+Now the template controls which Turbo and Stimulus behaviours are attached, while the partial remains generic and composable.
+
+## Conclusion
+
+Making partials this thin demonstrates maximum composability.
+The trade-off is that the behaviour and structure forced up into templates will quickly become duplicated.
+The full scope of maintaining Rails views is beyond this article.
+
+The point is that fixed hierarchies push you into the same trap described in [The Dark Side of DRY](/docs/dark-side-of-dry).
+You either fragment what is related, or fuse what is unrelated.
+The backend solution is dependency injection, while the front end solution is `yield`.
+
+This concept applies regardless of your view system. Whether you're using React, Vue, Svelte, or something else, composition is the right approach for views.
