@@ -1,0 +1,96 @@
+<svg viewBox="0 0 400 400" width="450px" height="450px" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <defs>
+    <!-- Arrowhead marker -->
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+    </marker>
+
+    <!-- Gradient for the arc -->
+    <linearGradient id="arcGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4285f4;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#34a853;stop-opacity:0.8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" fill="white"/>
+
+  <!-- Grid lines (subtle) -->
+  <g stroke="#e0e0e0" stroke-width="0.5">
+    <line x1="80" y1="100" x2="80" y2="320" />
+    <line x1="130" y1="100" x2="130" y2="320" />
+    <line x1="180" y1="100" x2="180" y2="320" />
+    <line x1="230" y1="100" x2="230" y2="320" />
+    <line x1="280" y1="100" x2="280" y2="320" />
+    <line x1="330" y1="100" x2="330" y2="320" />
+
+    <line x1="80" y1="270" x2="350" y2="270" />
+    <line x1="80" y1="220" x2="350" y2="220" />
+    <line x1="80" y1="170" x2="350" y2="170" />
+    <line x1="80" y1="120" x2="350" y2="120" />
+  </g>
+
+  <!-- X-axis (Conceptual Overhead) -->
+  <line x1="80" y1="320" x2="360" y2="320" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Y-axis (Maintainability) -->
+  <line x1="80" y1="320" x2="80" y2="90" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Axis labels -->
+  <text x="220" y="360" text-anchor="middle" font-size="14" font-weight="500" fill="#333">
+    Conceptual Overhead
+  </text>
+
+  <text x="40" y="200" text-anchor="middle" font-size="14" font-weight="500" fill="#333" transform="rotate(-90 40 200)">
+    Maintainability
+  </text>
+
+  <!-- Origin point - Fragmentation -->
+  <circle cx="80" cy="320" r="6" fill="#dc2626" stroke="#991b1b" stroke-width="2"/>
+  <text x="80" y="345" text-anchor="middle" font-size="13" font-weight="600" fill="#dc2626">
+    Fragmentation
+  </text>
+
+  <!-- Factorization logarithmic curve (showing diminishing returns) -->
+  <path d="M 80 320 Q 140 200, 180 170 T 280 150"
+        stroke="#4285f4"
+        stroke-width="3"
+        stroke-dasharray="8,4"
+        fill="none"
+        opacity="0.8"/>
+
+  <!-- Arrow showing direction along the curve -->
+  <path d="M 270 152 L 280 150 L 275 158"
+        stroke="#4285f4"
+        stroke-width="2.5"
+        fill="none"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+  <!-- Points along the factorization curve -->
+  <circle cx="110" cy="260" r="4" fill="#4285f4" stroke="#1967d2" stroke-width="1.5"/>
+  <circle cx="150" cy="200" r="4" fill="#4285f4" stroke="#1967d2" stroke-width="1.5"/>
+  <circle cx="200" cy="170" r="4" fill="#4285f4" stroke="#1967d2" stroke-width="1.5"/>
+  <circle cx="250" cy="155" r="4" fill="#4285f4" stroke="#1967d2" stroke-width="1.5"/>
+
+  <!-- Text annotation for Factorization -->
+  <text x="170" y="235" text-anchor="middle" font-size="14" font-weight="600" fill="#1967d2">
+    Factorization
+  </text>
+
+  <!-- Annotation showing diminishing returns -->
+  <text x="240" y="135" font-size="10" fill="#666" font-style="italic">
+    Diminishing returns
+  </text>
+
+  <!-- Axis value labels -->
+  <!-- X-axis values -->
+  <text x="80" y="335" text-anchor="middle" font-size="11" fill="#666">0</text>
+  <text x="180" y="335" text-anchor="middle" font-size="11" fill="#666">Med</text>
+  <text x="280" y="335" text-anchor="middle" font-size="11" fill="#666">High</text>
+
+  <!-- Y-axis values -->
+  <text x="70" y="324" text-anchor="end" font-size="11" fill="#666">0</text>
+  <text x="70" y="220" text-anchor="end" font-size="11" fill="#666">Med</text>
+  <text x="70" y="120" text-anchor="end" font-size="11" fill="#666">High</text>
+</svg>

@@ -25,7 +25,10 @@ When an application outgrows this structure, ActionView itself becomes the maint
 This is the motivation for gems like Phlex and ViewComponents.
 {% /callout %}
 
+What does maintainability look like? 
+
 Growing views must be decomposed to manage cognitive load.
+Cognitive load is a maintainability hazard.
 However, decomposition does not necessarily improve maintainability.
 Decomposition along the wrong axes creates **fragmentation** and technical debt.
 Rails views need **factorisation** that cuts along the axes of page behaviour, presentational HTML and data derived from models.
@@ -86,8 +89,10 @@ Consider a timesheet index view with approve and decline buttons for managers.
               = f.button "Reject", value: "rejected", class: "btn-sm btn-danger"
 ```
 
-## Fragmentation
 
+![Maintainability vs Conceptual Overhead diagram showing fragmentation at origin and factorization as a logarithmic curve with diminishing returns](/images/composable-views/maintainability-overhead.svg)
+
+## Fragmentation
 Let's decompose this page *ontologically*.
 Whatever you can name, extract it into a partial.
 This gives us a summary bar and a list of timesheets.
@@ -223,8 +228,7 @@ Now the employee dashboard can hide the buttons by setting the flag.
 ```
 
 That was a lot of work to "reuse" a partial.
-In fact, we couldn't reuse it.
-We had to rework it.
+In fact, we had to rework it.
 This is the first sign that the nested partial structure is a liability.
 There is more to come.
 
@@ -240,11 +244,14 @@ Again, we have bad options:
  1. Escape the turbo frame with a `data-turbo-frame="_top"` attribute on the edit link, or
  1. Wrap the edit page in a matching turbo frame, coupling unrelated templates.
 
-This structure puts the developer in the same dilemma again and again:
+This structure puts the developer in the same dilemma repeatedly:
   - Either invest a lot of time and effort to restructure, or
   - Make the situation a bit worse and move on.
 
-Hardcoding nested partials creates technical debt, boxing developers into lose-lose dilemmas.
+Hardcoding nested partials creates fixed hierarchies that are hard to adapt to different use cases.
+This forces you to continuously parameterise and expand the views.
+The result is complex shadow hierarchies where each node performs many functions.
+This is technical debt.
 
 ![Factorization approach](/images/composable-views/factorization-approach.svg)
 
@@ -337,31 +344,20 @@ Now let's rebuild the employee's timesheet view, with:
 
 That's it. There is almost nothing to do.
 
-Interestingly, we didn't reuse `_timesheet_list` in the employee view.
-That is not surprising, because it contains nothing but page concerns.
-Sharing it between pages would only create interlocking constraints.
-We can inline the content of `_timesheet_list` into the manager's view.
-
 {% callout %}
-If you have built views of significant complexity through nesting, it is unlikely that `yield` alone will save the day.
-Partials are not encapsulated and can easily reach up into their context.
-Having partials `yield` allows you to leverage a partial's composability.
-That composability might be zero for a partial full of code, instance variables, page parameters and forms for example.
+Nested views will not automatically compose because you `yield`.
+Rather, `yield` allows you to leverage the *composability* of partials.
+Views built with nesting are likely to have very low composability, because partials offer no encapsulation.
 {% /callout %}
 
 ### Template-Partial Symbiosis
-If you push page concerns up into templates, partials might be left with only some minimal code to slot plain data into some HTML.
-They essentially become custom HTML elements.
-A partial containing mostly plain HTML and a `yield` has two great properties. You can:
+We have demonstrated a huge difference in maintainability, but it does rest completely on the *composability* of partials.
+How far can we push that?
+
+The limit is to push everything but HTML (and perhaps some plain data) up into templates. This essentially turns partials into custom HTML elements.
+Partials like this have two great properties. You can:
   1. Put the partial inside anything, and
   1. Put anything inside the partial.
-
-Partials like this make it easy to avoid duplicating blocks of HTML, because you can put them anywhere.
-Conversely, overloaded partials couple generic HTML to context-specific behaviour. 
-This forces rampant duplication of HTML fragments.
-
-Templates no longer pass data into blobs of imported behaviour.
-Instead, they weave behaviour into a flexible composition of partials.
 
 Consider the example of a card.
 The card below is full of logic and page concerns.
@@ -381,8 +377,8 @@ The partials are not coupled to any of it, or each other, nor do they obscure th
             %span.badge Approved
 ```
 
-Others templates can use the partials in a completely different way, without putting any constraints on each other.
-This makes templates flexible, while abstracting HTML declutters the logic.
+Others templates can use the partials in a completely different way, with zero coordination.
+This makes templates flexible and declutters their logic.
 
 {% callout %}
 Eventually, it makes sense to create a partial whose only purpose is to fill a `yield` slot.
@@ -393,9 +389,7 @@ Partials like these can be more suited to using locals as named slots for render
 {% /callout %}
 
 ### Page Concerns
-Here is a quick list of page concerns.
-Always use your judgment, but consider pushing these things up toward templates.
-That will make your templates more flexible and your partials more composable.
+If we are really strict about maintaining maximum portability in our partials, here are the things we would push up into templates. 
 
 | Page Concern | Examples |
 |--------------|---------|
