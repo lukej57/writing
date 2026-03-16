@@ -12,5 +12,5 @@ That's because I value clarity, and fundamentals **illuminate** while technologi
 Clarity comes from articulating precise abstractions.
 Abstraction creates emphasis, but risks vagueness.
 Thinking deeply through examples retains precision.
-Then communicating intergrates your learning into something that is both general and specific. 
+Then communicating intergrates what you learned. 
 The result is clarity. 
