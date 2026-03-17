@@ -15,7 +15,7 @@ Ruby projects using Sorbet will almost certainly be using `T::Struct` which, acc
 
 > … behave similarly to the Struct class built into Ruby, but work better with static and runtime type checking.
 
-My aim here is to deep dive into that definition and then discuss how best to use `T::Struct`.
+My aim here is to dive deep into that definition and then discuss how best to use `T::Struct`.
 
 ## Why Do We Need Structs?
 
