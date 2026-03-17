@@ -6,12 +6,12 @@ nextjs:
     description: About Luke Jeremy and this site.
 ---
 
-I have broad experience in software engineer, but I am concerned more with fundamental principles than technologies.
+I have broad experience in software engineering, but I am concerned more with fundamental principles than technologies.
 That's because I value clarity, and fundamentals **illuminate** while technologies **complicate**.
 
 Clarity comes from articulating precise abstractions.
 Abstraction creates emphasis, but risks vagueness.
 Thinking deeply through examples retains precision.
-Communicating intergrates what you learned. 
+Communicating intergrates what you have learned. 
 The result is clarity.
 
