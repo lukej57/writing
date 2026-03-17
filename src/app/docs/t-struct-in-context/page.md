@@ -106,7 +106,7 @@ We would surely use `T::Array[Point3d]` and `T::Hash[Symbol, Point3d]`, but we w
 ### The Need for Data Classes
 
 Let’s try this approach with the more complicated example of a configuration object for a hypothetical email client.
-We have many properties, with a variety of types and some have default values.
+We have many properties, with a variety of types and some with default values.
 
 ```ruby
 class EmailConfig
