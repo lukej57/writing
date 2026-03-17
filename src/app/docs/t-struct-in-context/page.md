@@ -517,7 +517,7 @@ my_struct.cache["key"] = "value"
 ```
 
 There are two separate programs at play: `sorbet-runtime` and `sorbet`.
-The runtime is what actually runs in your code, while sorbet statically checks a model of the code.
+The runtime is what actually runs your code, while sorbet statically checks a model of the code.
 The static analyser:
 
  1. Already understands `private`, and
