@@ -34,7 +34,11 @@ I think it's reasonable to include a good summary of the background and general 
 
 And then we'll move toward the end of the paper, where we see modules or mixins used as traits versus mixins used for absolutely everything. We should probably discuss concerns about the kind of Rails-specific manifestation of mixins and why they should be small, atomic, composable, etc.
 
-Some other examples are controllers with similar functionality. Unless the controllers are truly different in their domain, they could probably share a base controller, rather than using mixins to deduplicate their internals. Mixins should add some sort of out-of-band capability to a controller. If the controllers can be siblings under a base class, we should reach for that before using mixins, unless it truly does add a non-specific capability to that controller. 
+Some other examples are controllers with similar functionality. Unless the controllers are truly different in their domain, they could probably share a base controller, rather than using mixins to deduplicate their internals. Mixins should add some sort of out-of-band capability to a controller. If the controllers can be siblings under a base class, we should reach for that before using mixins, unless it truly does add a non-specific capability to that controller.
+
+On the other hand, concerns have one genuinely interesting role: co-locating and grouping together the many different kinds of Rails declarations — associations, validations, scopes, API methods, callbacks — that together implement a single capability of a Rails class. Normally those declarations are scattered by kind across a model; a concern lets them be grouped by capability instead. That is probably where concerns make sense.
+
+The reason this needs concerns specifically is that those declarations are class-level Rails machinery. If you didn't have concerns and wanted to add a capability to a model that leveraged a lot of that machinery, you'd be stuck: a plain module can hold pure methods, but the associations, validations, and scopes just couldn't be extracted into it. The `included do` block is what makes the extraction possible at all. So concerns do make sense in Rails — but they can be overused just like any module, and they have all the same shortcomings (no encapsulation, full access to host state, still inheritance).
 
 ## Shape
 
@@ -49,7 +53,9 @@ Roughly the order to build toward:
    - a mixin *only* when it is a trait: API plus partial implementation needing the host's internal state.
 4. `Enumerable` / `Comparable` as the canonical traits.
 5. Good and bad examples with the reasoning made explicit.
-6. Rails-specific manifestation: concerns, why small/atomic/composable, what state discipline buys you.
+6. Rails-specific manifestation: concerns, why small/atomic/composable, what state discipline buys you;
+   the legitimate case for concerns — grouping associations, validations, scopes, etc. by capability
+   rather than by kind.
 
 ## Reference material
 
