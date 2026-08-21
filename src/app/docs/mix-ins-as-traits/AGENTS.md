@@ -4,6 +4,7 @@
 
 - `page.md` — the article itself. This is the only file that becomes a route (`/docs/mix-ins-as-traits`).
 - `AGENTS.md` — this file. The brief, and instructions for anyone (human or agent) working on the draft.
+- `PREVIEW.md` — chapter preview: the argument, three parts, locked decisions, what's next. Start here after a break.
 - `reference/` — the source papers. Never published; not referenced by the build.
 - `examples/` — code resources for the story (naïve → concern soup → equation). Not published. Start with `examples/PLAN.md`.
 
