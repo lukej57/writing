@@ -41,6 +41,7 @@ Send the rest home so the include list can be a capability list.
 
 Test: `Thing.new(host).call` → never a trait.
 Child only fills gaps in a hefty parent → never a mixin (deep and thin → SI).
+As that family grows, the parent should be a template with slots, not a moving target.
 Needs `each`, provides `map` → trait (wide and shallow).
 Empty parent / one-method "Base" → shallow base class: you wanted a trait.
 Fat concern / settings-provider-as-module → deep trait: you wanted a base class or a collaborator.

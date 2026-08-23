@@ -51,6 +51,7 @@ This article assumes those and does: ownership of the equation, the Ruby diction
 - ActiveModel is concern-shaped machinery on a class you own (validations, naming, `form_with`); it does not spend SI. AR macros stay on AR.
 - What concerns are for: adding a capability to a model so PORO collaborators can depend on that role. `included do` is the Rails means. Not the operation, and not included into the PORO.
 - SI is deep and thin; traits are wide and shallow. Pathologies: shallow base class, deep trait. Buys/pitfalls of those four are a stub — return to them.
+- As an SI family grows, the parent tends toward a template with slots; children fill blanks and vary less from the base. That keeps FBC in check. Stub — return to this.
 - Story for the prose: naïve Invoice/Estimate → concern soup → equation. Build soup first.
 
 ## Still to write

@@ -122,7 +122,7 @@ See [The One Job of a Concern](/docs/one-job-of-a-concern).
 
 ### Roles of the tools (thesis)
 
-- **Single inheritance:** variations *within a role* — **deep and thin**. A hefty parent; children fill gaps. Hierarchy depth one; travels one family, one use case (settings providers into applicable checks). Fragile base class if you stack parents. Rust absorbs this job into the trait system via typeclasses. Ruby already has it as `< Parent`, so modules should not.
+- **Single inheritance:** variations *within a role* — **deep and thin**. A hefty parent; children fill gaps. Hierarchy depth one; travels one family, one use case (settings providers into applicable checks). As P grows, the parent becomes a template with slots — children fill blanks, they do not rewrite the base; that keeps FBC in check. Fragile if you stack parents. Rust absorbs this job into the trait system via typeclasses. Ruby already has it as `< Parent`, so modules should not.
 - **Traits (emulated):** orthogonal *capabilities* — **wide and shallow**. `Enumerable`, `Comparable`: generic, pure, tiny required surface. This is the job Ruby modules are for — because the SI slot is filled, and you may want several capabilities that all need internals.
 - **DI / collaborators:** *between* objects, once a piece of behaviour wants its own identity, state, and boundary. Complements **both** SI and mixins, not a third option that replaces them.
 - **Multiple inheritance:** same problem space; Ruby does not offer it; historical attempt, not a destination.
