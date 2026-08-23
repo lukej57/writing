@@ -11,6 +11,7 @@ How far a composition mechanism scales is inverse to the coupling it installs.
 Fan-out is only the number of partners — it is not the degree.
 Load is roughly directions × partners × surface.
 That is why dependency injection plus small public APIs scales furthest, and mixin inheritance scales least.
+DI is not a third replacement for SI or mixins: it is the boundary; they are how you produce the injectables.
 {% /callout %}
 
 Related: [A Taxonomy of Reuse](/docs/taxonomy-of-reuse), [The Dark Side of DRY](/docs/dark-side-of-dry), [Mix-Ins as Traits](/docs/mix-ins-as-traits).
@@ -75,6 +76,48 @@ This is not a ladder you climb and never return to.
 Pick the *least* coupling that still fits the job.
 Mixins look more compositional than SI and rank *below* it because they spend the boundary *and* multiply the children.
 DI is not always better; it pays once sharing an implementation has become the problem.
+
+## DI is complementary to both SI and mixins
+
+Injection is the *boundary*: the client talks to a published role (`#call`, `#each`, `#notify`) and does not know the provider.
+That is how D drops to 1.
+It does not replace SI or mixins.
+It *uses* them.
+The thing you inject is still built with whichever intra-object mechanism fits.
+
+```
+Host  --depends on role interface-->  collaborator
+                                      SI family: variations of one role
+                                   or mixin/trait: a capability many types can wear
+                                   or a PORO that happens to respond
+```
+
+Variations within a role can be injected.
+So can objects that acquired a capability via a mixin.
+Both supply a minimum interface the host can depend on.
+They bring different strengths — not to the injection (DI already did that), but to *producing* injectables.
+
+| | SI family as collaborator | Mixin / trait as the role |
+|---|---|---|
+| What the host depends on | Parent role, kept small (`#notify`) | Required / provided surface (`#each`) |
+| What is easy | New *variant* of that role (inherit a substantial base) | New *kind of object* in that role (include the capability) |
+| What is hard | Admitting an unrelated class (wrong parent) | Sharing a large "what this role *is*" without a parent (you will fatten S) |
+
+SI does not make injection easier.
+It makes **writing a family of injectables** cheaper when they are the same role with a large shared body (`EmailNotifier` / `SlackNotifier` under `Notifier`).
+Mixins do not "bring in any variety of classes."
+They let **many varieties of class become the collaborator** — unrelated types that can grow `#each` or `#<=>` without being siblings.
+
+The story recurs on the far side of the boundary.
+A collaborator may itself be an SI family, wear mixins, and inject *its* collaborators.
+That is why DI sits at the top of the ranking *and* is complementary to both.
+
+Depend on a role.
+Use SI when the providers are *the same kind of thing* and share a body.
+Use a mixin or trait when the providers are *different kinds of thing* that share a capability.
+Inject either.
+Do not `include` either into the host unless the host itself needs that capability in its own internals.
+`Thing.new(host).call` is never a trait on the host — it is a collaborator, which may *internally* be SI- or mixin-shaped.
 
 ## Public interfaces are how DI earns that rank
 
