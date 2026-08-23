@@ -3,11 +3,19 @@ import * as url from 'url'
 
 const require = createRequire(import.meta.url)
 const loaderPath = require.resolve('./search-loader.cjs')
+const pageLoaderPath = require.resolve('./page-loader.cjs')
 const searchModulePath = url.fileURLToPath(import.meta.url)
 
 export default function withSearch(nextConfig = {}) {
   const searchLoader = {
     loader: loaderPath,
+  }
+  const pageLoader = {
+    loader: pageLoaderPath,
+    options: {
+      dir: process.cwd(),
+      schemaPath: './src/markdoc',
+    },
   }
 
   return Object.assign({}, nextConfig, {
@@ -15,6 +23,17 @@ export default function withSearch(nextConfig = {}) {
       ...nextConfig.turbopack,
       rules: {
         ...nextConfig.turbopack?.rules,
+        // Replace @markdoc/next.js's Turbopack .md rule. That loader uses
+        // webpack's this.getResolve(), which Turbopack does not implement, so
+        // custom tags/nodes (quick-links, callouts, Fence) never load.
+        '*.md': {
+          loaders: [pageLoader],
+          as: '*.js',
+        },
+        '*.mdoc': {
+          loaders: [pageLoader],
+          as: '*.js',
+        },
         // Only this module is rewritten into the FlexSearch index. next.config
         // still imports the real withSearch() export via Node, not Turbopack.
         '**/search.mjs': {
