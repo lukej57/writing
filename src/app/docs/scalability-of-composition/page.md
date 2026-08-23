@@ -12,6 +12,7 @@ Fan-out is only the number of partners — it is not the degree.
 Load is roughly directions × partners × surface.
 That is why dependency injection plus small public APIs scales furthest, and mixin inheritance scales least.
 DI is not a third replacement for SI or mixins: it is the boundary; they are how you produce the injectables.
+Base classes are deep and thin; traits are wide and shallow — the swap is the pathology.
 {% /callout %}
 
 Related: [A Taxonomy of Reuse](/docs/taxonomy-of-reuse), [The Dark Side of DRY](/docs/dark-side-of-dry), [Mix-Ins as Traits](/docs/mix-ins-as-traits).
@@ -52,9 +53,9 @@ This table is only how expensive the relationship is once you have chosen it.
 
 | | P | S | D | Load |
 |---|---|---|---|---|
-| 10 classes include a 40-method concern | 10 | ~40 + host internals | 2 | huge |
-| 10 subclasses of one base controller | 10 | \|parent\| | 2 | large, but one role |
-| 10 classes include `Enumerable` | 10 | 1 (`each`) | 2 | 20 |
+| 10 classes include a 40-method concern | 10 | ~40 + host internals | 2 | huge — **deep trait** |
+| 10 subclasses of one hefty settings provider | 10 | \|parent\| | 2 | large, but one role — **deep and thin** |
+| 10 classes include `Enumerable` | 10 | 1 (`each`) | 2 | 20 — **wide and shallow** |
 | 10 callers of a one-method command | 10 | 1 (`call`) | 1 | 10 |
 
 P=10 is identical; S and D are not.
@@ -66,10 +67,10 @@ A 40-method service object is `N · 40` — still a lot of coupling, just unidir
 
 | | Technique | Scales to | Breaks when |
 |---|---|---|---|
-| least | Mixin inheritance | a small capability on a few hosts | many includes, or many methods per mixin |
+| least | Mixin inheritance | a small capability on a few hosts | many includes, or a **deep trait** (many methods per mixin) |
 | | Multiple inheritance | almost never worth it | diamond, named parents, state copied twice |
-| | Single inheritance | one level of role variation | the hierarchy deepens, or the parent becomes a junk drawer |
-| | Traits | orthogonal capabilities on a class | the required API grows; mixins pretending to be traits |
+| | Single inheritance | one level of role variation — deep body, thin travel | the hierarchy deepens, or a **shallow base class** (empty parent, or a capability in the SI slot) |
+| | Traits | orthogonal capabilities on a class — wide and shallow | the required API grows; mixins pretending to be traits |
 | most | Object composition (DI) | a system | the interface fattens into a god collaborator |
 
 This is not a ladder you climb and never return to.
@@ -104,7 +105,8 @@ They bring different strengths — not to the injection (DI already did that), b
 | What is hard | Admitting an unrelated class (wrong parent) | Sharing a large "what this role *is*" without a parent (you will fatten S) |
 
 SI does not make injection easier.
-It makes **writing a family of injectables** cheaper when they are the same role with a large shared body (`EmailNotifier` / `SlackNotifier` under `Notifier`).
+It makes **writing a family of injectables** cheaper when they are the same role with a large shared body — settings providers injected into applicable checks; `EmailNotifier` / `SlackNotifier` under `Notifier`.
+That is deep and thin: a hefty parent, one use case.
 Mixins do not "bring in any variety of classes."
 They let **many varieties of class become the collaborator** — unrelated types that can grow `#each` or `#<=>` without being siblings.
 

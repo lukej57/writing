@@ -10,6 +10,8 @@ nextjs:
 `include` is mixin inheritance, not composition-over-inheritance.
 SI + traits is the fundamental pair — the papers put Superclass in the equation; Rust still does both jobs inside one construct.
 Ruby already has SI, so modules should do the trait job: small capabilities, host owns state and glue.
+Base classes are deep and thin (a hefty settings-provider family); traits are wide and shallow (`Enumerable`).
+The pathologies are the swap: a shallow base class, a deep trait.
 Collaborators when reuse outgrows a single host.
 Rails occupies the SI slot on models, views, and controllers — if every piece of logic stays there, `include` is the only reuse operator left.
 Pull work into objects you own so inheritance is free again.
@@ -120,8 +122,8 @@ See [The One Job of a Concern](/docs/one-job-of-a-concern).
 
 ### Roles of the tools (thesis)
 
-- **Single inheritance:** variations *within a role* — shallow behavioural templating; child fills gaps / overrides hooks. Fragile base class → prefer depth one. Rust absorbs this job into the trait system via typeclasses. Ruby already has it as `< Parent`, so modules should not.
-- **Traits (emulated):** orthogonal *capabilities* added to a host that owns state and glue. This is the job Ruby modules are for — because the SI slot is filled.
+- **Single inheritance:** variations *within a role* — **deep and thin**. A hefty parent; children fill gaps. Hierarchy depth one; travels one family, one use case (settings providers into applicable checks). Fragile base class if you stack parents. Rust absorbs this job into the trait system via typeclasses. Ruby already has it as `< Parent`, so modules should not.
+- **Traits (emulated):** orthogonal *capabilities* — **wide and shallow**. `Enumerable`, `Comparable`: generic, pure, tiny required surface. This is the job Ruby modules are for — because the SI slot is filled, and you may want several capabilities that all need internals.
 - **DI / collaborators:** *between* objects, once a piece of behaviour wants its own identity, state, and boundary. Complements **both** SI and mixins, not a third option that replaces them.
 - **Multiple inheritance:** same problem space; Ruby does not offer it; historical attempt, not a destination.
 
@@ -136,6 +138,7 @@ SI does not make injection easier — DI already did that — it makes writing t
 Mixins do not get injected; objects that *have* the mixin do.
 
 See [Scalability of Composition](/docs/scalability-of-composition) for the table.
+See [A Taxonomy of Reuse](/docs/taxonomy-of-reuse) for deep-and-thin vs wide-and-shallow (buys / pitfalls still a stub).
 
 DI is not always the better option.
 It is what you reach for when inheritance has hit its scale limit.

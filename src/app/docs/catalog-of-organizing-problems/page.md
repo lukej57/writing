@@ -40,8 +40,10 @@ Send the rest home so the include list can be a capability list.
 | Orthogonal capability that needs host internals (`Enumerable` / `Comparable` shape) | Mixin as trait; host owns state + glue | **yes — this is the job** |
 
 Test: `Thing.new(host).call` → never a trait.
-Child only fills gaps in a parent → never a mixin.
-Needs `each`, provides `map` → trait.
+Child only fills gaps in a hefty parent → never a mixin (deep and thin → SI).
+Needs `each`, provides `map` → trait (wide and shallow).
+Empty parent / one-method "Base" → shallow base class: you wanted a trait.
+Fat concern / settings-provider-as-module → deep trait: you wanted a base class or a collaborator.
 
 ## Escalation (same catalog, as a ladder)
 
