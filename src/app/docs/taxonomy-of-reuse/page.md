@@ -80,6 +80,9 @@ Fragile base class if you go deep.
 Retained job: *variation within a role* — a hefty parent as behavioural template; children fill gaps.
 Hierarchy depth one; the reused body can be deep.
 Travels thinly: one family, one use case.
+As the number of children grows, the parent should tend toward a **template with slots**: the algorithm stays in the base, children only fill the blanks.
+Less ad-hoc variation from the parent — not the parent growing new "real" behaviour, and not children rewriting it.
+That is how the fragile base class stays in check while P grows.
 
 **Multiple inheritance.**
 Decomposition: sibling sharing, yes; generic wrappers, no (`super` / `A::read` bound to a named parent).
@@ -126,6 +129,7 @@ Settings providers injected into applicable checks: variations on the original h
 A lot of code is reused; it does not travel.
 A new check gets a new variant of the same role, not a new kind of object.
 That family is a collaborator — DI already did the boundary; SI makes the variants cheap.
+As more variants appear, the original should crystallize into slots the children fill — not a parent that keeps changing "real" behaviour for each new sibling.
 Putting that body in a mixin would be a deep trait: wide fan-out of something that is not generic, with worse ownership.
 
 **Wide and shallow.**

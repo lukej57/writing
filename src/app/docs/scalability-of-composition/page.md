@@ -69,7 +69,7 @@ A 40-method service object is `N · 40` — still a lot of coupling, just unidir
 |---|---|---|---|
 | least | Mixin inheritance | a small capability on a few hosts | many includes, or a **deep trait** (many methods per mixin) |
 | | Multiple inheritance | almost never worth it | diamond, named parents, state copied twice |
-| | Single inheritance | one level of role variation — deep body, thin travel | the hierarchy deepens, or a **shallow base class** (empty parent, or a capability in the SI slot) |
+| | Single inheritance | one level of role variation — deep body, thin travel; as P grows, a template with slots | the hierarchy deepens; children rewrite the parent; the parent keeps growing "real" behaviour; or a **shallow base class** |
 | | Traits | orthogonal capabilities on a class — wide and shallow | the required API grows; mixins pretending to be traits |
 | most | Object composition (DI) | a system | the interface fattens into a god collaborator |
 
