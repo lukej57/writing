@@ -43,6 +43,7 @@ This article assumes those and does: ownership of the equation, the Ruby diction
 - Composite traits only if subtraits are an implementation detail of a real capability.
 - DI is not the winner of every row; pick the least coupling that still fits.
 - DI complements **both** SI and mixins: it is the boundary; they are how you *produce* injectables (SI family vs capability on many types).
+- Rust looks traits-only; the typeclass / `impl Trait for T` half is the SI analogue (variation within a role; coherence as one parent). Last column stays traits+SI. Not a language axis.
 - Story for the prose: naïve Invoice/Estimate → concern soup → equation. Build soup first.
 
 ## Still to write

@@ -59,6 +59,11 @@ Together they tick the matrix.
 Mixins get decomposition (that is why they exist) and then fail composition.
 MI gets sibling sharing and then loses the diamond, wrappers, and named-parent fragility.
 
+Rust looks like a counterexample — a proper trait system as the *only* reuse mechanism, no superclass.
+It is not.
+The typeclass half of that system (`impl Trait for Type`, default methods, one impl per trait per type) is the SI job without a parent class.
+See [Rust looks traits-only](#rust-looks-traits-only).
+
 ## The techniques
 
 **Single inheritance.**
@@ -89,6 +94,7 @@ Flattening: composition is structure, not a second semantics.
 No state diamond; method diamond is a conflict marker; glue in the composer; aliases instead of named parents; new methods surface as conflicts at the direct client.
 Superclass is not leftover: traits do not replace deriving a class from a parent.
 They replace using the parent (or a mixin chain) as the unit of fine-grained reuse.
+A language can hide the parent inside a typeclass (`impl Trait for Type`) and still be doing this job — that is Rust, not a traits-only column.
 
 Worked example of the shape (one required method, large provided API): paper `TMagnitude`; Ruby `Comparable` / `Enumerable`; Rust `Ord` / `Iterator`.
 Language snippets illustrate the *solution*, not a second axis.
@@ -101,6 +107,32 @@ Under the table, not as columns:
 - Multiple inheritance — C++, Eiffel, Python, CLOS. Ruby does not have it; cover as a solution that was tried, not as a destination.
 - Mixin inheritance — Strongtalk, Jam, C++ mixins-via-templates, Ruby `include` / `prepend`. Scala's "traits" belong here (linearisation), despite the name.
 - Traits + single inheritance — Squeak 3.9 / Pharo (the paper's implementation). Rust borrowed provided/required methods and unordered composition, then fused them with Haskell typeclasses. Use Rust where a snippet helps; do not add a language axis. Pharo later allowed slots on traits — a retreat from "no state"; not the model.
+
+## Rust looks traits-only
+
+Rust has no class inheritance and no mixins.
+For the problems in this matrix, a proper trait system is the only reuse mechanism the language needs.
+That looks like the last column dropping SI.
+
+It does not.
+Rust fused paper traits with Haskell typeclasses.
+A typeclass is "this type is a member of this role."
+That is *variation within a role* — the job we still want SI for — without a superclass.
+
+| Paper / SI | Rust typeclass analogue |
+|---|---|
+| Abstract parent as template | Trait with default methods (`Iterator`, `Ord`) |
+| Child fills the gaps | `impl Trait for T` supplies the required methods |
+| One parent for that role | Coherence: one impl per trait per type |
+| Superclass owns state; subclass is glue | The type owns fields; the `impl` is glue |
+
+The paper-trait half is still there: a type wears many traits, composition is unordered, required methods are the contract, no fields on the trait.
+The typeclass half is why that can be the *only* reuse construct: `impl Trait for T` *is* the shallow parent.
+One mechanism; both jobs.
+The last column stays **traits + SI** even when a language never grew a superclass.
+
+Do not add a Rust column.
+Snippets (`Ord` / `Iterator`) illustrate the *shape*, including this fusion.
 
 ## Caveats (prose, not cells)
 

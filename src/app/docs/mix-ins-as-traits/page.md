@@ -54,6 +54,12 @@ Ruby has neither uniqueness of assignment nor conflict markers.
 Matz considered `Module#mix` (error on name clash) and shipped `prepend` instead.
 He has said that if he had known about traits when designing Ruby, he would have chosen them over modules.
 
+Rust's coherence is also a hint about the SI job.
+One impl per trait per type is "one parent for this role."
+That is why Rust can look like traits-only reuse: the typeclass half of the fusion (`impl Trait for Type`, default methods) *is* the shallow parent.
+Ruby still needs a real superclass for variation within a role, because a module is not a typeclass.
+See [A Taxonomy of Reuse](/docs/taxonomy-of-reuse).
+
 The mitigation is surface area: few mixins per class, few methods per mixin, and other rungs of the [catalog](/docs/catalog-of-organizing-problems) for internal reuse.
 The paper's own Smalltalk advice is in the same spirit: design traits around abstractions, not reuse; avoid too-fine-grained traits; prefer classes, use traits to resolve design conflicts.
 
@@ -92,7 +98,7 @@ See [The One Job of a Concern](/docs/one-job-of-a-concern).
 
 ### Roles of the tools (thesis)
 
-- **Single inheritance:** variations *within a role* — shallow behavioural templating; child fills gaps / overrides hooks. Fragile base class → prefer depth one.
+- **Single inheritance:** variations *within a role* — shallow behavioural templating; child fills gaps / overrides hooks. Fragile base class → prefer depth one. Rust absorbs this job into the trait system via typeclasses; Ruby does not.
 - **Traits (emulated):** orthogonal *capabilities* added to a host that owns state and glue.
 - **DI / collaborators:** *between* objects, once a piece of behaviour wants its own identity, state, and boundary. Complements **both** SI and mixins, not a third option that replaces them.
 - **Multiple inheritance:** same problem space; Ruby does not offer it; historical attempt, not a destination.
