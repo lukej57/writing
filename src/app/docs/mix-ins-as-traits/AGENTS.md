@@ -42,22 +42,35 @@ On the other hand, concerns have one genuinely interesting role: co-locating and
 
 The reason this needs concerns specifically is that those declarations are class-level Rails machinery. If you didn't have concerns and wanted to add a capability to a model that leveraged a lot of that machinery, you'd be stuck: a plain module can hold pure methods, but the associations, validations, and scopes just couldn't be extracted into it. The `included do` block is what makes the extraction possible at all. So concerns do make sense in Rails — but they can be overused just like any module, and they have all the same shortcomings (no encapsulation, full access to host state, still inheritance).
 
+## Split (23 Aug 2026)
+
+The long outline was too much for one article.
+Axioms are now separate drafts; this folder is the synthesis.
+
+| Draft | Path |
+|---|---|
+| A Taxonomy of Reuse | `src/app/docs/taxonomy-of-reuse/page.md` |
+| Scalability of Composition | `src/app/docs/scalability-of-composition/page.md` |
+| A Catalog of Organising Problems | `src/app/docs/catalog-of-organizing-problems/page.md` |
+| Include Is Not Composition | `src/app/docs/include-is-not-composition/page.md` |
+| The One Job of a Concern | `src/app/docs/one-job-of-a-concern/page.md` |
+| Mix-Ins as Traits (this article) | `page.md` |
+
+Write the axioms first.
+This article assumes them and does ownership, the Ruby dictionary, mixin-as-trait discipline, and the Invoice/Estimate story.
+
+Do not re-derive the paper matrix, the `D × P × S` tables, or the fourteen-row catalog here — link.
+
 ## Shape
 
 Roughly the order to build toward:
 
 1. The problem: everything is a concern; God classes by accumulation.
-2. Background from the papers: why single, multiple, and mixin inheritance each fail; what a trait is.
-3. The ladder down into Ruby/Rails — the escalation:
-   - pure functions in a namespace module (`module_function`), called directly;
-   - a class when those functions cluster around a shared argument (it goes in the constructor);
-   - the "vanilla Rails" facade — model delegates to a collaborator, dependencies via constructor;
-   - a mixin *only* when it is a trait: API plus partial implementation needing the host's internal state.
+2. Point at the axioms (taxonomy, coupling, catalog, category error).
+3. The equation as an *ownership* rule; mixin-as-trait discipline.
 4. `Enumerable` / `Comparable` as the canonical traits.
-5. Good and bad examples with the reasoning made explicit.
-6. Rails-specific manifestation: concerns, why small/atomic/composable, what state discipline buys you;
-   the legitimate case for concerns — grouping associations, validations, scopes, etc. by capability
-   rather than by kind.
+5. The story (naïve → soup → equation) applying the catalog.
+6. Rails leftover: point at *The One Job of a Concern*.
 
 ## Reference material
 
