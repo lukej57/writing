@@ -7,7 +7,11 @@ nextjs:
 ---
 
 {% callout title="TL;DR" type="note" %}
-TODO — `include` is mixin inheritance, not composition-over-inheritance. Use mixins as traits (capabilities); SI for shallow role variation; collaborators when reuse outgrows a single host. Rails concerns earn their keep when grouping capability-shaped declarations.
+`include` is mixin inheritance, not composition-over-inheritance.
+SI + traits is the fundamental pair — the papers put Superclass in the equation; Rust still does both jobs inside one construct.
+Ruby already has SI, so modules should do the trait job: small capabilities, host owns state and glue.
+Collaborators when reuse outgrows a single host.
+Rails concerns earn their keep when grouping capability-shaped declarations.
 {% /callout %}
 
 This article is the synthesis.
@@ -38,14 +42,28 @@ Send those home and the include list becomes a short capability list — which i
 
 `Class = Superclass + State + Traits + Glue` (ECOOP §3.3).
 SI and traits complement each other inside a class ([taxonomy](/docs/taxonomy-of-reuse)).
+That pair is **fundamental**, not a Smalltalk accident.
 Object composition (DI) complements *that* pair once reuse needs a public API.
 None of them is always better.
+
+**The pair is fundamental — so Ruby modules should be traits.**
+The papers put Superclass in the equation on purpose: traits do not replace deriving a class from a parent.
+Rust looks like it dropped the parent; the typeclass half (`impl Trait for Type`, default methods, coherence) is still doing the SI job ([taxonomy](/docs/taxonomy-of-reuse)).
+One mechanism; both jobs.
+That is further evidence the pair is required.
+
+Ruby already has the parent.
+Using modules as a second inheritance system — `include DocumentBehaviour` instead of `< Document`, or a folder for every DRY — is doing the SI job twice, badly.
+The module slot is the *trait* slot.
+Use it for orthogonal capabilities.
+Leave role variation to the superclass we already have.
 
 **Smalltalk → Ruby.**
 Traits were designed in Squeak.
 Ruby sits in that lineage: single inheritance plus mixin modules.
 The paper's critique of mixin inheritance is a direct critique of the composition model Ruby shipped with.
 The lead-in is not "Ruby secretly has traits"; it is "Smalltalk researchers diagnosed the reuse problem Ruby inherited, and proposed traits as the fix — we can approximate that discipline with modules."
+We *should* approximate it, because the SI half of the pair is already in the language.
 
 **Coherence does not transfer.**
 Do not conflate Rust's "one impl of a trait per type" with the paper's "conflicts are errors."
@@ -57,7 +75,8 @@ He has said that if he had known about traits when designing Ruby, he would have
 Rust's coherence is also a hint about the SI job.
 One impl per trait per type is "one parent for this role."
 That is why Rust can look like traits-only reuse: the typeclass half of the fusion (`impl Trait for Type`, default methods) *is* the shallow parent.
-Ruby still needs a real superclass for variation within a role, because a module is not a typeclass.
+Ruby already has a real superclass for that job.
+A module is not a typeclass, so it should not try to be the parent.
 See [A Taxonomy of Reuse](/docs/taxonomy-of-reuse).
 
 The mitigation is surface area: few mixins per class, few methods per mixin, and other rungs of the [catalog](/docs/catalog-of-organizing-problems) for internal reuse.
@@ -98,8 +117,8 @@ See [The One Job of a Concern](/docs/one-job-of-a-concern).
 
 ### Roles of the tools (thesis)
 
-- **Single inheritance:** variations *within a role* — shallow behavioural templating; child fills gaps / overrides hooks. Fragile base class → prefer depth one. Rust absorbs this job into the trait system via typeclasses; Ruby does not.
-- **Traits (emulated):** orthogonal *capabilities* added to a host that owns state and glue.
+- **Single inheritance:** variations *within a role* — shallow behavioural templating; child fills gaps / overrides hooks. Fragile base class → prefer depth one. Rust absorbs this job into the trait system via typeclasses. Ruby already has it as `< Parent`, so modules should not.
+- **Traits (emulated):** orthogonal *capabilities* added to a host that owns state and glue. This is the job Ruby modules are for — because the SI slot is filled.
 - **DI / collaborators:** *between* objects, once a piece of behaviour wants its own identity, state, and boundary. Complements **both** SI and mixins, not a third option that replaces them.
 - **Multiple inheritance:** same problem space; Ruby does not offer it; historical attempt, not a destination.
 
@@ -173,7 +192,9 @@ Almost every include was a different organising problem ([catalog](/docs/catalog
 The Rails-shaped leftover is [The One Job of a Concern](/docs/one-job-of-a-concern).
 
 **Close.**
-Mixins-as-traits is a useful local discipline inside a language that will not grow paper traits.
+SI + traits is the pair that ticks the matrix.
+Rust still does both jobs inside one construct.
+Ruby already has SI, so mixins-as-traits is not a taste — it is the remaining slot.
 The destination is a short include list of capabilities.
 Inheritance (SI + mixins-as-traits) and collaborators complement each other because they sit at different points on the coupling curve.
 Traits decorate a host; they do not replace a second object, and a second object does not replace a trait.

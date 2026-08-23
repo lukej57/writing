@@ -34,6 +34,11 @@ See [Scalability of Composition](/docs/scalability-of-composition).
 The slogan people think they are following is the second object.
 The mechanism they are using is the first, without the discipline.
 
+A second mistake sits next to that one: using `include` for *role variation* when Ruby already has a parent.
+SI + traits is the fundamental pair ([taxonomy](/docs/taxonomy-of-reuse)).
+Rust still does both jobs inside one construct.
+Ruby already filled the SI slot, so the module should be the trait — not a second inheritance system.
+
 ## What `include` actually does
 
 ```

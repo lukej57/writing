@@ -11,6 +11,8 @@ Reuse has two halves: can you extract shared behaviour, and who is in control wh
 Single inheritance, multiple inheritance, mixins, and traits fail different rows of that matrix.
 Mixins exist because they win extraction — including generic wrappers — and then lose control to linearisation.
 Traits plus a shallow parent is the only column that ticks both halves.
+That pair is fundamental: Rust still does both jobs inside one construct.
+Ruby already has the parent, so modules should fill the trait slot.
 {% /callout %}
 
 Related: [Scalability of Composition](/docs/scalability-of-composition), [Include Is Not Composition](/docs/include-is-not-composition), [Mix-Ins as Traits](/docs/mix-ins-as-traits).
@@ -130,6 +132,12 @@ The paper-trait half is still there: a type wears many traits, composition is un
 The typeclass half is why that can be the *only* reuse construct: `impl Trait for T` *is* the shallow parent.
 One mechanism; both jobs.
 The last column stays **traits + SI** even when a language never grew a superclass.
+
+That is why the pair is fundamental — and why Ruby modules should be used like traits.
+Ruby already has the parent.
+The module is the remaining slot: orthogonal capabilities, not a second inheritance system and not a folder for every DRY.
+`include DocumentBehaviour` instead of `< Document` is using the trait slot for the SI job.
+See [Mix-Ins as Traits](/docs/mix-ins-as-traits).
 
 Do not add a Rust column.
 Snippets (`Ord` / `Iterator`) illustrate the *shape*, including this fusion.
