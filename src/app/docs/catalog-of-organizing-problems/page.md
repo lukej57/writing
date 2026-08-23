@@ -82,7 +82,7 @@ That list **scales better as mixins** because you stopped using mixins to scale 
 Understandability: `ancestors` means "what this object can do," not "every DRY we ever did."
 
 The mixin-as-trait discipline itself is [Mix-Ins as Traits](/docs/mix-ins-as-traits).
-The Rails DSL leftover is [The One Job of a Concern](/docs/one-job-of-a-concern).
+The Rails job — a capability on the model for PORO collaborators — is [The One Job of a Concern](/docs/one-job-of-a-concern).
 
 ## Rough draft
 

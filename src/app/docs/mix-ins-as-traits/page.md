@@ -26,7 +26,7 @@ The axioms live elsewhere:
 | Why mixins scale least and DI + small APIs scale most | [Scalability of Composition](/docs/scalability-of-composition) |
 | Where each organising problem should live | [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems) |
 | `include` is still inheritance | [Include Is Not Composition](/docs/include-is-not-composition) |
-| The one honest job of `ActiveSupport::Concern` | [The One Job of a Concern](/docs/one-job-of-a-concern) |
+| A concern adds a capability to a model for PORO collaborators | [The One Job of a Concern](/docs/one-job-of-a-concern) |
 
 Primary reference: Schärli et al., *Traits: Composable Units of Behaviour* (ECOOP 2003).
 Secondary / formal: Ducasse et al., *Traits: A Mechanism for Fine-grained Reuse* (TOPLAS 2006).
