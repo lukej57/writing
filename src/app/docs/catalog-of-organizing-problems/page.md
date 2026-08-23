@@ -35,7 +35,7 @@ Send the rest home so the include list can be a capability list.
 | "Every controller needs this" (`current_user`, authn) | That's the role — base controller | no |
 | Constants / config | Namespace module, or `Rails.configuration` | no |
 | Class-method utilities (`User.recent`) | Query object, or a dedicated class | no |
-| One capability's Rails DSL (assocs, validations, scopes *for that capability*) | Concern, `included do`, keep it small | yes, as a trait-shaped mixin |
+| One capability's Rails DSL (assocs, validations, scopes *for that capability*) | Concern, `included do`, keep it small. Macros are the host's: AR on the record, AM on a form you own. May also be the role a PORO depends on | yes, as a trait-shaped mixin |
 | Orthogonal capability that needs host internals (`Enumerable` / `Comparable` shape) | Mixin as trait; host owns state + glue | **yes — this is the job** |
 
 Test: `Thing.new(host).call` → never a trait.

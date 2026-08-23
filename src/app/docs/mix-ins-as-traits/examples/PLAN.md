@@ -55,8 +55,8 @@ Write the soup snapshot so that **each bad include is a catalog row**. The equat
 | Invoice vs Estimate internals | `include DocumentBehaviour` on both | `class Invoice < Document` / `Estimate < Document`, depth one | Variations of one role → SI |
 | Controllers | `include DocumentResources` in both controllers | `class InvoicesController < DocumentsController` | Same — "every controller needs this" is the *role* |
 | Emailing the client | `include Notifiable` reading `@client` | `Notifier.new(mailer).notify(document)` | Own lifetime → DI (the `Notifier` family may be SI; a mailer may wear a mixin — DI complements both) |
-| "Billable" workflow | `include Billable` on the model | `Issue.new(document).call` (PORO takes the model) | Operation *on* a record |
-| Scope pile | `include DocumentScopes` | Query object, or scopes stay on `Document` | File length ≠ capability |
+| "Billable" workflow | `include Billable` *as the operation* on the model | `Issue.new(billable).call` (PORO takes the *role*; a slim `Billable` concern may still group the record's DSL + `#total`) | Operation *on* a record; concern is the interface, not the work |
+| Form that needs `form_with` | jam it onto the record | `InvoiceForm < ApplicationForm` with `ActiveModel::API` (SI yours; AM is traits) | Rails face on a class you own |
 | `as_json` for the API | `include Displayable` | Presenter / decorator | Presentation |
 | `after_save` sync | `include Auditable` | Host callback calls `Audit.log(document)` | Side effects |
 | Compare / sort documents | homemade `include Orderable` touching `@number` | `include Comparable`; host implements `<=>` as **glue**; `@number` is **state** | Real trait |

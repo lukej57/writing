@@ -13,7 +13,8 @@ Ruby already has SI, so modules should do the trait job: small capabilities, hos
 Collaborators when reuse outgrows a single host.
 Rails occupies the SI slot on models, views, and controllers — if every piece of logic stays there, `include` is the only reuse operator left.
 Pull work into objects you own so inheritance is free again.
-Rails concerns earn their keep when grouping capability-shaped declarations.
+ActiveModel is how those objects borrow Rails' face without borrowing the parent.
+A concern may be the small role a PORO depends on — not the place the operation lives.
 {% /callout %}
 
 This article is the synthesis.
@@ -215,8 +216,20 @@ The model or controller stays a thin host: persistence, HTTP, one capability's D
 The catalog rows that wanted a parent or a collaborator finally have somewhere to go.
 Staying inside MVC and reaching for another concern is how the soup is made.
 
+**ActiveModel is how a PORO borrows Rails' face without borrowing its parent.**
+You cannot put `has_many` / `scope` / `after_commit` on a plain object — that magic is ActiveRecord's.
+You *can* `include ActiveModel::API` (and `Attributes`, `Dirty`, …) on a class you own.
+Those modules are traits: validations, naming, `form_with`, typed attributes.
+SI stays yours (`InvoiceForm < ApplicationForm`).
+A concern on that host may use AM macros, not AR macros.
+
+**Concerns as the role collaborators depend on.**
+The leftover concern on the *record* is allowed to be the small interface a PORO takes: `Billable` groups the DSL *and* `#total` / `#currency`; `Issue.new(billable)` depends on the role, not on `Invoice`.
+That is mixin-as-admission to a capability, not mixin-as-the-operation.
+Do not include `Billable` into `Issue`.
+The full split (AR vs AM, two directions) is [The One Job of a Concern](/docs/one-job-of-a-concern).
+
 Almost every include was a different organising problem ([catalog](/docs/catalog-of-organizing-problems)).
-The Rails-shaped leftover is [The One Job of a Concern](/docs/one-job-of-a-concern).
 
 **Close.**
 SI + traits is the pair that ticks the matrix.
