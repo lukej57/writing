@@ -144,6 +144,47 @@ Those are capabilities, not a role.
 | Shallow base class | `class Foo < EnumerableBase` with almost no body; or a "Base" that exists to share `#each` | A trait. You spent the parent on a capability. |
 | Deep trait | A 40-method concern; a settings-provider-as-module; `UserConcern` | A base class on an object you own, or a collaborator. You spent the include list on a role. |
 
+Articulate the **pros as what the shape buys**, and the **pitfalls as what you still pay after the swap**.
+Each pattern has an honest cost; that cost is worth it when the shape matches.
+Each pathology keeps the cost and loses the purchase.
+
+### What the patterns buy
+
+| | Deep-and-thin SI | Wide-and-shallow trait |
+|---|---|---|
+| You buy | One place for a hefty algorithm; the next variant is a subclass, not a copy | Orthogonal stacking: enumerable *and* comparable *and* serialisable, all needing internals |
+| | Unambiguous `super`; glue in the child; parent owns the role's state | Cheap admission: an existing type grows `#each` and is done |
+| | Ordinary class tests; you own the hierarchy | A fake host of one method; tests stay cheap *because* S is tiny |
+| | Thin blast radius — only the family signed up | Load stays `2 · N · k` even when N is large |
+| You honestly pay | The one superclass slot; D=2; S=\|parent\| | No encapsulation; D=2; silent override in Ruby |
+| | Cannot admit an unrelated type (wrong parent) | Host must write glue; trait must stay pure |
+| Worth it when | The body *is* the role, and it should not travel | The capability is generic, and the parent is needed for something else |
+
+The SI cost (one slot, large S, few partners) is the price of a deep body.
+The trait cost (no boundary, fake-host tests) is the price of width.
+Keep each, and the price is small relative to what you bought.
+
+### What the pathologies cost
+
+**Shallow base class** — you wanted width, you spent the thin-travel tool.
+
+- You spend the scarcest slot on a capability. You still need mixins the moment a type wants a *second* capability (`Comparable` + `Enumerable` cannot both be the parent).
+- Ancestors go dishonest: an empty or one-method `Base`, or methods pushed too high so siblings can share a hook ([decomposition](#decomposition--can-you-extract-the-shared-behaviour)).
+- Unrelated types get forced under the parent (inappropriate hierarchy) because that was the only way to get `#each`.
+- If you stack bases to recover a second capability, hierarchy depth grows and the fragile base class stops being contained.
+- You paid SI's D=2 and the slot, and bought almost no body — the one thing SI is for.
+
+**Deep trait** — you wanted depth, you spent the wide-travel tool.
+
+- S becomes "whatever the mixin reached for": ivars, `params`, host shape. Load is `2 · N · (everything)` ([scalability](/docs/scalability-of-composition)).
+- The class is no longer the composer. Glue and state leak into the module; adding a method silently clobbers another include.
+- Fake-host tests become a second implementation of the concern. Reduced testability is tolerable for `each`; it is not tolerable for a 40-method `UserConcern`.
+- Specific logic pretends to be generic and *travels farther than it should* — a settings provider as a module, now included by hosts that are not that role.
+- In Rails this is the soup: the SI slot was already spent, so the hefty body went into `include`.
+
+The swap does not give you a cheaper version of the other tool.
+It gives you the other tool's costs on top of a job it cannot do.
+
 "Shallow parent" in the last column of the matrix means hierarchy depth one, not an empty parent.
 An empty parent is the first pathology.
 A fat mixin is the second.
