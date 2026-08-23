@@ -10,6 +10,8 @@ nextjs:
 `include` is mixin inheritance, not composition-over-inheritance.
 SI + traits is the fundamental pair — the papers put Superclass in the equation; Rust still does both jobs inside one construct.
 Ruby already has SI, so modules should do the trait job: small capabilities, host owns state and glue.
+Base classes are deep and thin (a hefty settings-provider family); traits are wide and shallow (`Enumerable`).
+The pathologies are the swap: a shallow base class, a deep trait.
 Collaborators when reuse outgrows a single host.
 Rails occupies the SI slot on models, views, and controllers — if every piece of logic stays there, `include` is the only reuse operator left.
 Pull work into objects you own so inheritance is free again.
