@@ -42,6 +42,7 @@ This article assumes those and does: ownership of the equation, the Ruby diction
 - Glue lives on the composer; when that is a class, the class owns state **and** glue.
 - Composite traits only if subtraits are an implementation detail of a real capability.
 - DI is not the winner of every row; pick the least coupling that still fits.
+- DI complements **both** SI and mixins: it is the boundary; they are how you *produce* injectables (SI family vs capability on many types).
 - Story for the prose: naïve Invoice/Estimate → concern soup → equation. Build soup first.
 
 ## Still to write

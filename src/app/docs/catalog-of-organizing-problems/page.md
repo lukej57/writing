@@ -44,13 +44,18 @@ Needs `each`, provides `map` → trait.
 
 ## Escalation (same catalog, as a ladder)
 
+This is not "always prefer a higher number."
+DI is the *boundary* between objects.
+SI and mixins are how you *produce* objects — or how you structure *this* object.
+
 1. Pure functions in a namespace module (`module_function`), called directly.
 2. A class when those functions cluster around a shared argument (it goes in the constructor).
-3. The host as a facade — delegates to a collaborator, dependencies via constructor.
-4. Single inheritance, depth one, when the types are variations of one role.
-5. A mixin *only* when it is a trait: API plus partial implementation needing the host's internal state.
+3. Depend on a small role and inject a collaborator when reuse wants its own lifetime.
+   The thing you inject may itself be an SI family (cheap new variants of one role) or may wear a mixin (cheap admission of many existing types to a capability).
+4. Single inheritance, depth one, when *this* type is a variation of one role.
+5. A mixin on *this* object *only* when it is a trait: API plus partial implementation needing the host's internal state.
 
-The ranking of how far those mechanisms *scale* is [Scalability of Composition](/docs/scalability-of-composition).
+The ranking of how far those mechanisms *scale* — and why DI complements both SI and mixins rather than replacing them — is [Scalability of Composition](/docs/scalability-of-composition).
 This article is only *which problem you are in*.
 
 ## Payoff of sending the rest home

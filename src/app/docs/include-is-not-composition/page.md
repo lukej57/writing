@@ -28,7 +28,10 @@ That is why it is a far less scalable form of composition than a collaborator.
 
 Trait composition in the paper is the disciplined version of the same *inside-the-class* move (small, no state, explicit conflicts).
 Object composition (DI) is a different move: a second object with a boundary.
-The slogan people think they are following is the second.
+DI does not replace SI or mixins; it complements both.
+The host depends on a small role; SI and mixins are two ways to *produce* something that satisfies it — SI when you need cheap new variants of one role, mixins when you need cheap admission of many existing types to a capability.
+See [Scalability of Composition](/docs/scalability-of-composition).
+The slogan people think they are following is the second object.
 The mechanism they are using is the first, without the discipline.
 
 ## What `include` actually does

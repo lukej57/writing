@@ -53,6 +53,7 @@ S becomes unbounded ([Scalability of Composition](/docs/scalability-of-compositi
 - Small, atomic, composable; minimal state interaction; host decides state.
 - `included do` only for **one** capability's class-level DSL.
 - Prefer a base class for same-role variation; prefer a collaborator for reusable behaviour with a real boundary; prefer a concern only for that leftover row of the [catalog](/docs/catalog-of-organizing-problems).
+- The collaborator may *internally* be an SI family or wear a mixin — DI complements both; it does not replace them.
 
 ## Rough draft
 

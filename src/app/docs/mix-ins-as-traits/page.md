@@ -94,16 +94,25 @@ See [The One Job of a Concern](/docs/one-job-of-a-concern).
 
 - **Single inheritance:** variations *within a role* — shallow behavioural templating; child fills gaps / overrides hooks. Fragile base class → prefer depth one.
 - **Traits (emulated):** orthogonal *capabilities* added to a host that owns state and glue.
-- **DI / collaborators:** *between* objects, once a piece of behaviour wants its own identity, state, and boundary. Complements inheritance rather than replacing it — SI + traits scale a class; collaborators scale a system.
+- **DI / collaborators:** *between* objects, once a piece of behaviour wants its own identity, state, and boundary. Complements **both** SI and mixins, not a third option that replaces them.
 - **Multiple inheritance:** same problem space; Ruby does not offer it; historical attempt, not a destination.
 
 The papers do not discuss dependency injection; that rung is ours.
 "Composition" there means trait composition (flattening methods into a class), not object collaboration.
 
+**Complementary in two directions.**
+Inside a class: SI + traits scale *this* object (role variation plus capabilities); DI is what you reach for when the reused thing wants its own lifetime and boundary.
+On the far side of that boundary the same two tools recur: the collaborator may be an SI family (cheap new *variants* of one role, sharing a substantial base) or may wear a mixin (cheap *admission* of many existing types to a small role interface).
+The host depends on that minimum interface either way.
+SI does not make injection easier — DI already did that — it makes writing the family of injectables cheaper.
+Mixins do not get injected; objects that *have* the mixin do.
+
+See [Scalability of Composition](/docs/scalability-of-composition) for the table.
+
 DI is not always the better option.
 It is what you reach for when inheritance has hit its scale limit.
-A tiny `Enumerable`-shaped mixin is still the right tool.
-A second object for "the same role, slightly different" is usually the wrong one.
+A tiny `Enumerable`-shaped mixin is still the right tool *on the host*.
+A second object for "the same role, slightly different" is usually the wrong one — that is still SI, possibly *behind* an injected role if some other class is the client.
 
 ---
 
