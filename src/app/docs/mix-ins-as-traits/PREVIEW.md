@@ -28,6 +28,8 @@ None of SI, traits, or DI is always better.
 
 This article assumes those and does: ownership of the equation, the Ruby dictionary, mixin-as-trait discipline, the Invoice/Estimate story, the close.
 
+Foundation (not this series): [Dependencies in the Abstract](/docs/dependencies-in-the-abstract) — DAGs, topology, change as *pⁿ*. Under [The Calculus of Maintainable Software](/docs/calculus-of-maintainable-sw).
+
 ## What stays here
 
 - Ownership table (trait / state / glue) and composite-trait warning.
