@@ -106,7 +106,7 @@ Under the table, not as columns:
 - Single inheritance — the default OO model. Java, C#, Ruby classes, Smalltalk classes.
 - Multiple inheritance — C++, Eiffel, Python, CLOS. Ruby does not have it; cover as a solution that was tried, not as a destination.
 - Mixin inheritance — Strongtalk, Jam, C++ mixins-via-templates, Ruby `include` / `prepend`. Scala's "traits" belong here (linearisation), despite the name.
-- Traits + single inheritance — Squeak 3.9 / Pharo (the paper's implementation). Rust borrowed provided/required methods and unordered composition, then fused them with Haskell typeclasses. Use Rust where a snippet helps; do not add a language axis. Pharo later allowed slots on traits — a retreat from "no state"; not the model.
+- Traits + single inheritance — Squeak 3.9 / Pharo (the paper's implementation). Rust looks like traits alone; the typeclass fusion is the missing parent ([below](#rust-looks-traits-only)). Pharo later allowed slots on traits — a retreat from "no state"; not the model.
 
 ## Rust looks traits-only
 
