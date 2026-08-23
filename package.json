@@ -6,8 +6,8 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "next dev --webpack",
-    "build": "next build --webpack",
+    "dev": "next dev",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -31,7 +31,6 @@
     "react-dom": "^19",
     "react-highlight-words": "^0.21.0",
     "shiki": "^4.4.3",
-    "simple-functional-loader": "^1.2.1",
     "tailwindcss": "^4.1.15",
     "typescript": "^7.0.2"
   },
