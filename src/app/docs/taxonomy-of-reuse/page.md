@@ -115,6 +115,11 @@ The matrix says which problems a technique *solves*.
 [Scalability of Composition](/docs/scalability-of-composition) says how far each technique *scales*, as a function of coupling.
 Mixins rank *below* SI on that curve even though they win more decomposition rows — they spend the boundary and multiply the children.
 
+Both jobs recur *behind* a public API.
+A collaborator can be a shallow SI family (variation within a role, substantial base) or can wear a mixin (orthogonal capability on unrelated types).
+The client depends on the role either way.
+That complementarity is the scalability article's, not a new column here.
+
 ## Rough draft
 
 *(Prose begins here once the outline settles.)*

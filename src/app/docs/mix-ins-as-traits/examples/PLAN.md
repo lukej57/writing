@@ -53,7 +53,7 @@ Write the soup snapshot so that **each bad include is a catalog row**. The equat
 | PDF bits taking a document | `include Exportable` that calls `pdf_*` on self | `PdfExporter.new(document).call` | Clustered on one argument → class |
 | Invoice vs Estimate internals | `include DocumentBehaviour` on both | `class Invoice < Document` / `Estimate < Document`, depth one | Variations of one role → SI |
 | Controllers | `include DocumentResources` in both controllers | `class InvoicesController < DocumentsController` | Same — "every controller needs this" is the *role* |
-| Emailing the client | `include Notifiable` reading `@client` | `Notifier.new(mailer).notify(document)` | Own lifetime → DI |
+| Emailing the client | `include Notifiable` reading `@client` | `Notifier.new(mailer).notify(document)` | Own lifetime → DI (the `Notifier` family may be SI; a mailer may wear a mixin — DI complements both) |
 | "Billable" workflow | `include Billable` on the model | `Issue.new(document).call` (PORO takes the model) | Operation *on* a record |
 | Scope pile | `include DocumentScopes` | Query object, or scopes stay on `Document` | File length ≠ capability |
 | `as_json` for the API | `include Displayable` | Presenter / decorator | Presentation |
