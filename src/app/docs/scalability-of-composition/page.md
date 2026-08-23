@@ -15,7 +15,7 @@ DI is not a third replacement for SI or mixins: it is the boundary; they are how
 Base classes are deep and thin; traits are wide and shallow — the swap is the pathology.
 {% /callout %}
 
-Related: [A Taxonomy of Reuse](/docs/taxonomy-of-reuse), [The Dark Side of DRY](/docs/dark-side-of-dry), [Mix-Ins as Traits](/docs/mix-ins-as-traits).
+Related: [A Taxonomy of Reuse](/docs/taxonomy-of-reuse), [The Dark Side of DRY](/docs/dark-side-of-dry), [Mix-Ins as Traits](/docs/mix-ins-as-traits), [Dependencies in the Abstract](/docs/dependencies-in-the-abstract).
 
 Coupling has a *mechanism* and a *degree*.
 Fan-out is only the number of partners.
@@ -144,6 +144,8 @@ Optional, one aside, not a sixth table.
 
 *The Dark Side of DRY* is about rotating coupling from horizontal (duplication) to vertical (the shared abstraction).
 This article is about *which* abstraction mechanism you reached for, and why some of them cannot take many partners.
+P here is *degree*.
+[Dependencies in the Abstract](/docs/dependencies-in-the-abstract) is *paths*: layers attenuate, fan-in freezes, fan-out volatilises.
 
 ## Rough draft
 
