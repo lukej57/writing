@@ -1,6 +1,6 @@
 {
   "name": "Writing (Next.js blog)",
-  "install": "npm ci",
+  "install": "export NVM_DIR=\"$HOME/.nvm\" && . \"$NVM_DIR/nvm.sh\" && nvm install && nvm alias default \"$(cat .nvmrc)\" && npm ci",
   "terminals": [
     {
       "name": "dev",
