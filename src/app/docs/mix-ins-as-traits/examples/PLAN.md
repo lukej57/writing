@@ -6,7 +6,8 @@ Do not start a separate git repo until (if) the snapshots are worth cloning. Unt
 
 ## Why examples at all
 
-The outline in `page.md` is dense on purpose: it is a brief. Readers will not sit through it. They will sit through a story:
+The synthesis outline in `page.md` is dense on purpose: it is a brief.
+The paper matrix, coupling tables, and catalog now live in sibling drafts (see `../PREVIEW.md`). Readers will not sit through it. They will sit through a story:
 
 1. We implement something the naïve way.
 2. Sharing code the usual Rails way (concerns for everything) makes it hard to maintain.
