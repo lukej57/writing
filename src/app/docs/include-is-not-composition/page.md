@@ -34,6 +34,11 @@ See [Scalability of Composition](/docs/scalability-of-composition).
 The slogan people think they are following is the second object.
 The mechanism they are using is the first, without the discipline.
 
+A second mistake sits next to that one: using `include` for *role variation* when Ruby already has a parent.
+SI + traits is the fundamental pair ([taxonomy](/docs/taxonomy-of-reuse)).
+Rust still does both jobs inside one construct.
+Ruby already filled the SI slot, so the module should be the trait — not a second inheritance system.
+
 ## What `include` actually does
 
 ```
@@ -59,6 +64,10 @@ This article is about reaching for the *wrong operator* when you DRY: `include` 
 
 How expensive that operator is, once chosen, is [Scalability of Composition](/docs/scalability-of-composition).
 What to do instead, row by row, is the [catalog](/docs/catalog-of-organizing-problems).
+
+In Rails the category error is almost forced: the framework already spent SI on `ApplicationRecord` and friends, so `include` is the only operator left if the logic stays there.
+The way out is an object you own, not a more clever concern.
+See [Mix-Ins as Traits](/docs/mix-ins-as-traits).
 
 ## Rough draft
 

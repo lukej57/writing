@@ -70,7 +70,7 @@ Roughly the order to build toward:
 3. The equation as an *ownership* rule; mixin-as-trait discipline.
 4. `Enumerable` / `Comparable` as the canonical traits.
 5. The story (naïve → soup → equation) applying the catalog.
-6. Rails leftover: point at *The One Job of a Concern*.
+6. Rails: the framework occupies SI on MVC, so mixin-for-everything is the default if logic stays there; pull work into objects you own. Concerns add a capability to the model for those POROs. Point at *The One Job of a Concern*.
 
 ## Reference material
 

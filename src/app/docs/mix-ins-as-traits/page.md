@@ -7,7 +7,14 @@ nextjs:
 ---
 
 {% callout title="TL;DR" type="note" %}
-TODO — `include` is mixin inheritance, not composition-over-inheritance. Use mixins as traits (capabilities); SI for shallow role variation; collaborators when reuse outgrows a single host. Rails concerns earn their keep when grouping capability-shaped declarations.
+`include` is mixin inheritance, not composition-over-inheritance.
+SI + traits is the fundamental pair — the papers put Superclass in the equation; Rust still does both jobs inside one construct.
+Ruby already has SI, so modules should do the trait job: small capabilities, host owns state and glue.
+Collaborators when reuse outgrows a single host.
+Rails occupies the SI slot on models, views, and controllers — if every piece of logic stays there, `include` is the only reuse operator left.
+Pull work into objects you own so inheritance is free again.
+ActiveModel is how those objects borrow Rails' face without borrowing the parent.
+A concern is how you add a capability to a model for those POROs to depend on — not where the operation lives.
 {% /callout %}
 
 This article is the synthesis.
@@ -19,7 +26,7 @@ The axioms live elsewhere:
 | Why mixins scale least and DI + small APIs scale most | [Scalability of Composition](/docs/scalability-of-composition) |
 | Where each organising problem should live | [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems) |
 | `include` is still inheritance | [Include Is Not Composition](/docs/include-is-not-composition) |
-| The one honest job of `ActiveSupport::Concern` | [The One Job of a Concern](/docs/one-job-of-a-concern) |
+| A concern adds a capability to a model for PORO collaborators | [The One Job of a Concern](/docs/one-job-of-a-concern) |
 
 Primary reference: Schärli et al., *Traits: Composable Units of Behaviour* (ECOOP 2003).
 Secondary / formal: Ducasse et al., *Traits: A Mechanism for Fine-grained Reuse* (TOPLAS 2006).
@@ -38,14 +45,28 @@ Send those home and the include list becomes a short capability list — which i
 
 `Class = Superclass + State + Traits + Glue` (ECOOP §3.3).
 SI and traits complement each other inside a class ([taxonomy](/docs/taxonomy-of-reuse)).
+That pair is **fundamental**, not a Smalltalk accident.
 Object composition (DI) complements *that* pair once reuse needs a public API.
 None of them is always better.
+
+**The pair is fundamental — so Ruby modules should be traits.**
+The papers put Superclass in the equation on purpose: traits do not replace deriving a class from a parent.
+Rust looks like it dropped the parent; the typeclass half (`impl Trait for Type`, default methods, coherence) is still doing the SI job ([taxonomy](/docs/taxonomy-of-reuse)).
+One mechanism; both jobs.
+That is further evidence the pair is required.
+
+Ruby already has the parent.
+Using modules as a second inheritance system — `include DocumentBehaviour` instead of `< Document`, or a folder for every DRY — is doing the SI job twice, badly.
+The module slot is the *trait* slot.
+Use it for orthogonal capabilities.
+Leave role variation to the superclass we already have.
 
 **Smalltalk → Ruby.**
 Traits were designed in Squeak.
 Ruby sits in that lineage: single inheritance plus mixin modules.
 The paper's critique of mixin inheritance is a direct critique of the composition model Ruby shipped with.
 The lead-in is not "Ruby secretly has traits"; it is "Smalltalk researchers diagnosed the reuse problem Ruby inherited, and proposed traits as the fix — we can approximate that discipline with modules."
+We *should* approximate it, because the SI half of the pair is already in the language.
 
 **Coherence does not transfer.**
 Do not conflate Rust's "one impl of a trait per type" with the paper's "conflicts are errors."
@@ -53,6 +74,13 @@ Ruby has neither uniqueness of assignment nor conflict markers.
 `include` / `prepend` linearise; later wins; a gem can include into your class in another file.
 Matz considered `Module#mix` (error on name clash) and shipped `prepend` instead.
 He has said that if he had known about traits when designing Ruby, he would have chosen them over modules.
+
+Rust's coherence is also a hint about the SI job.
+One impl per trait per type is "one parent for this role."
+That is why Rust can look like traits-only reuse: the typeclass half of the fusion (`impl Trait for Type`, default methods) *is* the shallow parent.
+Ruby already has a real superclass for that job.
+A module is not a typeclass, so it should not try to be the parent.
+See [A Taxonomy of Reuse](/docs/taxonomy-of-reuse).
 
 The mitigation is surface area: few mixins per class, few methods per mixin, and other rungs of the [catalog](/docs/catalog-of-organizing-problems) for internal reuse.
 The paper's own Smalltalk advice is in the same spirit: design traits around abstractions, not reuse; avoid too-fine-grained traits; prefer classes, use traits to resolve design conflicts.
@@ -92,8 +120,8 @@ See [The One Job of a Concern](/docs/one-job-of-a-concern).
 
 ### Roles of the tools (thesis)
 
-- **Single inheritance:** variations *within a role* — shallow behavioural templating; child fills gaps / overrides hooks. Fragile base class → prefer depth one.
-- **Traits (emulated):** orthogonal *capabilities* added to a host that owns state and glue.
+- **Single inheritance:** variations *within a role* — shallow behavioural templating; child fills gaps / overrides hooks. Fragile base class → prefer depth one. Rust absorbs this job into the trait system via typeclasses. Ruby already has it as `< Parent`, so modules should not.
+- **Traits (emulated):** orthogonal *capabilities* added to a host that owns state and glue. This is the job Ruby modules are for — because the SI slot is filled.
 - **DI / collaborators:** *between* objects, once a piece of behaviour wants its own identity, state, and boundary. Complements **both** SI and mixins, not a third option that replaces them.
 - **Multiple inheritance:** same problem space; Ruby does not offer it; historical attempt, not a destination.
 
@@ -163,12 +191,54 @@ Fragile base class is mitigated, not gone: purity + a required-method surface is
 God classes justified as composition-over-inheritance.
 Name the mistake: mixin soup is inheritance without a single parent *or* an object boundary — the least scalable of the three.
 
+**Rails occupies the SI slot.**
+Jam every piece of logic into a model, view, or controller and you are always already inside the framework's inheritance hierarchy:
+
+```
+Invoice            < ApplicationRecord    < ActiveRecord::Base
+InvoicesController < ApplicationController < ActionController::Base
+InvoiceMailer      < ApplicationMailer    < ActionMailer::Base
+```
+
+The parent is taken.
+You cannot write `Invoice < Document` or `EmailNotifier < Notifier` *on those classes* without fighting a hierarchy you do not own.
+The only reuse operator left on the object is `include`.
+That is why "everything is a concern" is the path of least resistance — not because mixins are the right tool, but because SI + traits is fundamental and Rails already spent SI.
+
+`ApplicationController` / `ApplicationRecord` are the *one* SI step Rails gives you: "every X in this app."
+Depth one.
+Further role variation does not belong one layer deeper in the framework tree.
+
+**Pull logic into objects you own.**
+A PORO, a form, a notifier family, an exporter — these can use inheritance freely.
+`class EstimateDocument < BillableDocument`, `class SlackNotifier < Notifier`, `Issue.new(invoice).call`.
+The model or controller stays a thin host: persistence, HTTP, one capability's DSL, maybe a real trait.
+The catalog rows that wanted a parent or a collaborator finally have somewhere to go.
+Staying inside MVC and reaching for another concern is how the soup is made.
+
+**ActiveModel is how a PORO borrows Rails' face without borrowing its parent.**
+You cannot put `has_many` / `scope` / `after_commit` on a plain object — that magic is ActiveRecord's.
+You *can* `include ActiveModel::API` (and `Attributes`, `Dirty`, …) on a class you own.
+Those modules are traits: validations, naming, `form_with`, typed attributes.
+SI stays yours (`InvoiceForm < ApplicationForm`).
+A concern on that host may use AM macros, not AR macros.
+
+**That is what concerns are for.**
+Add a capability to a model so its PORO collaborators can depend on that role.
+`Billable` groups the DSL *and* `#total` / `#currency`; `Issue.new(billable)` depends on the role, not on `Invoice`.
+Grouping declarations by capability is the Rails means (plain modules cannot host `has_many`).
+It is not a second job, and it is not the operation.
+Do not include `Billable` into `Issue`.
+The full split (AR vs AM, two directions) is [The One Job of a Concern](/docs/one-job-of-a-concern).
+
 Almost every include was a different organising problem ([catalog](/docs/catalog-of-organizing-problems)).
-The Rails-shaped leftover is [The One Job of a Concern](/docs/one-job-of-a-concern).
 
 **Close.**
-Mixins-as-traits is a useful local discipline inside a language that will not grow paper traits.
-The destination is a short include list of capabilities.
+SI + traits is the pair that ticks the matrix.
+Rust still does both jobs inside one construct.
+Ruby already has SI, so mixins-as-traits is not a taste — it is the remaining slot.
+Rails spends that SI slot on `ApplicationRecord` and friends; objects you own get it back.
+The destination is a short include list of capabilities on a thin host, and a graph of non-framework objects that can inherit.
 Inheritance (SI + mixins-as-traits) and collaborators complement each other because they sit at different points on the coupling curve.
 Traits decorate a host; they do not replace a second object, and a second object does not replace a trait.
 
