@@ -35,7 +35,7 @@ This article assumes those and does: ownership of the equation, the Ruby diction
 - Theory → Ruby dictionary (`include` / `prepend` / `extend`).
 - Discipline: required API, fake-host tests, `Enumerable` / `Comparable`.
 - Story: naïve → soup → equation (`examples/PLAN.md`).
-- Close: the pair is fundamental; Ruby has SI so modules are traits; short include list; collaborators scale a system.
+- Close: the pair is fundamental; Ruby has SI so modules are traits; Rails spends SI on MVC — pull logic out; short include list; collaborators scale a system.
 
 ## Decisions already locked
 
@@ -47,6 +47,7 @@ This article assumes those and does: ownership of the equation, the Ruby diction
 - DI complements **both** SI and mixins: it is the boundary; they are how you *produce* injectables (SI family vs capability on many types).
 - Rust looks traits-only; the typeclass / `impl Trait for T` half is the SI analogue (variation within a role; coherence as one parent). Last column stays traits+SI. Not a language axis.
 - The pair is fundamental. Ruby already has SI, so modules fill the trait slot — further evidence for mixin-as-trait discipline, not a second inheritance system.
+- Rails occupies the SI slot on MVC classes. Mixin-for-everything is the path of least resistance if logic stays there. Pull work into objects you own so inheritance is free again.
 - Story for the prose: naïve Invoice/Estimate → concern soup → equation. Build soup first.
 
 ## Still to write

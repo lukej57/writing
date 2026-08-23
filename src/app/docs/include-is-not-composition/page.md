@@ -65,6 +65,10 @@ This article is about reaching for the *wrong operator* when you DRY: `include` 
 How expensive that operator is, once chosen, is [Scalability of Composition](/docs/scalability-of-composition).
 What to do instead, row by row, is the [catalog](/docs/catalog-of-organizing-problems).
 
+In Rails the category error is almost forced: the framework already spent SI on `ApplicationRecord` and friends, so `include` is the only operator left if the logic stays there.
+The way out is an object you own, not a more clever concern.
+See [Mix-Ins as Traits](/docs/mix-ins-as-traits).
+
 ## Rough draft
 
 *(Prose begins here once the outline settles.)*

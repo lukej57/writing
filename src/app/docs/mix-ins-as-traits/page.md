@@ -11,6 +11,8 @@ nextjs:
 SI + traits is the fundamental pair — the papers put Superclass in the equation; Rust still does both jobs inside one construct.
 Ruby already has SI, so modules should do the trait job: small capabilities, host owns state and glue.
 Collaborators when reuse outgrows a single host.
+Rails occupies the SI slot on models, views, and controllers — if every piece of logic stays there, `include` is the only reuse operator left.
+Pull work into objects you own so inheritance is free again.
 Rails concerns earn their keep when grouping capability-shaped declarations.
 {% /callout %}
 
@@ -188,6 +190,31 @@ Fragile base class is mitigated, not gone: purity + a required-method surface is
 God classes justified as composition-over-inheritance.
 Name the mistake: mixin soup is inheritance without a single parent *or* an object boundary — the least scalable of the three.
 
+**Rails occupies the SI slot.**
+Jam every piece of logic into a model, view, or controller and you are always already inside the framework's inheritance hierarchy:
+
+```
+Invoice            < ApplicationRecord    < ActiveRecord::Base
+InvoicesController < ApplicationController < ActionController::Base
+InvoiceMailer      < ApplicationMailer    < ActionMailer::Base
+```
+
+The parent is taken.
+You cannot write `Invoice < Document` or `EmailNotifier < Notifier` *on those classes* without fighting a hierarchy you do not own.
+The only reuse operator left on the object is `include`.
+That is why "everything is a concern" is the path of least resistance — not because mixins are the right tool, but because SI + traits is fundamental and Rails already spent SI.
+
+`ApplicationController` / `ApplicationRecord` are the *one* SI step Rails gives you: "every X in this app."
+Depth one.
+Further role variation does not belong one layer deeper in the framework tree.
+
+**Pull logic into objects you own.**
+A PORO, a form, a notifier family, an exporter — these can use inheritance freely.
+`class EstimateDocument < BillableDocument`, `class SlackNotifier < Notifier`, `Issue.new(invoice).call`.
+The model or controller stays a thin host: persistence, HTTP, one capability's DSL, maybe a real trait.
+The catalog rows that wanted a parent or a collaborator finally have somewhere to go.
+Staying inside MVC and reaching for another concern is how the soup is made.
+
 Almost every include was a different organising problem ([catalog](/docs/catalog-of-organizing-problems)).
 The Rails-shaped leftover is [The One Job of a Concern](/docs/one-job-of-a-concern).
 
@@ -195,7 +222,8 @@ The Rails-shaped leftover is [The One Job of a Concern](/docs/one-job-of-a-conce
 SI + traits is the pair that ticks the matrix.
 Rust still does both jobs inside one construct.
 Ruby already has SI, so mixins-as-traits is not a taste — it is the remaining slot.
-The destination is a short include list of capabilities.
+Rails spends that SI slot on `ApplicationRecord` and friends; objects you own get it back.
+The destination is a short include list of capabilities on a thin host, and a graph of non-framework objects that can inherit.
 Inheritance (SI + mixins-as-traits) and collaborators complement each other because they sit at different points on the coupling curve.
 Traits decorate a host; they do not replace a second object, and a second object does not replace a trait.
 

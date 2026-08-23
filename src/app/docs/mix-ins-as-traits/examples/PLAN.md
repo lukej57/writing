@@ -22,6 +22,7 @@ The article *points at* excerpts. This folder holds the full snapshots so we can
 Why this domain:
 
 - Two classes that are *variations of one role* (single inheritance) and also want *orthogonal capabilities* (traits).
+  They are POROs on purpose: if they were `ApplicationRecord`, Rails would already have spent the SI slot and the soup would be the only move.
 - Obvious fake-trait temptations: `Utils`, `Scopes`, `Exportable`, `Notifiable`, `Billable`, a shared controller concern.
 - Obvious real trait: comparison / ordering (`<=>` → `Comparable`).
 - Glue you can see: accessors, "document number", "client email."

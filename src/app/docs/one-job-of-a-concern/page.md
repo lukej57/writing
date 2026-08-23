@@ -41,6 +41,17 @@ The `included do` block is what makes the extraction possible at all.
 
 So concerns do make sense in Rails — and they can be overused just like any module.
 
+## Why the soup is the path of least resistance
+
+Rails already used the parent: `ApplicationRecord`, `ApplicationController`, the mailer base, the job base.
+Jam every piece of logic into those classes and SI is gone.
+The only reuse operator left on the object is `include`.
+Every DRY that should have been a subclass or a collaborator becomes a concern.
+
+The fix is not a better concern.
+It is an object the framework does not own — one that can use inheritance freely.
+See [Mix-Ins as Traits](/docs/mix-ins-as-traits).
+
 ## The usual failure
 
 The concern ships trait + state + glue.
@@ -52,7 +63,8 @@ S becomes unbounded ([Scalability of Composition](/docs/scalability-of-compositi
 
 - Small, atomic, composable; minimal state interaction; host decides state.
 - `included do` only for **one** capability's class-level DSL.
-- Prefer a base class for same-role variation; prefer a collaborator for reusable behaviour with a real boundary; prefer a concern only for that leftover row of the [catalog](/docs/catalog-of-organizing-problems).
+- Prefer a base class for same-role variation — on an object you own, not one layer deeper in `ApplicationRecord`.
+- Prefer a collaborator for reusable behaviour with a real boundary; prefer a concern only for that leftover row of the [catalog](/docs/catalog-of-organizing-problems).
 - The collaborator may *internally* be an SI family or wear a mixin — DI complements both; it does not replace them.
 
 ## Rough draft

@@ -58,6 +58,15 @@ SI and mixins are how you *produce* objects — or how you structure *this* obje
 The ranking of how far those mechanisms *scale* — and why DI complements both SI and mixins rather than replacing them — is [Scalability of Composition](/docs/scalability-of-composition).
 This article is only *which problem you are in*.
 
+## When the parent slot is already taken
+
+Rails occupies SI on `ApplicationRecord`, `ApplicationController`, the mailer base, the job base.
+If the behaviour stays on those classes, `include` is the only operator left — that is the mixin-for-everything style.
+Steps 3 and 4 of the ladder (collaborator; SI for role variation) need an object the framework does not own.
+Pull the work out and the SI slot opens.
+Keep it in the model and you will `include` a concern for a job that wanted a parent.
+See [Mix-Ins as Traits](/docs/mix-ins-as-traits).
+
 ## Payoff of sending the rest home
 
 Once the other rows have somewhere to go, a class includes a handful of capabilities.
