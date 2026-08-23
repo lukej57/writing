@@ -120,8 +120,8 @@ See [The One Job of a Concern](/docs/one-job-of-a-concern).
 
 ### Roles of the tools (thesis)
 
-- **Single inheritance:** variations *within a role* — shallow behavioural templating; child fills gaps / overrides hooks. Fragile base class → prefer depth one. Rust absorbs this job into the trait system via typeclasses. Ruby already has it as `< Parent`, so modules should not.
-- **Traits (emulated):** orthogonal *capabilities* added to a host that owns state and glue. This is the job Ruby modules are for — because the SI slot is filled.
+- **Single inheritance:** variations *within a role* — **deep and thin**. A hefty parent; children fill gaps. Hierarchy depth one; travels one family, one use case (settings providers into applicable checks). Fragile base class if you stack parents. Rust absorbs this job into the trait system via typeclasses. Ruby already has it as `< Parent`, so modules should not.
+- **Traits (emulated):** orthogonal *capabilities* — **wide and shallow**. `Enumerable`, `Comparable`: generic, pure, tiny required surface. This is the job Ruby modules are for — because the SI slot is filled, and you may want several capabilities that all need internals.
 - **DI / collaborators:** *between* objects, once a piece of behaviour wants its own identity, state, and boundary. Complements **both** SI and mixins, not a third option that replaces them.
 - **Multiple inheritance:** same problem space; Ruby does not offer it; historical attempt, not a destination.
 
@@ -136,6 +136,7 @@ SI does not make injection easier — DI already did that — it makes writing t
 Mixins do not get injected; objects that *have* the mixin do.
 
 See [Scalability of Composition](/docs/scalability-of-composition) for the table.
+See [A Taxonomy of Reuse](/docs/taxonomy-of-reuse) for deep-and-thin vs wide-and-shallow, and the two pathologies: a shallow base class, a deep trait.
 
 DI is not always the better option.
 It is what you reach for when inheritance has hit its scale limit.
