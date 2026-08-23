@@ -14,7 +14,7 @@ Collaborators when reuse outgrows a single host.
 Rails occupies the SI slot on models, views, and controllers — if every piece of logic stays there, `include` is the only reuse operator left.
 Pull work into objects you own so inheritance is free again.
 ActiveModel is how those objects borrow Rails' face without borrowing the parent.
-A concern may be the small role a PORO depends on — not the place the operation lives.
+A concern is how you add a capability to a model for those POROs to depend on — not where the operation lives.
 {% /callout %}
 
 This article is the synthesis.
@@ -223,9 +223,11 @@ Those modules are traits: validations, naming, `form_with`, typed attributes.
 SI stays yours (`InvoiceForm < ApplicationForm`).
 A concern on that host may use AM macros, not AR macros.
 
-**Concerns as the role collaborators depend on.**
-The leftover concern on the *record* is allowed to be the small interface a PORO takes: `Billable` groups the DSL *and* `#total` / `#currency`; `Issue.new(billable)` depends on the role, not on `Invoice`.
-That is mixin-as-admission to a capability, not mixin-as-the-operation.
+**That is what concerns are for.**
+Add a capability to a model so its PORO collaborators can depend on that role.
+`Billable` groups the DSL *and* `#total` / `#currency`; `Issue.new(billable)` depends on the role, not on `Invoice`.
+Grouping declarations by capability is the Rails means (plain modules cannot host `has_many`).
+It is not a second job, and it is not the operation.
 Do not include `Billable` into `Issue`.
 The full split (AR vs AM, two directions) is [The One Job of a Concern](/docs/one-job-of-a-concern).
 

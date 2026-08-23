@@ -24,7 +24,7 @@ None of SI, traits, or DI is always better.
 | [Scalability of Composition](/docs/scalability-of-composition) | `load ≈ D × P × S`. Mixins least, DI + small API most. |
 | [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems) | Where each job lives. `include?` for two rows only. |
 | [Include Is Not Composition](/docs/include-is-not-composition) | Category error. Ancestor chain ≠ collaborator. |
-| [The One Job of a Concern](/docs/one-job-of-a-concern) | `included do` is class-level DSL glue for one capability. AR vs AM macros; concern as the role a PORO depends on. |
+| [The One Job of a Concern](/docs/one-job-of-a-concern) | Add a capability to a model so PORO collaborators can depend on that role. DSL grouping is the means. |
 
 This article assumes those and does: ownership of the equation, the Ruby dictionary, mixin-as-trait discipline, the Invoice/Estimate story, the close.
 
@@ -48,7 +48,8 @@ This article assumes those and does: ownership of the equation, the Ruby diction
 - Rust looks traits-only; the typeclass / `impl Trait for T` half is the SI analogue (variation within a role; coherence as one parent). Last column stays traits+SI. Not a language axis.
 - The pair is fundamental. Ruby already has SI, so modules fill the trait slot — further evidence for mixin-as-trait discipline, not a second inheritance system.
 - Rails occupies the SI slot on MVC classes. Mixin-for-everything is the path of least resistance if logic stays there. Pull work into objects you own so inheritance is free again.
-- ActiveModel is concern-shaped machinery on a class you own (validations, naming, `form_with`); it does not spend SI. AR macros stay on AR. A concern may be the small role a PORO depends on — not the PORO, and not included into it.
+- ActiveModel is concern-shaped machinery on a class you own (validations, naming, `form_with`); it does not spend SI. AR macros stay on AR.
+- What concerns are for: adding a capability to a model so PORO collaborators can depend on that role. `included do` is the Rails means. Not the operation, and not included into the PORO.
 - Story for the prose: naïve Invoice/Estimate → concern soup → equation. Build soup first.
 
 ## Still to write

@@ -3,16 +3,16 @@ title: The One Job of a Concern
 nextjs:
   metadata:
     title: The One Job of a Concern
-    description: ActiveSupport::Concern is still mixin inheritance. Its one honest job is class-level DSL glue for a single capability.
+    description: ActiveSupport::Concern is still mixin inheritance. Its one honest job is adding a capability to a model so PORO collaborators can depend on that role.
 ---
 
 {% callout title="TL;DR" type="note" %}
 A concern is a Rails-specific mixin, not a third composition model.
 It has every shortcoming of `include`: no encapsulation, full host access, still inheritance.
-Its one genuine job is grouping class-level Rails DSL **by capability**, because a plain module cannot host that machinery.
-`included do` is glue for that DSL — not a licence to own ivars or `params`.
-The macros that fire are the host's: ActiveRecord on `ApplicationRecord`, ActiveModel on a class you own.
-A concern can also be the small role interface that collaborating POROs depend on — it is not the collaborator.
+Its one job is adding a **capability** to a model so collaborating POROs can depend on that role — `Issue.new(billable)`, not `include Billable` into `Issue`.
+`included do` exists because admitting the model to the role needs class-level Rails DSL (`has_many`, `validates`, `scope`) that a plain module cannot host.
+That grouping is the means, not a second purpose.
+The macros that fire are the host's: ActiveRecord on the record, ActiveModel on a class you own.
 {% /callout %}
 
 Related: [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems), [Mix-Ins as Traits](/docs/mix-ins-as-traits), [Include Is Not Composition](/docs/include-is-not-composition).
@@ -34,14 +34,19 @@ The second is the concern owning state.
 
 ## Why concerns exist at all
 
-Normally Rails declarations are scattered by kind across a model.
-A concern lets them be grouped by capability instead.
+That is what they are *for*: adding a capability to a model so PORO collaborators can use it.
 
-The reason this needs concerns specifically is that those declarations are class-level Rails machinery.
-A plain module can hold pure methods; the associations, validations, and scopes could not be extracted into it.
-The `included do` block is what makes the extraction possible at all.
+`Billable` on `Invoice` is how the record admits itself to a role (`#total`, `#currency`, the line items that make those true).
+`Issue.new(billable).call` depends on that role, not on `Invoice`.
+The PORO is the collaborator.
+The concern is not the work.
 
-So concerns do make sense in Rails — and they can be overused just like any module.
+The Rails-shaped half of the job is why this needs a concern at all.
+Admitting a model to a capability usually means associations, validations, scopes — class-level machinery a plain module cannot hold.
+`included do` is glue for that DSL.
+Grouping declarations "by capability" is how you keep the role small, not an organisational end in itself.
+
+So concerns do make sense in Rails — as traits on the record for collaborators — and they can be overused just like any module.
 
 ## Why the soup is the path of least resistance
 
@@ -96,14 +101,11 @@ A concern that mixes both is two hosts pretending to be one capability.
 ActiveModel::Model is the recommended bundle when the PORO must sit in a form or a mailer the way a record does.
 It is still an include list of capabilities, not a reason to jam the operation back onto `Invoice`.
 
-## Concerns as the interface collaborators depend on
-
-The other honest job is the role surface, not the work.
+## The job, in one picture
 
 A `Billable` concern on the record groups that capability's DSL (`has_many :line_items`, `validates :currency`) *and* the small provided API (`#total`, `#currency`, `#billable?`).
 `Issue.new(billable).call` depends on that role, not on `Invoice`.
 The concern is how the record *admits itself* to a capability — the mixin half of [DI complementarity](/docs/scalability-of-composition).
-The PORO is the collaborator.
 Do not `include Billable` into `Issue`; do not put `Issue`'s charge logic in the concern.
 
 Two directions, both legal:
@@ -129,7 +131,7 @@ S becomes unbounded ([Scalability of Composition](/docs/scalability-of-compositi
 - Small, atomic, composable; minimal state interaction; host decides state.
 - `included do` only for **one** capability's class-level DSL — and only macros the host actually has (AR vs AM).
 - Prefer a base class for same-role variation — on an object you own, not one layer deeper in `ApplicationRecord`. ActiveModel does not spend that slot.
-- Prefer a collaborator for reusable behaviour with a real boundary; prefer a concern only for that leftover row of the [catalog](/docs/catalog-of-organizing-problems), or as the small role the collaborator depends on.
+- Prefer a collaborator for the operation; prefer a concern only to admit the model to the role that collaborator depends on.
 - The collaborator may *internally* be an SI family or wear a mixin — DI complements both; it does not replace them.
 - Do not include the record's concern into the PORO. The PORO takes the role, or wears its own AM traits.
 

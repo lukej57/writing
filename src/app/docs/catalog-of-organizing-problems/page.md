@@ -9,7 +9,8 @@ nextjs:
 {% callout title="TL;DR" type="note" %}
 Most "where does this code go?" questions are not mixin questions.
 Pure utilities, clustered arguments, role variation, operations on a record, presentation, side effects — each has a home.
-`include` is for an orthogonal capability that needs the host's internals, and (in Rails) for one capability's class-level DSL.
+`include` is for an orthogonal capability that needs the host's internals.
+In Rails that same job is a concern: add a capability to a model so PORO collaborators can depend on the role.
 Everything else on the include list is a different organising problem wearing a module.
 {% /callout %}
 
@@ -18,7 +19,7 @@ Related: [Mix-Ins as Traits](/docs/mix-ins-as-traits), [The One Job of a Concern
 ## The catalog
 
 Modules got used for every row.
-Only one row is properly theirs; Rails adds a second leftover.
+Only one row is properly theirs; the Rails leftover is the same row on a model — a capability for collaborators, not a second job.
 Send the rest home so the include list can be a capability list.
 
 | Problem | Mechanism | `include` a module? |
@@ -35,7 +36,7 @@ Send the rest home so the include list can be a capability list.
 | "Every controller needs this" (`current_user`, authn) | That's the role — base controller | no |
 | Constants / config | Namespace module, or `Rails.configuration` | no |
 | Class-method utilities (`User.recent`) | Query object, or a dedicated class | no |
-| One capability's Rails DSL (assocs, validations, scopes *for that capability*) | Concern, `included do`, keep it small. Macros are the host's: AR on the record, AM on a form you own. May also be the role a PORO depends on | yes, as a trait-shaped mixin |
+| Admit a model to a capability its POROs depend on (`Billable` → `Issue.new(billable)`) | Concern as trait: DSL + small provided API; operation stays in the PORO | **yes — this is the Rails job** |
 | Orthogonal capability that needs host internals (`Enumerable` / `Comparable` shape) | Mixin as trait; host owns state + glue | **yes — this is the job** |
 
 Test: `Thing.new(host).call` → never a trait.

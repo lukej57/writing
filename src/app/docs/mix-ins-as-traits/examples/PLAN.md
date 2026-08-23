@@ -60,7 +60,7 @@ Write the soup snapshot so that **each bad include is a catalog row**. The equat
 | `as_json` for the API | `include Displayable` | Presenter / decorator | Presentation |
 | `after_save` sync | `include Auditable` | Host callback calls `Audit.log(document)` | Side effects |
 | Compare / sort documents | homemade `include Orderable` touching `@number` | `include Comparable`; host implements `<=>` as **glue**; `@number` is **state** | Real trait |
-| Client `has_many` + validations that *are* one capability | (optional) a fat concern | Small concern, `included do` only for that capability's DSL | Legitimate Rails leftover |
+| Client `has_many` + validations that *are* one capability | fat concern that *is* the operation | Slim concern admits the model to the role; PORO does the work | What concerns are for |
 
 Not every row needs a full class in the article. Several can be a 8-line before/after. The **spine** of the story is: duplication → soup (`Exportable` + `Notifiable` + `Formatting` + `DocumentBehaviour`) → equation (`Document` superclass, `Comparable`, `PdfExporter`, `Notifier`, `Formatting.currency`).
 
