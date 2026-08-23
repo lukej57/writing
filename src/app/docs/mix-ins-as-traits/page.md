@@ -138,10 +138,7 @@ SI does not make injection easier — DI already did that — it makes writing t
 Mixins do not get injected; objects that *have* the mixin do.
 
 See [Scalability of Composition](/docs/scalability-of-composition) for the table.
-See [A Taxonomy of Reuse](/docs/taxonomy-of-reuse) for deep-and-thin vs wide-and-shallow.
-Pros are what the shape buys; pitfalls are what you still pay after the swap.
-Shallow base class: you spent the parent on a capability and still need mixins for the second.
-Deep trait: S explodes, the composer is lost, and fake-host tests become a second implementation.
+See [A Taxonomy of Reuse](/docs/taxonomy-of-reuse) for deep-and-thin vs wide-and-shallow (buys / pitfalls still a stub).
 
 DI is not always the better option.
 It is what you reach for when inheritance has hit its scale limit.
