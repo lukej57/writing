@@ -57,6 +57,7 @@ This article assumes those and does: ownership of the equation, the Ruby diction
 ## Still to write
 
 - Buys / pitfalls of deep-thin SI, wide-shallow traits, and the two pathologies.
+- SI as P grows: parent as template with slots; FBC contained.
 - The axiom articles' prose (outlines already extracted).
 - The three snapshots under `examples/snapshots/`.
 - Actual synthesis prose in `page.md`.
