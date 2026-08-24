@@ -62,7 +62,7 @@ function routeEdgesBetweenDots(svgMarkup: string) {
     return [{ x: centre.x, y: centre.y, r: radius }]
   })
 
-  const gap = dots[0] ? Math.max(3, dots[0].r * 0.4) : 4
+  const gap = dots[0] ? Math.max(4, dots[0].r * 0.55) : 4
 
   const paths = svg.querySelectorAll<SVGPathElement>(
     'path.flowchart-link, .edgePath .path',
@@ -107,8 +107,8 @@ function routeEdgesBetweenDots(svgMarkup: string) {
   }
 
   for (const marker of svg.querySelectorAll('marker')) {
-    marker.setAttribute('markerWidth', '8')
-    marker.setAttribute('markerHeight', '8')
+    marker.setAttribute('markerWidth', '5')
+    marker.setAttribute('markerHeight', '5')
   }
 
   const html = holder.innerHTML
