@@ -53,7 +53,8 @@
 /* Black-and-white abstract dependency graphs (Mermaid). */
 .dependency-graph svg {
   max-width: 100%;
-  height: auto;
+  height: 4.5rem;
+  width: auto;
   background: transparent !important;
 }
 
