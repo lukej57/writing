@@ -43,6 +43,47 @@ function insetEdgeEnds(svgMarkup: string) {
   return holder.innerHTML
 }
 
+const TARGET_DOT_RADIUS = 9
+
+function fitSvgToDotSize(svgMarkup: string) {
+  const holder = document.createElement('div')
+  holder.innerHTML = svgMarkup
+  const svg = holder.querySelector('svg')
+  if (!svg) {
+    return svgMarkup
+  }
+
+  const circle = svg.querySelector('circle')
+  const radius =
+    circle instanceof SVGCircleElement ? Number(circle.getAttribute('r')) : NaN
+  if (!Number.isFinite(radius) || radius <= 0) {
+    return holder.innerHTML
+  }
+
+  const scale = TARGET_DOT_RADIUS / radius
+  const viewBox = svg.getAttribute('viewBox')
+  let width = Number(svg.getAttribute('width'))
+  let height = Number(svg.getAttribute('height'))
+  if (viewBox) {
+    const parts = viewBox.split(/[\s,]+/).map(Number)
+    if (parts.length === 4 && parts.every((part) => Number.isFinite(part))) {
+      width = parts[2]
+      height = parts[3]
+    }
+  }
+  if (!Number.isFinite(width) || !Number.isFinite(height)) {
+    return holder.innerHTML
+  }
+
+  svg.setAttribute('width', String(Math.round(width * scale)))
+  svg.setAttribute('height', String(Math.round(height * scale)))
+  svg.style.maxWidth = '100%'
+  svg.style.height = 'auto'
+  svg.style.width = 'auto'
+
+  return holder.innerHTML
+}
+
 function loadMermaid() {
   if (!mermaidReady) {
     mermaidReady = import('mermaid').then(({ default: mermaid }) => {
@@ -70,8 +111,8 @@ function loadMermaid() {
           curve: 'linear',
           htmlLabels: false,
           padding: 10,
-          nodeSpacing: 64,
-          rankSpacing: 88,
+          nodeSpacing: 48,
+          rankSpacing: 64,
           useMaxWidth: false,
         },
       })
@@ -94,7 +135,7 @@ export function Mermaid({ chart }: { chart: string }) {
       .then((mermaid) => mermaid.render(`mermaid-${reactId}`, chart.trim()))
       .then(({ svg }) => {
         if (!cancelled) {
-          setSvg(insetEdgeEnds(svg))
+          setSvg(fitSvgToDotSize(insetEdgeEnds(svg)))
           setError(null)
         }
       })
