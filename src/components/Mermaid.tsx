@@ -32,8 +32,8 @@ function nearestDot(dots: Dot[], x: number, y: number) {
 }
 
 // Mermaid docks every edge to the same node port, so fan-in/out
-// arrowheads stack. Redraw each edge along the true centre line
-// so it meets the circle at its own point.
+// arrowheads stack. Redraw each edge toward a unique point on the
+// circle, with a slight cubic bow so fans look like natural paths.
 function routeEdgesBetweenDots(svgMarkup: string) {
   const holder = document.createElement('div')
   holder.style.cssText = 'position:absolute;left:-99999px;top:0;visibility:hidden'
@@ -93,22 +93,70 @@ function routeEdgesBetweenDots(svgMarkup: string) {
 
     const ux = dx / distance
     const uy = dy / distance
-    const from = svgPointLocal(
-      path,
-      source.x + ux * (source.r + gap),
-      source.y + uy * (source.r + gap),
-    )
-    const to = svgPointLocal(
-      path,
-      target.x - ux * (target.r + gap),
-      target.y - uy * (target.r + gap),
-    )
-    path.setAttribute('d', `M${from.x},${from.y} L${to.x},${to.y}`)
+    const fromX = source.x + ux * (source.r + gap)
+    const fromY = source.y + uy * (source.r + gap)
+    const toX = target.x - ux * (target.r + gap)
+    const toY = target.y - uy * (target.r + gap)
+    const spanX = toX - fromX
+    const spanY = toY - fromY
+    const span = Math.hypot(spanX, spanY)
+    if (span < 2) {
+      continue
+    }
+
+    const sux = spanX / span
+    const suy = spanY / span
+    const lateral = source.x - target.x
+    const mostlyHorizontal = Math.abs(suy) < 0.4
+    let bow = 0
+    let bowX = 0
+    let bowY = 0
+    if (mostlyHorizontal) {
+      bow = span * 0.12
+      bowY = -1
+    } else if (Math.abs(lateral) > 1) {
+      bow = span * 0.16
+      bowX = Math.sign(lateral)
+    }
+
+    const from = svgPointLocal(path, fromX, fromY)
+    const to = svgPointLocal(path, toX, toY)
+
+    if (bow === 0) {
+      path.setAttribute('d', `M${from.x},${from.y} L${to.x},${to.y}`)
+    } else {
+      const c1 = svgPointLocal(
+        path,
+        fromX + sux * span * 0.4 + bowX * bow,
+        fromY + suy * span * 0.4 + bowY * bow,
+      )
+      const c2 = svgPointLocal(
+        path,
+        toX - sux * span * 0.28 + bowX * bow * 0.35,
+        toY - suy * span * 0.28 + bowY * bow * 0.35,
+      )
+      path.setAttribute(
+        'd',
+        `M${from.x},${from.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${to.x},${to.y}`,
+      )
+    }
   }
 
   for (const marker of svg.querySelectorAll('marker')) {
     marker.setAttribute('markerWidth', '5')
     marker.setAttribute('markerHeight', '5')
+  }
+
+  const viewBox = svg.getAttribute('viewBox')
+  if (viewBox && dots[0]) {
+    const parts = viewBox.split(/[\s,]+/).map(Number)
+    if (parts.length === 4 && parts.every((part) => Number.isFinite(part))) {
+      const pad = dots[0].r * 2.5
+      svg.setAttribute(
+        'viewBox',
+        `${parts[0] - pad} ${parts[1] - pad} ${parts[2] + pad * 2} ${parts[3] + pad * 2}`,
+      )
+    }
   }
 
   const html = holder.innerHTML
