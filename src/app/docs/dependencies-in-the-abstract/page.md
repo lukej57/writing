@@ -34,6 +34,55 @@ flowchart LR
 `A → B` means *A depends on B*.
 Change in B may ripple to A (against the arrow).
 
+A node, alone.
+
+```mermaid
+flowchart
+  A((A))
+```
+
+The lower node depends on the upper one.
+
+```mermaid
+flowchart BT
+  A((A)) --> B((B))
+```
+
+Three depend on one.
+
+```mermaid
+flowchart BT
+  X((X)) --> L((L))
+  Y((Y)) --> L
+  Z((Z)) --> L
+```
+
+Many depend on one.
+
+```mermaid
+flowchart BT
+  A((A)) --> L((L))
+  B((B)) --> L
+  C((C)) --> L
+  D((D)) --> L
+  E((E)) --> L
+  F((F)) --> L
+  G((G)) --> L
+```
+
+One depends on many.
+
+```mermaid
+flowchart TB
+  L((L)) --> A((A))
+  L --> B((B))
+  L --> C((C))
+  L --> D((D))
+  L --> E((E))
+  L --> F((F))
+  L --> G((G))
+```
+
 ## Outline (working)
 
 ### Two nodes
