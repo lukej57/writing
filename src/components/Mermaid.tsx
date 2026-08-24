@@ -4,43 +4,164 @@ import { useEffect, useId, useState } from 'react'
 
 let mermaidReady: Promise<typeof import('mermaid').default> | null = null
 
-function insetEdgeEnds(svgMarkup: string) {
+type Dot = { x: number; y: number; r: number }
+
+function svgPoint(element: SVGGraphicsElement, x: number, y: number) {
+  const point = new DOMPoint(x, y)
+  const ctm = element.getCTM()
+  return ctm ? point.matrixTransform(ctm) : point
+}
+
+function svgPointLocal(element: SVGGraphicsElement, x: number, y: number) {
+  const point = new DOMPoint(x, y)
+  const ctm = element.getCTM()
+  return ctm ? point.matrixTransform(ctm.inverse()) : point
+}
+
+function nearestDot(dots: Dot[], x: number, y: number) {
+  let closest: Dot | undefined
+  let best = Infinity
+  for (const dot of dots) {
+    const distance = Math.hypot(dot.x - x, dot.y - y)
+    if (distance < best) {
+      best = distance
+      closest = dot
+    }
+  }
+  return closest
+}
+
+// Mermaid docks every edge to the same node port, so fan-in/out
+// arrowheads stack. Redraw each edge toward a unique point on the
+// circle, with a slight cubic bow so fans look like natural paths.
+function routeEdgesBetweenDots(svgMarkup: string) {
   const holder = document.createElement('div')
+  holder.style.cssText = 'position:absolute;left:-99999px;top:0;visibility:hidden'
   holder.innerHTML = svgMarkup
+  document.body.appendChild(holder)
+
   const svg = holder.querySelector('svg')
   if (!svg) {
+    holder.remove()
     return svgMarkup
   }
 
-  const circle = svg.querySelector('circle, ellipse')
-  let gap = 4
-  if (circle instanceof SVGCircleElement) {
-    const radius = Number(circle.getAttribute('r'))
-    if (Number.isFinite(radius) && radius > 0) {
-      gap = Math.max(3, radius * 0.4)
+  const dots: Dot[] = [
+    ...svg.querySelectorAll<SVGCircleElement>('.node circle'),
+  ].flatMap((circle) => {
+    const box = circle.getBBox()
+    const centre = svgPoint(
+      circle,
+      box.x + box.width / 2,
+      box.y + box.height / 2,
+    )
+    const radius = box.width / 2
+    if (!Number.isFinite(radius) || radius <= 0) {
+      return []
     }
-  } else if (circle instanceof SVGEllipseElement) {
-    const radiusX = Number(circle.getAttribute('rx'))
-    if (Number.isFinite(radiusX) && radiusX > 0) {
-      gap = Math.max(3, radiusX * 0.4)
-    }
-  }
+    return [{ x: centre.x, y: centre.y, r: radius }]
+  })
+
+  const gap = dots[0] ? Math.max(4, dots[0].r * 0.55) : 4
 
   const paths = svg.querySelectorAll<SVGPathElement>(
     'path.flowchart-link, .edgePath .path',
   )
   for (const path of paths) {
     const length = path.getTotalLength()
-    if (!Number.isFinite(length) || length <= gap * 2 + 2) {
+    if (!Number.isFinite(length) || length < 2) {
       continue
     }
 
-    const start = path.getPointAtLength(gap)
-    const end = path.getPointAtLength(length - gap)
-    path.setAttribute('d', `M${start.x},${start.y} L${end.x},${end.y}`)
+    const start = path.getPointAtLength(0)
+    const end = path.getPointAtLength(length)
+    const startSvg = svgPoint(path, start.x, start.y)
+    const endSvg = svgPoint(path, end.x, end.y)
+    const source = nearestDot(dots, startSvg.x, startSvg.y)
+    const target = nearestDot(dots, endSvg.x, endSvg.y)
+    if (!source || !target || source === target) {
+      continue
+    }
+
+    const dx = target.x - source.x
+    const dy = target.y - source.y
+    const distance = Math.hypot(dx, dy)
+    const clearance = source.r + target.r + gap * 2
+    if (distance <= clearance) {
+      continue
+    }
+
+    const ux = dx / distance
+    const uy = dy / distance
+    const fromX = source.x + ux * (source.r + gap)
+    const fromY = source.y + uy * (source.r + gap)
+    const toX = target.x - ux * (target.r + gap)
+    const toY = target.y - uy * (target.r + gap)
+    const spanX = toX - fromX
+    const spanY = toY - fromY
+    const span = Math.hypot(spanX, spanY)
+    if (span < 2) {
+      continue
+    }
+
+    const sux = spanX / span
+    const suy = spanY / span
+    const lateral = source.x - target.x
+    const mostlyHorizontal = Math.abs(suy) < 0.4
+    let bow = 0
+    let bowX = 0
+    let bowY = 0
+    if (mostlyHorizontal) {
+      bow = span * 0.12
+      bowY = -1
+    } else if (Math.abs(lateral) > 1) {
+      bow = span * 0.16
+      bowX = Math.sign(lateral)
+    }
+
+    const from = svgPointLocal(path, fromX, fromY)
+    const to = svgPointLocal(path, toX, toY)
+
+    if (bow === 0) {
+      path.setAttribute('d', `M${from.x},${from.y} L${to.x},${to.y}`)
+    } else {
+      const c1 = svgPointLocal(
+        path,
+        fromX + sux * span * 0.4 + bowX * bow,
+        fromY + suy * span * 0.4 + bowY * bow,
+      )
+      const c2 = svgPointLocal(
+        path,
+        toX - sux * span * 0.28 + bowX * bow * 0.35,
+        toY - suy * span * 0.28 + bowY * bow * 0.35,
+      )
+      path.setAttribute(
+        'd',
+        `M${from.x},${from.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${to.x},${to.y}`,
+      )
+    }
   }
 
-  return holder.innerHTML
+  for (const marker of svg.querySelectorAll('marker')) {
+    marker.setAttribute('markerWidth', '5')
+    marker.setAttribute('markerHeight', '5')
+  }
+
+  const viewBox = svg.getAttribute('viewBox')
+  if (viewBox && dots[0]) {
+    const parts = viewBox.split(/[\s,]+/).map(Number)
+    if (parts.length === 4 && parts.every((part) => Number.isFinite(part))) {
+      const pad = dots[0].r * 2.5
+      svg.setAttribute(
+        'viewBox',
+        `${parts[0] - pad} ${parts[1] - pad} ${parts[2] + pad * 2} ${parts[3] + pad * 2}`,
+      )
+    }
+  }
+
+  const html = holder.innerHTML
+  holder.remove()
+  return html
 }
 
 const TARGET_DOT_RADIUS = 9
@@ -135,7 +256,7 @@ export function Mermaid({ chart }: { chart: string }) {
       .then((mermaid) => mermaid.render(`mermaid-${reactId}`, chart.trim()))
       .then(({ svg }) => {
         if (!cancelled) {
-          setSvg(fitSvgToDotSize(insetEdgeEnds(svg)))
+          setSvg(fitSvgToDotSize(routeEdgesBetweenDots(svg)))
           setError(null)
         }
       })
