@@ -3,7 +3,7 @@ title: Dependencies in the Abstract
 nextjs:
   metadata:
     title: Dependencies in the Abstract
-    description: A node is anything you can depend on. Fan-in makes it harder to change; fan-out makes it harder not to change. Both at once is a god object.
+    description: A node is anything you can depend on. Fan-in makes it harder to change; fan-out makes it harder not to change. Layers of abstraction attenuate ripples.
 ---
 
 {% callout title="TL;DR" type="note" %}
@@ -12,6 +12,8 @@ An arrow is a reference plus an invocation.
 As more things depend on a node, unwanted ripples become more likely, so the node gets harder to change.
 Flip the arrows and the inverse happens: more paths in, so it gets harder *not* to change.
 Both at once is a god object — hard to change and hard not to change.
+A real system still depends on hundreds of libraries.
+It survives because layers of abstraction attenuate ripples: each hop multiplies the chance down, if the abstraction holds.
 {% /callout %}
 
 Related: [The Dark Side of DRY](/docs/dark-side-of-dry), [Scalability of Composition](/docs/scalability-of-composition), [The Calculus of Maintainable Software](/docs/calculus-of-maintainable-sw), [Depending on Behaviour versus Depending on Data](/docs/depending-on-behaviour-versus-data).
@@ -151,37 +153,70 @@ It is a massive antipattern.
 | High fan-in | Depended on by many | Harder to change — freezes |
 | High fan-out | Depends on many | Harder *not* to change — volatile |
 | Both | Hub | Hard to change *and* hard not to change — a god object |
+| Long paths | Layered | Ripples attenuate — risk falls as *pⁿ* |
 
 DRY's vertical coupling ([Dark Side of DRY](/docs/dark-side-of-dry)) is a hub: many sites → one abstraction, short paths, ripples both ways.
 Scalability's P is *degree*; this article is *paths* ([Scalability of Composition](/docs/scalability-of-composition)).
 
-## Outline still open
+## How does software work at all?
 
-### Insert a layer — probability attenuates
+If depending on many things makes a node harder *not* to change, how does any real system survive?
+A Rails app depends on hundreds of gems.
+A service depends on a forest of packages.
+Those are not small fan-outs.
 
+The count of arrows is not what makes a node unstable by itself.
+It is how short the paths are.
+
+## Insert a layer
+
+The single arrow was one hop.
+
+```mermaid
+flowchart BT
+  A((A)) --> B((B))
 ```
-  A ────► M ────► B
+
+A change in B may reach A in one step.
+Let each hop carry a change with probability *p*, and let *p* be less than one.
+The risk is about *p*.
+
+Now put something in the middle.
+
+```mermaid
+flowchart BT
+  A((A)) --> M((M))
+  M --> B((B))
 ```
 
-Let each hop propagate a change with probability *p* < 1.
-Direct `A → B`: risk ≈ *p*.
-Via M: risk ≈ *p* × *p*.
-The middle entity is not just indirection.
+A change in B must cross two hops to reach A.
+The risk is about *p* × *p*.
+The middle node is not just indirection.
 It is attenuation.
 
-That is why a system with a *large* number of dependencies can be stable: the paths are long.
-Count of edges is the wrong fear.
-Path length and layering are the right ones.
+That assumes the abstraction holds.
+A leaky layer is a short path with a longer name.
 
-### Layers
+## Layers
 
-```
-  UI ──► app ──► domain ──► data
+A real stack is the same idea, repeated.
+
+```mermaid
+flowchart BT
+  UI((UI)) --> App((App))
+  App --> Domain((Domain))
+  Domain --> Data((Data))
 ```
 
 Many edges.
 Few short paths from a frozen core to the edge.
-A change in `data` must cross three hops to reach `UI`.
+A change in the data layer must cross three hops to reach the UI.
+If each hop is *p*, the chance of a ripple all the way is about *p*³.
+Each extra layer multiplies the chance down.
+
+That is why a system with a *large* number of dependencies can be stable.
+Count of edges is the wrong fear.
+Path length and layering are the right ones.
 
 ## Map to examples (stub)
 
@@ -205,5 +240,6 @@ Maintainability is a property of the graph's shape.
 - Arrow: depender → depended-on. Ripple travels the other way.
 - A node is anything you can depend on; an arrow is a reference plus an invocation.
 - Fan-in: harder to change. Fan-out: harder not to change. Both: a god object.
-- Change as probability per hop; a layer attenuates.
+- Change as probability per hop; a good layer attenuates — risk falls as *pⁿ*.
+- That is how software with hundreds of libraries still holds: the paths are long.
 - Diagrams do the carrying; examples come after the shapes.
