@@ -12,6 +12,8 @@ Not published. Not the article.
 SI + traits is the fundamental pair.
 Rust still does both jobs (typeclass = SI).
 Ruby already has SI, so modules should be **traits**: a small capability, pure methods, host owns state and glue.
+Keep the include list short and each mixin atomic — no encapsulation, later include wins.
+A God class split into single-use concerns is still a god object.
 Everything else is a different organising problem.
 `Class = Superclass + State + Traits + Glue`.
 None of SI, traits, or DI is always better.
@@ -22,9 +24,9 @@ None of SI, traits, or DI is always better.
 |---|---|
 | [A Taxonomy of Reuse](/docs/taxonomy-of-reuse) | Problems × SI / MI / mixins / traits+SI. Mixins win extraction, lose control. |
 | [Scalability of Composition](/docs/scalability-of-composition) | `load ≈ D × P × S`. Mixins least, DI + small API most. |
-| [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems) | Where each job lives. `include?` for two rows only. |
-| [Include Is Not Composition](/docs/include-is-not-composition) | Category error. Ancestor chain ≠ collaborator. |
-| [The One Job of a Concern](/docs/one-job-of-a-concern) | Add a capability to a model so PORO collaborators can depend on that role. DSL grouping is the means. |
+| [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems) | Where each job lives. `include?` for two rows only. Single-use concern split = still a god object. Few, atomic mixins. |
+| [Include Is Not Composition](/docs/include-is-not-composition) | Category error. Ancestor chain ≠ collaborator. God class in several files is still one object. |
+| [The One Job of a Concern](/docs/one-job-of-a-concern) | Add a capability to a model so PORO collaborators can depend on that role. DSL grouping is the means. Single-use concerns are a table of contents. |
 
 This article assumes those and does: ownership of the equation, the Ruby dictionary, mixin-as-trait discipline, the Invoice/Estimate story, the close.
 
@@ -37,7 +39,7 @@ Foundation (not this series): [Dependencies in the Abstract](/docs/dependencies-
 - Theory → Ruby dictionary (`include` / `prepend` / `extend`).
 - Discipline: required API, fake-host tests, `Enumerable` / `Comparable`.
 - Story: naïve → soup → equation (`examples/PLAN.md`).
-- Close: the pair is fundamental; Ruby has SI so modules are traits; Rails spends SI on MVC — pull logic out; short include list; collaborators scale a system.
+- Close: the pair is fundamental; Ruby has SI so modules are traits; Rails spends SI on MVC — pull logic out; short include list; single-use concerns are still a God class; collaborators scale a system.
 
 ## Decisions already locked
 
@@ -55,6 +57,8 @@ Foundation (not this series): [Dependencies in the Abstract](/docs/dependencies-
 - SI is deep and thin; traits are wide and shallow. Pathologies: shallow base class, deep trait. Buys/pitfalls of those four are a stub — return to them.
 - As an SI family grows, the parent tends toward a template with slots; children fill blanks and vary less from the base. That keeps FBC in check. Stub — return to this.
 - Story for the prose: naïve Invoice/Estimate → concern soup → equation. Build soup first.
+- Mixins should be few and atomic. No encapsulation + order-dependent resolution means they overwrite each other; do not combine huge shared bodies this way.
+- Carving one God class into concerns used only by that class is still a god object. Files / `concerning` are not a boundary.
 
 ## Still to write
 

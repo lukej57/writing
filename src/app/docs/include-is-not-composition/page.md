@@ -12,6 +12,7 @@ It looks compositional because you can mix many things.
 It is composition **without a boundary** — no object identity, no private state, full access to the host.
 The slogan people think they are following is a second object with a public API.
 The mechanism they are using is a parent in the ancestor chain.
+A God class split into several files is still one object.
 {% /callout %}
 
 Related: [A Taxonomy of Reuse](/docs/taxonomy-of-reuse), [The Dark Side of DRY](/docs/dark-side-of-dry), [Mix-Ins as Traits](/docs/mix-ins-as-traits).
@@ -34,6 +35,21 @@ See [Scalability of Composition](/docs/scalability-of-composition).
 The slogan people think they are following is the second object.
 The mechanism they are using is the first, without the discipline.
 
+## The God class in several files
+
+The same category error has a quieter form.
+An 800-line `User` becomes `include UserAuthentication`, `include UserBilling`, `include UserNotifications`.
+Each module has one client: `User`.
+The class looks composed.
+The instance is the same god object it was — every method, every ivar, no boundary.
+`concerning` does this in one file; `app/models/concerns/` does it across files.
+Neither is composition-over-inheritance.
+It is a table of contents for a God class.
+
+If the pieces are only used here, they were never a capability.
+Leave them on the class, or give a piece its own object.
+See [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems).
+
 A second mistake sits next to that one: using `include` for *role variation* when Ruby already has a parent.
 SI + traits is the fundamental pair ([taxonomy](/docs/taxonomy-of-reuse)).
 Rust still does both jobs inside one construct.
@@ -51,6 +67,7 @@ extend  M   eigenclass → M                        module methods become single
 |---|---|
 | "We composed in `Notifiable`" | `Notifiable` is a parent. `super` follows linearisation. Later include wins. |
 | "Composition over inheritance" | No second object. No private state. The mixin may touch anything on the host. |
+| "We split the God class into concerns" | Same instance, same methods, same ivars. Files are not a boundary. |
 | "More flexible than a base class" | Yes — that is why mixins exist ([taxonomy](/docs/taxonomy-of-reuse): they win extraction). Flexibility is not a boundary. |
 
 `prepend` is the one mixin job the paper said mixins do well: a generic wrapper with late-bound `super`.

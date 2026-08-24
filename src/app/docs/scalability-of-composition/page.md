@@ -63,11 +63,17 @@ Public interfaces win the ranking because they drop D to 1 *and* let you keep k 
 They win *again* when k stays small.
 A 40-method service object is `N · 40` — still a lot of coupling, just unidirectional.
 
+Splitting one God class into N mixins used only by that class does not change the load.
+P is still 1 (one host).
+S is still the whole object — the methods flattened back onto it, no boundary.
+You paid mixin cost for a table of contents.
+See [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems).
+
 ## Ranked least → most scalable
 
 | | Technique | Scales to | Breaks when |
 |---|---|---|---|
-| least | Mixin inheritance | a small capability on a few hosts | many includes, or a **deep trait** (many methods per mixin) |
+| least | Mixin inheritance | a small capability on a few hosts | many includes, a **deep trait** (many methods per mixin), or N single-use concerns that are still one God class |
 | | Multiple inheritance | almost never worth it | diamond, named parents, state copied twice |
 | | Single inheritance | one level of role variation — deep body, thin travel; as P grows, a template with slots | the hierarchy deepens; children rewrite the parent; the parent keeps growing "real" behaviour; or a **shallow base class** |
 | | Traits | orthogonal capabilities on a class — wide and shallow | the required API grows; mixins pretending to be traits |

@@ -36,6 +36,8 @@ I think it's reasonable to include a good summary of the background and general 
 
 And then we'll move toward the end of the paper, where we see modules or mixins used as traits versus mixins used for absolutely everything. We should probably discuss concerns about the kind of Rails-specific manifestation of mixins and why they should be small, atomic, composable, etc.
 
+Two points that must land: (1) aim for a small number of mixins, each small and atomic — they lack encapsulation, resolve by ancestor order, and overwrite each other, so you do not combine huge amounts of shared common code that way; (2) taking one God class and splitting it into a bunch of concerns that are only used in that class is not any different from a god object.
+
 Some other examples are controllers with similar functionality. Unless the controllers are truly different in their domain, they could probably share a base controller, rather than using mixins to deduplicate their internals. Mixins should add some sort of out-of-band capability to a controller. If the controllers can be siblings under a base class, we should reach for that before using mixins, unless it truly does add a non-specific capability to that controller.
 
 On the other hand, concerns have one genuinely interesting role: co-locating and grouping together the many different kinds of Rails declarations — associations, validations, scopes, API methods, callbacks — that together implement a single capability of a Rails class. Normally those declarations are scattered by kind across a model; a concern lets them be grouped by capability instead. That is probably where concerns make sense.
@@ -65,7 +67,7 @@ Do not re-derive the paper matrix, the `D × P × S` tables, or the fourteen-row
 
 Roughly the order to build toward:
 
-1. The problem: everything is a concern; God classes by accumulation.
+1. The problem: everything is a concern; God classes by accumulation — including a God class split into concerns used only by that class (still one object).
 2. Point at the axioms (taxonomy, coupling, catalog, category error).
 3. The equation as an *ownership* rule; mixin-as-trait discipline.
 4. `Enumerable` / `Comparable` as the canonical traits.

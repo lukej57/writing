@@ -10,6 +10,7 @@ nextjs:
 Reuse has two halves: can you extract shared behaviour, and who is in control when you combine it?
 Single inheritance, multiple inheritance, mixins, and traits fail different rows of that matrix.
 Mixins exist because they win extraction — including generic wrappers — and then lose control to linearisation.
+Keep them few and atomic, or they overwrite each other.
 Traits plus a shallow parent is the only column that ticks both halves.
 That pair is fundamental: Rust still does both jobs inside one construct.
 Ruby already has the parent, so modules should fill the trait slot.
@@ -95,6 +96,10 @@ This is why mixins exist — and why they *look* like composition.
 Composition: total order; later silently wins; glue disperses into intermediate classes (`Rectangle + MColor + MBorder`); adding a method to a mixin can clobber another with no alarm.
 This is still inheritance.
 Flexibility without a boundary is not the GoF slogan.
+That is why mixin-as-trait discipline keeps the count small and the units atomic.
+You cannot encapsulate, and you cannot see the clash.
+A large shared body, or a long include list, is how one mixin overwrites another.
+Paper traits signal the conflict at the composer; Ruby linearises.
 See [Include Is Not Composition](/docs/include-is-not-composition).
 
 **Traits + single inheritance.**
