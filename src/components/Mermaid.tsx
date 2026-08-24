@@ -4,6 +4,45 @@ import { useEffect, useId, useState } from 'react'
 
 let mermaidReady: Promise<typeof import('mermaid').default> | null = null
 
+function insetEdgeEnds(svgMarkup: string) {
+  const holder = document.createElement('div')
+  holder.innerHTML = svgMarkup
+  const svg = holder.querySelector('svg')
+  if (!svg) {
+    return svgMarkup
+  }
+
+  const circle = svg.querySelector('circle, ellipse')
+  let gap = 4
+  if (circle instanceof SVGCircleElement) {
+    const radius = Number(circle.getAttribute('r'))
+    if (Number.isFinite(radius) && radius > 0) {
+      gap = Math.max(3, radius * 0.4)
+    }
+  } else if (circle instanceof SVGEllipseElement) {
+    const radiusX = Number(circle.getAttribute('rx'))
+    if (Number.isFinite(radiusX) && radiusX > 0) {
+      gap = Math.max(3, radiusX * 0.4)
+    }
+  }
+
+  const paths = svg.querySelectorAll<SVGPathElement>(
+    'path.flowchart-link, .edgePath .path',
+  )
+  for (const path of paths) {
+    const length = path.getTotalLength()
+    if (!Number.isFinite(length) || length <= gap * 2 + 2) {
+      continue
+    }
+
+    const start = path.getPointAtLength(gap)
+    const end = path.getPointAtLength(length - gap)
+    path.setAttribute('d', `M${start.x},${start.y} L${end.x},${end.y}`)
+  }
+
+  return holder.innerHTML
+}
+
 function loadMermaid() {
   if (!mermaidReady) {
     mermaidReady = import('mermaid').then(({ default: mermaid }) => {
@@ -55,7 +94,7 @@ export function Mermaid({ chart }: { chart: string }) {
       .then((mermaid) => mermaid.render(`mermaid-${reactId}`, chart.trim()))
       .then(({ svg }) => {
         if (!cancelled) {
-          setSvg(svg)
+          setSvg(insetEdgeEnds(svg))
           setError(null)
         }
       })
