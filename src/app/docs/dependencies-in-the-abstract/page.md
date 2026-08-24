@@ -203,9 +203,9 @@ A real stack is the same idea, repeated.
 
 ```mermaid
 flowchart BT
-  UI((UI)) --> App((App))
-  App --> Domain((Domain))
-  Domain --> Data((Data))
+  A((A)) --> B((B))
+  B --> C((C))
+  C --> D((D))
 ```
 
 Many edges.
