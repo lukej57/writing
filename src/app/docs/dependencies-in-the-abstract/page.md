@@ -3,26 +3,41 @@ title: Dependencies in the Abstract
 nextjs:
   metadata:
     title: Dependencies in the Abstract
-    description: The topology of a dependency graph — not the number of edges — is what makes a system maintainable. Change is a probability; layers attenuate it.
+    description: A node is anything you can depend on. Fan-in makes it harder to change; fan-out makes it harder not to change. Both at once is a god object.
 ---
 
 {% callout title="TL;DR" type="note" %}
-Dependencies are a DAG.
-The *topology* of that graph is what makes a system maintainable — not how many edges it has.
-Model change as a probability: each hop can fail to propagate, so an entity in the middle *attenuates* ripple risk.
-That is why a project with many dependencies can still be stable — there are layers between them.
-A node many others depend on is likely to *send* ripples, so it freezes.
-A node that depends on many others is likely to *receive* ripples, so it changes.
+A node is anything you can depend on: a class, a method, a package.
+An arrow is a reference plus an invocation.
+As more things depend on a node, unwanted ripples become more likely, so the node gets harder to change.
+Flip the arrows and the inverse happens: more paths in, so it gets harder *not* to change.
+Both at once is a god object — hard to change and hard not to change.
 {% /callout %}
 
 Related: [The Dark Side of DRY](/docs/dark-side-of-dry), [Scalability of Composition](/docs/scalability-of-composition), [The Calculus of Maintainable Software](/docs/calculus-of-maintainable-sw), [Depending on Behaviour versus Depending on Data](/docs/depending-on-behaviour-versus-data).
 
 This is a foundation article, not a Mix-Ins axiom.
-A few diagrams should carry the examples.
-The same logic transfers to architecture in general.
+The diagrams carry the cases.
+The same arrows describe classes, methods, packages, services, teams.
 
-**Convention.**
-One node with an arrow to another means the first depends on the second.
+## A node
+
+A dot is a point on which you can depend.
+
+```mermaid
+flowchart
+  A((A))
+```
+
+It might be a class.
+It might be a method.
+It might be a package, a service, a table, a team.
+The shape does not care.
+Anything that can be named and referenced is a node.
+
+## An arrow
+
+An arrow is the dependency relationship.
 
 ```mermaid
 flowchart LR
@@ -32,23 +47,25 @@ flowchart LR
 ```
 
 `A → B` means *A depends on B*.
-Change in B may ripple to A (against the arrow).
+A has a reference to B and invokes it in some way.
+That can be one method calling another.
+It can be one class calling a method on another class.
+Change in B may ripple to A, against the arrow.
 
-A node, alone.
+## As dependants rise
 
-```mermaid
-flowchart
-  A((A))
-```
-
-The lower node depends on the upper one.
+Start with one thing depended on by one other thing.
 
 ```mermaid
 flowchart BT
   A((A)) --> B((B))
 ```
 
-Three depend on one.
+A method depended on by one other method is a little harder to change.
+You have one other site to think about.
+The ripple has somewhere to go.
+
+Three is already a crowd.
 
 ```mermaid
 flowchart BT
@@ -57,7 +74,7 @@ flowchart BT
   Z((Z)) --> L
 ```
 
-Many depend on one.
+Now let the number keep rising.
 
 ```mermaid
 flowchart BT
@@ -70,7 +87,17 @@ flowchart BT
   G((G)) --> L
 ```
 
-One depends on many.
+Twenty-five dependants.
+A hundred.
+A thousand.
+The node is now really hard to change.
+It is hard even to understand the consequences.
+As the number of dependants rises, the likelihood of unwanted ripple effects rises with it.
+A node many others depend on tends to *freeze*: `ApplicationRecord`, a shared kernel, a published API.
+
+## Flip the arrows
+
+What happens when one thing depends on more and more other things?
 
 ```mermaid
 flowchart TB
@@ -83,20 +110,52 @@ flowchart TB
   L --> G((G))
 ```
 
-## Outline (working)
+You get the inverse.
+There are more pathways *into* that node where a ripple can arrive.
+A change in any collaborator can force a change here.
+The first shape made something harder to change.
+This shape makes something harder *not* to change.
+A controller that knows every model.
+A facade that talks to everyone.
+A test that stubs the world.
 
-### Two nodes
+Depending on many others is close to having one class with many collaborators, or many concerns left unseparated.
+That is equivalent, in form, to a very large object doing many things at once — each of which may change.
 
+## Both
+
+Now put both shapes on the same node.
+
+```mermaid
+flowchart TB
+  A((A)) --> G((G))
+  B((B)) --> G
+  C((C)) --> G
+  D((D)) --> G
+  E((E)) --> G
+  G --> P((P))
+  G --> Q((Q))
+  G --> R((R))
+  G --> S((S))
+  G --> T((T))
 ```
-  A ──────────────► B
-  ▲    depends on   │
-  └── ripple of ────┘
-      change
-```
 
-A is the depender.
-B is the depended-on.
-If B changes, A might have to.
+Depended on by many, and depending on many.
+Hard to change, and hard not to change.
+Ripples leave, ripples arrive, and the node is always in motion.
+That is a god object.
+It is a massive antipattern.
+
+| Topology | Role | Tendency |
+|---|---|---|
+| High fan-in | Depended on by many | Harder to change — freezes |
+| High fan-out | Depends on many | Harder *not* to change — volatile |
+| Both | Hub | Hard to change *and* hard not to change — a god object |
+
+DRY's vertical coupling ([Dark Side of DRY](/docs/dark-side-of-dry)) is a hub: many sites → one abstraction, short paths, ripples both ways.
+Scalability's P is *degree*; this article is *paths* ([Scalability of Composition](/docs/scalability-of-composition)).
+
+## Outline still open
 
 ### Insert a layer — probability attenuates
 
@@ -124,48 +183,13 @@ Many edges.
 Few short paths from a frozen core to the edge.
 A change in `data` must cross three hops to reach `UI`.
 
-### Fan-in: depended-on by many — sends ripples, freezes
-
-```
-  X ──► L
-  Y ──► L
-  Z ──► L
-```
-
-L is likely to *send* a ripple if it changes.
-Changing L becomes expensive, so L becomes **frozen**.
-`ApplicationRecord`, a shared kernel, a published API.
-
-### Fan-out: depends on many — receives ripples, changes
-
-```
-        ┌──► P
-  C ────┼──► Q
-        └──► R
-```
-
-C is likely to *receive* a ripple.
-C becomes **likely to change**.
-A god object, a facade that knows everyone, a test that stubs the world.
-
-### Send vs receive
-
-| Topology | Role | Tendency |
-|---|---|---|
-| High fan-in | Depended on | Sends ripples → freezes |
-| High fan-out | Depends on many | Receives ripples → volatile |
-| Long path / layers | Indirect | Attenuates — *pⁿ* |
-| Short path / hub | Direct | Every change is everyone's |
-
-DRY's vertical coupling ([Dark Side of DRY](/docs/dark-side-of-dry)) is a hub: many sites → one abstraction, short paths, ripples both ways.
-Scalability's P is *degree*; this article is *paths* ([Scalability of Composition](/docs/scalability-of-composition)).
-
 ## Map to examples (stub)
 
 - Rails `ApplicationRecord` — high fan-in, frozen.
 - A concern included everywhere — high fan-in *and* no layer (D=2); ripples do not attenuate.
 - A role interface / DI collaborator — the inserted M.
 - A controller that knows every model — high fan-out, volatile.
+- A god class that everyone calls and that knows everyone — both.
 - A deep package tree that is still calm — many edges, long paths.
 
 Return to this with one diagram per example.
@@ -179,10 +203,7 @@ Maintainability is a property of the graph's shape.
 
 - Title: Dependencies in the Abstract. Not a Mix-Ins splinter; a foundation piece under the Calculus.
 - Arrow: depender → depended-on. Ripple travels the other way.
+- A node is anything you can depend on; an arrow is a reference plus an invocation.
+- Fan-in: harder to change. Fan-out: harder not to change. Both: a god object.
 - Change as probability per hop; a layer attenuates.
-- Fan-in freezes; fan-out volatilises.
 - Diagrams do the carrying; examples come after the shapes.
-
-## Rough draft
-
-*(Prose begins here once the outline settles.)*
