@@ -22,6 +22,15 @@ A few diagrams should carry the examples.
 The same logic transfers to architecture in general.
 
 **Convention.**
+One node with an arrow to another means the first depends on the second.
+
+```mermaid
+flowchart LR
+  A(( ))
+  B(( ))
+  A --> B
+```
+
 `A → B` means *A depends on B*.
 Change in B may ripple to A (against the arrow).
 
