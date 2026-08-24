@@ -13,6 +13,7 @@ Its one job is adding a **capability** to a model so collaborating POROs can dep
 `included do` exists because admitting the model to the role needs class-level Rails DSL (`has_many`, `validates`, `scope`) that a plain module cannot host.
 That grouping is the means, not a second purpose.
 The macros that fire are the host's: ActiveRecord on the record, ActiveModel on a class you own.
+A concern used only by one class is that class with a table of contents.
 {% /callout %}
 
 Related: [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems), [Mix-Ins as Traits](/docs/mix-ins-as-traits), [Include Is Not Composition](/docs/include-is-not-composition).
@@ -26,7 +27,7 @@ Related: [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems
 | Same, for wrappers | `prepended do ... end` | Same hook when `prepend` is used. |
 | Metatrait | `class_methods do` / `module ClassMethods` | Concern does `base.extend ClassMethods` (or prepends them if you prepend the concern). |
 | Composite trait | concern that `include`s another concern | Concern inserts dependencies onto the host. Still a mixin chain, not flattening. |
-| Inline mixin | `concerning` | Concern defined inside the class file. Same rules; slightly less fan-out of the *file*, not of the coupling. |
+| Inline mixin | `concerning` | Concern defined inside the class file. Same rules; slightly less fan-out of the *file*, not of the coupling. The honest form of a single-use concern — still the God class. |
 
 The important split in `included do`: **class-level DSL** (macros the host would have written) vs **instance internals** (`@foo`, `params`).
 The first can be glue for a capability.
@@ -47,6 +48,7 @@ Admitting a model to a capability usually means associations, validations, scope
 Grouping declarations "by capability" is how you keep the role small, not an organisational end in itself.
 
 So concerns do make sense in Rails — as traits on the record for collaborators — and they can be overused just like any module.
+A concern used only by one class is that class with a table of contents.
 
 ## Why the soup is the path of least resistance
 
@@ -126,9 +128,26 @@ It reads ivars and `params`, so it dictates host shape.
 The composer is no longer the class.
 S becomes unbounded ([Scalability of Composition](/docs/scalability-of-composition)).
 
+## Single-use concerns are still the God class
+
+The other common failure is not a fat shared concern — it is a fat class disguised as several.
+`User` includes `UserAuthentication`, `UserBilling`, `UserAdmin`; each module exists for `User` alone.
+Or `concerning` does the same without leaving the file.
+The file got shorter.
+The object did not.
+Every method is still on `User`.
+Every concern still sees every ivar.
+There is no encapsulation to lose, because there was never a second object.
+
+That is not "separating concerns."
+It is the god object with a table of contents.
+A concern that is not a capability other types (or a PORO) actually depend on has no reason to be a module.
+See [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems).
+
 ## Rules of thumb
 
-- Small, atomic, composable; minimal state interaction; host decides state.
+- Few concerns per host, each small and atomic. Mixins have no encapsulation and later include wins; a pile of shared code will overwrite itself. Minimal state interaction; host decides state.
+- A concern used only by one class is still that class. Files are not a boundary.
 - `included do` only for **one** capability's class-level DSL — and only macros the host actually has (AR vs AM).
 - Prefer a base class for same-role variation — on an object you own, not one layer deeper in `ApplicationRecord`. ActiveModel does not spend that slot.
 - Prefer a collaborator for the operation; prefer a concern only to admit the model to the role that collaborator depends on.

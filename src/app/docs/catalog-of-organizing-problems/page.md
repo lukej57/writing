@@ -10,11 +10,13 @@ nextjs:
 Most "where does this code go?" questions are not mixin questions.
 Pure utilities, clustered arguments, role variation, operations on a record, presentation, side effects — each has a home.
 `include` is for an orthogonal capability that needs the host's internals.
+Keep that list short and each mixin atomic: mixins have no encapsulation, and later include silently overwrites.
 In Rails that same job is a concern: add a capability to a model so PORO collaborators can depend on the role.
+A God class split into concerns that only that class includes is still a god object.
 Everything else on the include list is a different organising problem wearing a module.
 {% /callout %}
 
-Related: [Mix-Ins as Traits](/docs/mix-ins-as-traits), [The One Job of a Concern](/docs/one-job-of-a-concern), [Scalability of Composition](/docs/scalability-of-composition).
+Related: [Mix-Ins as Traits](/docs/mix-ins-as-traits), [The One Job of a Concern](/docs/one-job-of-a-concern), [Include Is Not Composition](/docs/include-is-not-composition), [Scalability of Composition](/docs/scalability-of-composition).
 
 ## The catalog
 
@@ -30,6 +32,7 @@ Send the rest home so the include list can be a capability list.
 | Reuse that needs its own lifetime or state (notify, charge, generate) | Collaborator + DI; host delegates | no |
 | An operation *on* a record (`Billable`, `Onboardable`) | PORO / form / service that *takes* the model | no |
 | Model file is long (scopes, queries extracted by kind) | Query object, or leave them on the model | no — file length is not a capability |
+| God class carved into concerns used only here (`UserAuthentication`, `UserBilling`, `concerning`) | Leave the methods on the class, or extract collaborators / an SI family that other types actually use | no — files are not a boundary; the object is unchanged |
 | Presentation / formatting | Decorator, presenter, helper function | no |
 | Side effects on save | Host keeps the callback; it calls a job or object | no |
 | Authorization | Policy object (`user` + `record`) | no |
@@ -45,6 +48,7 @@ As that family grows, the parent should be a template with slots, not a moving t
 Needs `each`, provides `map` → trait (wide and shallow).
 Empty parent / one-method "Base" → shallow base class: you wanted a trait.
 Fat concern / settings-provider-as-module → deep trait: you wanted a base class or a collaborator.
+Concern used only here → a heading, not a trait. Still the God class.
 
 ## Escalation (same catalog, as a ladder)
 
@@ -71,10 +75,30 @@ Pull the work out and the SI slot opens.
 Keep it in the model and you will `include` a concern for a job that wanted a parent.
 See [Mix-Ins as Traits](/docs/mix-ins-as-traits).
 
+## A file split is not a smaller object
+
+Taking one God class and cutting it into `UserAuthentication`, `UserBilling`, `UserNotifications` — each included only by `User` — is still a god object.
+The methods landed back on the same instance.
+There is still no encapsulation: every concern sees every ivar.
+There is still no second object, no public API, no lifetime.
+`concerning` is the honest form of this move: the module never even leaves the file.
+Extracting it to `app/models/concerns/` only changes where the reader looks.
+The coupling did not move.
+
+A concern earns a file when a *capability* is worn by more than one host, or when a PORO needs that role as an interface.
+A concern that has one client is a heading.
+
+See [The One Job of a Concern](/docs/one-job-of-a-concern) and [Include Is Not Composition](/docs/include-is-not-composition).
+
 ## Payoff of sending the rest home
 
 Once the other rows have somewhere to go, a class includes a handful of capabilities.
 The list is high-signal: `Comparable`, `Taggable`, `Notifiable` as a *real* trait — not `Utils`, `Scopes`, `Callbacks`.
+
+Aim for a **small number** of **atomic** mixins.
+Mixins have no encapsulation, and names resolve by ancestor order — later `include` / `prepend` silently wins.
+A fat shared module, or a long include list of overlapping modules, is how one capability overwrites another.
+Huge shared bodies do not belong on the include list; they belong on a parent (deep and thin) or behind a collaborator, where there is a boundary.
 
 That list **scales better as mixins** because you stopped using mixins to scale everything else:
 
@@ -82,7 +106,7 @@ That list **scales better as mixins** because you stopped using mixins to scale 
 - **S is small** — each trait talks through a tiny required API; the code in the module is pure.
 - **Host owns state and glue** — the mixin cannot dictate ivars or `params`.
 
-Understandability: `ancestors` means "what this object can do," not "every DRY we ever did."
+Understandability: `ancestors` means "what this object can do," not "every DRY we ever did," and not a table of contents for one God class.
 
 The mixin-as-trait discipline itself is [Mix-Ins as Traits](/docs/mix-ins-as-traits).
 The Rails job — a capability on the model for PORO collaborators — is [The One Job of a Concern](/docs/one-job-of-a-concern).

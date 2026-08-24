@@ -17,6 +17,8 @@ Rails occupies the SI slot on models, views, and controllers — if every piece 
 Pull work into objects you own so inheritance is free again.
 ActiveModel is how those objects borrow Rails' face without borrowing the parent.
 A concern is how you add a capability to a model for those POROs to depend on — not where the operation lives.
+Keep the include list short and each mixin atomic: no encapsulation, later include wins.
+Carving a God class into single-use concerns does not make a smaller object.
 {% /callout %}
 
 This article is the synthesis.
@@ -44,6 +46,8 @@ It is composition **without a boundary**, so it is the least scalable of the reu
 Modules earn their keep as **traits**: a small capability, pure methods, host owns state and glue.
 Everything else is a different organising problem — [the catalog](/docs/catalog-of-organizing-problems).
 Send those home and the include list becomes a short capability list — which is how mixins scale at all.
+Keep that list short and each mixin atomic: no encapsulation, later include wins.
+Carving a God class into concerns that only that class includes is still a god object.
 
 `Class = Superclass + State + Traits + Glue` (ECOOP §3.3).
 SI and traits complement each other inside a class ([taxonomy](/docs/taxonomy-of-reuse)).
@@ -84,6 +88,13 @@ Ruby already has a real superclass for that job.
 A module is not a typeclass, so it should not try to be the parent.
 See [A Taxonomy of Reuse](/docs/taxonomy-of-reuse).
 
+**Few, small, atomic.**
+Mixins have no encapsulation and no conflict markers.
+Resolution is ancestor order: later `include` / `prepend` silently overwrites.
+That is why you do not want many of them, and why you do not pour a large shared body into one of them.
+A small number of atomic capabilities keeps the overwrite surface tiny and the required API testable.
+A dump of common code — `Utils`, `Shared`, a 40-method concern — is the opposite: huge S, order-dependent clashes, no composer in control.
+Huge shared bodies belong on a parent (deep and thin) or behind a collaborator.
 The mitigation is surface area: few mixins per class, few methods per mixin, and other rungs of the [catalog](/docs/catalog-of-organizing-problems) for internal reuse.
 The paper's own Smalltalk advice is in the same spirit: design traits around abstractions, not reuse; avoid too-fine-grained traits; prefer classes, use traits to resolve design conflicts.
 
@@ -179,12 +190,15 @@ extend  M   eigenclass of the object/class → M    module methods become single
 
 **Using mixins as traits (when they earn a place).**
 Discipline: provided methods + required methods (documented / tested); host owns **state and glue**; trait talks to the host only through the required API.
+Few of them; each atomic — mixins cannot encapsulate, and they overwrite by ancestor order.
 Test the trait against a fake host that implements those methods.
 Canonical examples: `Enumerable`, `Comparable`.
 This is **one row** in the [catalog](/docs/catalog-of-organizing-problems).
+A mixin used only by one class was never this row.
 
 **Payoff.**
 Once the other rows have somewhere to go, a class includes a handful of capabilities.
+That handful must stay small and atomic — mixins cannot encapsulate, and they overwrite by order.
 Fragile base class is mitigated, not gone: purity + a required-method surface is the substitute for a real boundary.
 
 ---
@@ -193,6 +207,15 @@ Fragile base class is mitigated, not gone: purity + a required-method surface is
 
 God classes justified as composition-over-inheritance.
 Name the mistake: mixin soup is inheritance without a single parent *or* an object boundary — the least scalable of the three.
+
+**The God class in several files is still a God class.**
+`User` plus `UserAuthentication` + `UserBilling` + `UserNotifications`, each included only by `User`, is the same object it was.
+The methods are still on the instance.
+The concerns still see every ivar.
+`concerning` is this move without leaving the file; a folder of single-use concerns is the same move with a table of contents.
+Composition-over-inheritance would have been a second object.
+This is file organisation.
+See [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems).
 
 **Rails occupies the SI slot.**
 Jam every piece of logic into a model, view, or controller and you are always already inside the framework's inheritance hierarchy:
@@ -242,6 +265,7 @@ Rust still does both jobs inside one construct.
 Ruby already has SI, so mixins-as-traits is not a taste — it is the remaining slot.
 Rails spends that SI slot on `ApplicationRecord` and friends; objects you own get it back.
 The destination is a short include list of capabilities on a thin host, and a graph of non-framework objects that can inherit.
+A folder of single-use concerns is not that destination — it is the God class with a table of contents.
 Inheritance (SI + mixins-as-traits) and collaborators complement each other because they sit at different points on the coupling curve.
 Traits decorate a host; they do not replace a second object, and a second object does not replace a trait.
 
