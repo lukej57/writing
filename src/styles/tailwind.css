@@ -94,3 +94,9 @@
   background: transparent !important;
   fill: transparent !important;
 }
+
+.dependency-graph .cluster rect,
+.dependency-graph .cluster-label {
+  fill: none !important;
+  stroke: none !important;
+}
