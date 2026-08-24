@@ -3,17 +3,17 @@ title: Dependencies in the Abstract
 nextjs:
   metadata:
     title: Dependencies in the Abstract
-    description: A node is anything you can depend on. Fan-in makes it harder to change; fan-out makes it harder not to change. Layers of abstraction attenuate ripples.
+    description: A node is anything you can depend on. Fan-in makes it harder to change; fan-out makes it harder not to change. The dual was found by flipping the arrows.
 ---
 
 {% callout title="TL;DR" type="note" %}
 A node is anything you can depend on: a class, a method, a package.
 An arrow is a reference plus an invocation.
 As more things depend on a node, unwanted ripples become more likely, so the node gets harder to change.
-Flip the arrows and the inverse happens: more paths in, so it gets harder *not* to change.
+Flip the arrows — a move in the structure, not in the examples — and you get the inverse: harder *not* to change.
 Both at once is a god object — hard to change and hard not to change.
-A real system still depends on hundreds of libraries.
-It survives because layers of abstraction attenuate ripples: each hop multiplies the chance down, if the abstraction holds.
+Layers look like they attenuate ripples.
+That frame is not locked yet.
 {% /callout %}
 
 Related: [The Dark Side of DRY](/docs/dark-side-of-dry), [Scalability of Composition](/docs/scalability-of-composition), [The Calculus of Maintainable Software](/docs/calculus-of-maintainable-sw), [Depending on Behaviour versus Depending on Data](/docs/depending-on-behaviour-versus-data).
@@ -97,9 +97,22 @@ It is hard even to understand the consequences.
 As the number of dependants rises, the likelihood of unwanted ripple effects rises with it.
 A node many others depend on tends to *freeze*: `ApplicationRecord`, a shared kernel, a published API.
 
+## The move
+
+So far the likeness came from the domain.
+A node.
+An arrow.
+More things depending on one node, and that node getting harder to change.
+That already looks like a directed graph.
+
+Once the likeness holds, you step into the structure and reason there.
+Then you map the result back into the domain.
+That is how you find a relationship that was true in the software and not obvious from the examples alone.
+
 ## Flip the arrows
 
-What happens when one thing depends on more and more other things?
+The structure lets you reverse every arrow.
+What does the domain say then?
 
 ```mermaid
 flowchart BT
@@ -147,13 +160,15 @@ Hard to change, and hard not to change.
 Ripples leave, ripples arrive, and the node is always in motion.
 That is a god object.
 It is a massive antipattern.
+That pair is what the structure gave back.
+Fan-in and fan-out are the same shape, opposite direction.
 
 | Topology | Role | Tendency |
 |---|---|---|
 | High fan-in | Depended on by many | Harder to change — freezes |
 | High fan-out | Depends on many | Harder *not* to change — volatile |
 | Both | Hub | Hard to change *and* hard not to change — a god object |
-| Long paths | Layered | Ripples attenuate — risk falls as *pⁿ* |
+| Long paths | Layered | Looks like attenuation — frame not locked |
 
 DRY's vertical coupling ([Dark Side of DRY](/docs/dark-side-of-dry)) is a hub: many sites → one abstraction, short paths, ripples both ways.
 Scalability's P is *degree*; this article is *paths* ([Scalability of Composition](/docs/scalability-of-composition)).
@@ -165,8 +180,9 @@ A Rails app depends on hundreds of gems.
 A service depends on a forest of packages.
 Those are not small fan-outs.
 
-The count of arrows is not what makes a node unstable by itself.
-It is how short the paths are.
+The count of arrows is not the whole story.
+Something about path length seems to matter.
+The frame for that is not yet in hand.
 
 ## Insert a layer
 
@@ -178,8 +194,7 @@ flowchart BT
 ```
 
 A change in B may reach A in one step.
-Let each hop carry a change with probability *p*, and let *p* be less than one.
-The risk is about *p*.
+If each hop carries a chance *p* less than one, one hop is about *p*.
 
 Now put something in the middle.
 
@@ -189,17 +204,17 @@ flowchart BT
   M --> B((B))
 ```
 
-A change in B must cross two hops to reach A.
-The risk is about *p* × *p*.
+Two hops look like *p* × *p*.
 The middle node is not just indirection.
-It is attenuation.
+It looks like attenuation.
+It also looks like the start of a probability semiring on the paths.
+Whether that is the right structure is still open.
 
-That assumes the abstraction holds.
 A leaky layer is a short path with a longer name.
 
 ## Layers
 
-A real stack is the same idea, repeated.
+A real stack repeats the same idea.
 
 ```mermaid
 flowchart BT
@@ -210,13 +225,11 @@ flowchart BT
 
 Many edges.
 Few short paths from a frozen core to the edge.
-A change in the data layer must cross three hops to reach the UI.
-If each hop is *p*, the chance of a ripple all the way is about *p*³.
-Each extra layer multiplies the chance down.
+A change in the data layer has more hops to cross to reach the UI.
+That would drive the chance down if the hop model holds.
 
-That is why a system with a *large* number of dependencies can be stable.
-Count of edges is the wrong fear.
-Path length and layering are the right ones.
+It is interesting.
+It is not yet the same kind of find as flipping the arrows.
 
 ## Map to examples (stub)
 
@@ -240,6 +253,8 @@ Maintainability is a property of the graph's shape.
 - Arrow: depender → depended-on. Ripple travels the other way.
 - A node is anything you can depend on; an arrow is a reference plus an invocation.
 - Fan-in: harder to change. Fan-out: harder not to change. Both: a god object.
-- Change as probability per hop; a good layer attenuates — risk falls as *pⁿ*.
-- That is how software with hundreds of libraries still holds: the paths are long.
+- The move: build the likeness from the domain; once it holds, reason in the structure; map back.
+- Flip the arrows was the first payoff of that move.
+- The working name for the structure is a probability semiring over the dependency graph.
+- Layers as attenuation is interesting; that frame is not locked.
 - Diagrams do the carrying; examples come after the shapes.
