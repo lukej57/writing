@@ -30,9 +30,9 @@ function loadMermaid() {
         flowchart: {
           curve: 'linear',
           htmlLabels: false,
-          padding: 8,
-          nodeSpacing: 72,
-          rankSpacing: 96,
+          padding: 16,
+          nodeSpacing: 80,
+          rankSpacing: 110,
           useMaxWidth: false,
         },
       })

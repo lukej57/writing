@@ -26,8 +26,8 @@ One node with an arrow to another means the first depends on the second.
 
 ```mermaid
 flowchart LR
-  A(( ))
-  B(( ))
+  A@{ shape: circle, label: " " }
+  B@{ shape: circle, label: " " }
   A --> B
 ```
 

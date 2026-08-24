@@ -70,7 +70,6 @@
 .dependency-graph .node .label tspan {
   fill: transparent !important;
   color: transparent !important;
-  font-size: 0 !important;
 }
 
 .dependency-graph .edgePath .path,
