@@ -100,7 +100,7 @@ A node many others depend on tends to *freeze*: `ApplicationRecord`, a shared ke
 What happens when one thing depends on more and more other things?
 
 ```mermaid
-flowchart TB
+flowchart BT
   L((L)) --> A((A))
   L --> B((B))
   L --> C((C))
