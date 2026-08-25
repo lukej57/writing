@@ -28,7 +28,7 @@ Send the rest home so the include list can be a capability list.
 
 | Problem | Mechanism | `include` a module? |
 |---|---|---|
-| Share pure utilities (formatters, date math, `Utils`) | Namespace + `module_function`; call `Utils.foo(x)` | no |
+| Share pure utilities (formatters, date math, `Utils`) | Namespace + `module_function`; call `Utils.foo(x)` — values, not `self` | no |
 | Share behaviour clustered on one argument | A class; that argument in the constructor | no |
 | Variations of one role (a kind of exporter; Invoice and Estimate as one document family) | Single inheritance, depth one, on an object you own. `BaseExporter`. A `DocumentsController` only if it is a hefty template, not a finder-holder | no — that's the parent. Ruby already has SI; do not spend the module on it |
 | Reuse that needs its own lifetime or state (notify, charge, generate) | Collaborator + DI; host delegates | no |
