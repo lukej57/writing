@@ -53,6 +53,7 @@ Foundation (not this series): [Dependencies in the Abstract](/docs/dependencies-
 - The pair is fundamental. Ruby already has SI, so modules fill the trait slot — further evidence for mixin-as-trait discipline, not a second inheritance system.
 - Rails occupies the SI slot on MVC classes. Mixin-for-everything is the path of least resistance if logic stays there. Pull work into objects you own so inheritance is free again.
 - Base-controller-first is only for real role variation with a hefty parent (`DocumentsController` as a template). Mechanically replacing a controller concern with an intermediate base (`EmployeeScopedController` for a finder) is the shallow-base pathology. Usual escape: collaborator + host-owned glue. `ApplicationController` is the app-wide role.
+- Two controllers sharing a CanCan `authorize!`: leave the one-liner. `Ability` is the policy. `include AuthorizesX` clutters the include list (not a trait). `AuthorizesX.call(self)` is rung 1 misapplied — you passed the host because it was not a pure function. A lambda is the same ceremony. A thicker procedure becomes a policy that takes `user` + record, never the controller.
 - ActiveModel is concern-shaped machinery on a class you own (validations, naming, `form_with`); it does not spend SI. AR macros stay on AR.
 - What concerns are for: adding a capability to a model so PORO collaborators can depend on that role. `included do` is the Rails means. Not the operation, and not included into the PORO.
 - SI is deep and thin; traits are wide and shallow. Pathologies: shallow base class, deep trait. Buys/pitfalls of those four are a stub — return to them.
@@ -60,7 +61,7 @@ Foundation (not this series): [Dependencies in the Abstract](/docs/dependencies-
 - Story for the prose: naïve Invoice/Estimate → concern soup → equation. Build soup first.
 - Mixins should be few and atomic. No encapsulation + order-dependent resolution means they overwrite each other; do not combine huge shared bodies this way.
 - Carving one God class into concerns used only by that class is still a god object. Files / `concerning` are not a boundary.
-- Controller internals: concern-for-DRY is the wrong reflex; concern→sibling-base is the shallow-base swap. Collaborator + host glue, or keep the one-liner.
+- Controller internals: concern-for-DRY is the wrong reflex; concern→sibling-base is the shallow-base swap; concern→`Foo.call(self)` is a utility that imported the host. Collaborator + host glue, or keep the one-liner. CanCan `authorize!` stays on the controller.
 
 ## Still to write
 

@@ -44,10 +44,15 @@ Refinement (controller internals, 25 Aug 2026).
 The base-controller-first rule is right when the controllers are variations of one role *and* the parent is a hefty template.
 It comes out awkwardly when the parent exists only to share a finder, a `before_action`, or `*_params` — that is the shallow base class (taxonomy: you spent SI on a capability).
 Rails already spent the parent on `ApplicationController`; another layer on that tree is the same spend.
-The usual escape is the same as the model case: pull the work into an object you own, and let each controller write the glue.
-A concern is still only for an out-of-band capability; a concern that reads `params` and sets ivars is stolen glue, not that capability.
-A one-liner repeated is often cheaper than either inheritance operator (*The Dark Side of DRY*).
-Motivating case: TandaHQ/payaus#57946 — getting off the concern-for-internals reflex by introducing an intermediate controller.
+
+The case that actually felt awkward: two controllers make the same CanCan `authorize!` call.
+The concern reflex (`include AuthorizesRoster`) clutters the include list for one method that is not a trait — no override, no plug into local state, no change of identity.
+The extract that replaced it — `RosterAuth.call(self)` / a `module_function` that calls `authorize!` on the controller — is rung 1 misapplied: the function is not pure, so you had to pass the host.
+A lambda the method can fire is the same ceremony.
+`authorize!` is already host-owned glue; CanCan's `Ability` is already the policy (`user` + subject).
+Leave the one-liner on each controller.
+If the procedure grows, a policy object takes `user` (or `current_ability`) and the record — never the controller.
+A one-liner repeated is cheaper than a concern, a sibling base, or a called module that imported `self` (*The Dark Side of DRY*).
 
 On the other hand, concerns have one genuinely interesting role: co-locating and grouping together the many different kinds of Rails declarations — associations, validations, scopes, API methods, callbacks — that together implement a single capability of a Rails class. Normally those declarations are scattered by kind across a model; a concern lets them be grouped by capability instead. That is probably where concerns make sense.
 

@@ -152,6 +152,7 @@ See [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems).
 - `included do` only for **one** capability's class-level DSL — and only macros the host actually has (AR vs AM).
 - Prefer a base class for same-role variation — on an object you own, not one layer deeper in `ApplicationRecord` or `ApplicationController`. ActiveModel does not spend that slot.
 - Two controllers sharing a finder is not same-role variation. A sibling `*Controller` that exists to hold `set_foo` / `*_params` is the shallow-base pathology. Pull the work into a collaborator; each host writes the glue. A one-liner may stay duplicated.
+- Two controllers sharing a CanCan `authorize!` is not a trait and not a utility. Leave the one-liner. `Ability` is the policy. `AuthorizesX.call(self)` imported the host; a lambda is the same ceremony. A thicker procedure takes `user` + record.
 - Prefer a collaborator for the operation; prefer a concern only to admit the model to the role that collaborator depends on.
 - The collaborator may *internally* be an SI family or wear a mixin — DI complements both; it does not replace them.
 - Do not include the record's concern into the PORO. The PORO takes the role, or wears its own AM traits.

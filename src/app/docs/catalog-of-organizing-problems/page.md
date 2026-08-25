@@ -14,6 +14,7 @@ Keep that list short and each mixin atomic: mixins have no encapsulation, and la
 In Rails that same job is a concern: add a capability to a model so PORO collaborators can depend on the role.
 A God class split into concerns that only that class includes is still a god object.
 A sibling base controller is not the inverse of a controller concern: a parent that exists to share a finder is the shallow-base pathology.
+A called module that takes the controller (`AuthorizesX.call(self)`) is rung 1 misapplied — you passed the host because the function was not pure.
 Everything else on the include list is a different organising problem wearing a module.
 {% /callout %}
 
@@ -36,15 +37,16 @@ Send the rest home so the include list can be a capability list.
 | God class carved into concerns used only here (`UserAuthentication`, `UserBilling`, `concerning`) | Leave the methods on the class, or extract collaborators / an SI family that other types actually use | no — files are not a boundary; the object is unchanged |
 | Presentation / formatting | Decorator, presenter, helper function | no |
 | Side effects on save | Host keeps the callback; it calls a job or object | no |
-| Authorization | Policy object (`user` + `record`) | no |
+| Authorization | Policy object (`user` + `record`). CanCan: `Ability` is the policy; `authorize!` stays on the controller | no — `include AuthorizesX` for one call is include-list clutter, not a trait. `AuthorizesX.call(self)` imported the host |
 | "Every controller needs this" (`current_user`, authn) | That's the app-wide role — `ApplicationController`. Depth one. | no |
-| Two controllers share internals (a finder, `*_params`, a `before_action`) | Collaborator, or leave the one-liner on each host. A sibling base only if they are the same role *and* the parent is a hefty template | no — `EmployeeScopedController` that exists to share `set_employee` is a shallow base; you spent SI on a capability. A concern that reads `params` is stolen glue |
+| Two controllers share internals (a finder, `*_params`, a `before_action`, the same `authorize!`) | Collaborator that takes *data*, or leave the one-liner on each host. A sibling base only if they are the same role *and* the parent is a hefty template | no — `EmployeeScopedController` is a shallow base. `AuthorizesX.call(self)` is a utility that imported the host. A concern that reads `params` is stolen glue |
 | Constants / config | Namespace module, or `Rails.configuration` | no |
 | Class-method utilities (`User.recent`) | Query object, or a dedicated class | no |
 | Admit a model to a capability its POROs depend on (`Billable` → `Issue.new(billable)`) | Concern as trait: DSL + small provided API; operation stays in the PORO | **yes — this is the Rails job** |
 | Orthogonal capability that needs host internals (`Enumerable` / `Comparable` shape) | Mixin as trait; host owns state + glue | **yes — this is the job** |
 
 Test: `Thing.new(host).call` → never a trait.
+`Foo.call(self)` / you had to pass the controller → never a pure utility (rung 1). The function needed the host, so it was glue.
 Child only fills gaps in a hefty parent → never a mixin (deep and thin → SI).
 As that family grows, the parent should be a template with slots, not a moving target.
 Needs `each`, provides `map` → trait (wide and shallow).
@@ -110,7 +112,7 @@ Three different controller problems:
 |---|---|
 | Every controller in this app (`current_user`, authn) | `ApplicationController` — that is the role |
 | Invoice and Estimate as the same resource family; hefty shared body; children fill slots | `DocumentsController` as a template — rare; the parent must be deep and thin |
-| A finder / params / callback two unrelated controllers both write | Collaborator, or the one-liner stays. Not a concern. Not a sibling base. |
+| A finder / params / callback / the same `authorize!` two unrelated controllers both write | Collaborator that takes data, or the one-liner stays. Not a concern. Not a sibling base. Not `Foo.call(self)`. |
 
 A concern that reaches for `params` and sets `@employee` is still stolen glue ([The One Job of a Concern](/docs/one-job-of-a-concern)).
 Mixin-as-trait discipline would push that glue onto each host (`employee_id`, `employee_scope`) and leave a one-method trait.
@@ -120,6 +122,42 @@ The controller writes `before_action` and assigns the ivar — host-owned glue.
 
 If the duplication is a one-liner, [The Dark Side of DRY](/docs/dark-side-of-dry) applies: keep the copies.
 The awkwardness is the signal that you forced an inheritance operator onto a problem that wanted a collaborator, or no DRY at all.
+
+## Passing the controller is not a utility
+
+The other extract, once you have refused the concern: a namespace module with `module_function`, called directly — catalog rung 1.
+
+```ruby
+module RosterAuth
+  def self.call(controller)
+    controller.authorize! :read, controller.roster
+  end
+end
+
+# in each controller
+RosterAuth.call(self)
+```
+
+That feels awkward because it is.
+Rung 1 is for *pure* functions: `Formatting.currency(amount)`.
+`authorize!` is a side effect on CanCan's controller API.
+You had to pass the host, so it was never a utility.
+A lambda the method can fire (`-> { authorize! :read, roster }`) is the same ceremony: you parameterised the side effect to make the extract look less coupled.
+
+The shared *decision* already has a home: CanCan's `Ability` (`user` + subject).
+`authorize!` on the controller is the glue that asks it.
+Two controllers writing the same one-liner are not missing a module.
+They are each writing glue.
+
+If the procedure grows past a call — resolve the subject, extra checks, a fallback — that is the [authorization](#the-catalog) row: a policy that takes `current_user` (or `current_ability`) and the record.
+
+```ruby
+RosterAccess.new(current_user, @roster).authorize!
+```
+
+Never the controller.
+The host still writes the one line that triggers it.
+Wrapping `ability.authorize! :read, roster` and stopping there has not won anything; keep `authorize!`.
 
 ## Payoff of sending the rest home
 

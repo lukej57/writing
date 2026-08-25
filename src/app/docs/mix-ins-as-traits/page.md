@@ -16,6 +16,7 @@ Collaborators when reuse outgrows a single host.
 Rails occupies the SI slot on models, views, and controllers — if every piece of logic stays there, `include` is the only reuse operator left.
 Pull work into objects you own so inheritance is free again.
 A sibling base controller is not the inverse of a concern: a parent that exists to share a finder is the shallow-base pathology.
+A called module that takes the controller is not a utility: you passed the host because `authorize!` was never a pure function.
 ActiveModel is how those objects borrow Rails' face without borrowing the parent.
 A concern is how you add a capability to a model for those POROs to depend on — not where the operation lives.
 Keep the include list short and each mixin atomic: no encapsulation, later include wins.
@@ -186,7 +187,7 @@ extend  M   eigenclass of the object/class → M    module methods become single
 | Alias / exclude | no real equivalent | Why Ruby cannot do paper composition. |
 | Flattening | does not exist | You always see the ancestor chain. |
 | Conflict | later `include`/`prepend` wins | Silent. |
-| Namespace of functions (not a trait) | `module_function` / `extend self` | Catalog rung 1. Do not `include` these. |
+| Namespace of functions (not a trait) | `module_function` / `extend self` | Catalog rung 1. Do not `include` these. Call with values, not `self`. |
 | Object composition | `initialize(collaborator)` / `delegate` | Different column of the ranking table. |
 
 **Using mixins as traits (when they earn a place).**
@@ -238,16 +239,27 @@ Further role variation does not belong one layer deeper in the framework tree.
 
 **The awkward rewrite.**
 Getting off the concern-for-internals reflex is right.
-Replacing every such concern with a sibling base controller is the swap: a deep trait becomes a shallow base.
+Two common replacements are still the wrong row.
+
+A sibling base controller is the swap: a deep trait becomes a shallow base.
 `EmployeeScopedController` / `ResourceController` / `CrudController` with `resource_class` hooks — the parent exists to share finders and `*_params`.
 The children are not filling slots in a template; they are inheriting helpers.
 That is not role variation.
 It is a capability wearing a superclass, on a tree whose parent is already taken.
 
+A called module is rung 1 misapplied.
+Two controllers share a CanCan `authorize!`; you refuse `include AuthorizesRoster` (correct: not a trait, no override, no local state, include-list clutter).
+`RosterAuth.call(self)` — a `module_function` that calls `authorize!` on the controller — feels out of place because the function is not pure.
+You had to pass the host.
+A lambda the method can fire is the same ceremony.
+`authorize!` is already glue; `Ability` is already the policy.
+Leave the one-liner.
+If the procedure grows, a policy takes `user` + record, never `self`.
+
 `DocumentsController` is legal only when Invoice and Estimate *are* one role and the parent is the hefty body — the SI shape.
-Most "we share a `before_action`" cases are not that.
+Most "we share a `before_action`" or "we share an `authorize!`" cases are not that.
 Pull the work out; leave the glue on each controller.
-A one-liner repeated is often cheaper than either operator ([The Dark Side of DRY](/docs/dark-side-of-dry)).
+A one-liner repeated is often cheaper than a concern, a sibling base, or a called module that imported `self` ([The Dark Side of DRY](/docs/dark-side-of-dry)).
 See the [catalog](/docs/catalog-of-organizing-problems).
 
 **Pull logic into objects you own.**
@@ -282,6 +294,7 @@ Rails spends that SI slot on `ApplicationRecord` and friends; objects you own ge
 The destination is a short include list of capabilities on a thin host, and a graph of non-framework objects that can inherit.
 A folder of single-use concerns is not that destination — it is the God class with a table of contents.
 An intermediate controller that exists to share a finder is not that destination either — it is the shallow base class on a tree you do not own.
+A called module that takes the controller is not that destination — it is glue wearing a namespace.
 Inheritance (SI + mixins-as-traits) and collaborators complement each other because they sit at different points on the coupling curve.
 Traits decorate a host; they do not replace a second object, and a second object does not replace a trait.
 
