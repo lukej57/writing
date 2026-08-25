@@ -55,6 +55,19 @@ SI + traits is the fundamental pair ([taxonomy](/docs/taxonomy-of-reuse)).
 Rust still does both jobs inside one construct.
 Ruby already filled the SI slot, so the module should be the trait — not a second inheritance system.
 
+The inverse is also a category error.
+Two controllers share a finder, so you drop the concern and write `EmployeeScopedController`.
+That looks like "we used SI instead of a mixin."
+It is the [shallow base class](/docs/taxonomy-of-reuse): you spent the parent on a capability.
+The controllers were never variations of one role.
+
+A third extract sits next to those two: `RosterAuth.call(self)`.
+That looks like "we used a utility instead of a mixin."
+Rung 1 is for pure functions.
+`authorize!` is glue on the controller; CanCan's `Ability` is the policy.
+You passed the host, so it was never a utility.
+See the [catalog](/docs/catalog-of-organizing-problems).
+
 ## What `include` actually does
 
 ```
@@ -69,6 +82,9 @@ extend  M   eigenclass → M                        module methods become single
 | "Composition over inheritance" | No second object. No private state. The mixin may touch anything on the host. |
 | "We split the God class into concerns" | Same instance, same methods, same ivars. Files are not a boundary. |
 | "More flexible than a base class" | Yes — that is why mixins exist ([taxonomy](/docs/taxonomy-of-reuse): they win extraction). Flexibility is not a boundary. |
+| "We used a base controller instead of a concern" | Only if they are one role and the parent is a template. A finder-holder parent is a shallow base — same spend, other operator. |
+| "We extracted `authorize!` into a called module" | You passed `self` because it was not a pure function. Glue stayed glue; the include list got quieter and the call got weirder. |
+| "We included a concern for shared internals" | A controller mixin-as-trait adds an endpoint. A helper is not an endpoint. |
 
 `prepend` is the one mixin job the paper said mixins do well: a generic wrapper with late-bound `super`.
 That is still inheritance.

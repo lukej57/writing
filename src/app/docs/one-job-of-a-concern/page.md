@@ -14,6 +14,7 @@ Its one job is adding a **capability** to a model so collaborating POROs can dep
 That grouping is the means, not a second purpose.
 The macros that fire are the host's: ActiveRecord on the record, ActiveModel on a class you own.
 A concern used only by one class is that class with a table of contents.
+On a controller the same job is an **endpoint**, not a helper.
 {% /callout %}
 
 Related: [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems), [Mix-Ins as Traits](/docs/mix-ins-as-traits), [Include Is Not Composition](/docs/include-is-not-composition).
@@ -59,7 +60,8 @@ Every DRY that should have been a subclass or a collaborator becomes a concern.
 
 The fix is not a better concern.
 It is an object the framework does not own — one that can use inheritance freely.
-See [Mix-Ins as Traits](/docs/mix-ins-as-traits).
+The inverse reflex — replace the concern with a sibling base controller — is the [shallow base class](/docs/taxonomy-of-reuse) on a tree whose parent is already taken.
+See [Mix-Ins as Traits](/docs/mix-ins-as-traits) and the [catalog](/docs/catalog-of-organizing-problems).
 
 ## You cannot put Rails persistence magic in a PORO
 
@@ -149,7 +151,10 @@ See [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems).
 - Few concerns per host, each small and atomic. Mixins have no encapsulation and later include wins; a pile of shared code will overwrite itself. Minimal state interaction; host decides state.
 - A concern used only by one class is still that class. Files are not a boundary.
 - `included do` only for **one** capability's class-level DSL — and only macros the host actually has (AR vs AM).
-- Prefer a base class for same-role variation — on an object you own, not one layer deeper in `ApplicationRecord`. ActiveModel does not spend that slot.
+- Prefer a base class for same-role variation — on an object you own, not one layer deeper in `ApplicationRecord` or `ApplicationController`. ActiveModel does not spend that slot.
+- Two controllers sharing a finder is not same-role variation. A sibling `*Controller` that exists to hold `set_foo` / `*_params` is the shallow-base pathology. Pull the work into a collaborator; each host writes the glue. A one-liner may stay duplicated.
+- Two controllers sharing a CanCan `authorize!` is not a trait and not a utility. Leave the one-liner. `Ability` is the policy. `AuthorizesX.call(self)` imported the host; a lambda is the same ceremony. A thicker procedure takes `user` + record.
+- On a controller, a concern-as-trait adds an **endpoint** (`#export` + host glue). It does not extract helpers. The resource's CRUD is the role.
 - Prefer a collaborator for the operation; prefer a concern only to admit the model to the role that collaborator depends on.
 - The collaborator may *internally* be an SI family or wear a mixin — DI complements both; it does not replace them.
 - Do not include the record's concern into the PORO. The PORO takes the role, or wears its own AM traits.
