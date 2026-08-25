@@ -210,6 +210,7 @@ That list **scales better as mixins** because you stopped using mixins to scale 
 - **Host owns state and glue** — the mixin cannot dictate ivars or `params`.
 
 Understandability: `ancestors` means "what this object can do," not "every DRY we ever did," and not a table of contents for one God class.
+On a controller that list should read as **endpoints**, not helpers.
 
 The mixin-as-trait discipline itself is [Mix-Ins as Traits](/docs/mix-ins-as-traits).
 The Rails job — a capability on the model for PORO collaborators — is [The One Job of a Concern](/docs/one-job-of-a-concern).

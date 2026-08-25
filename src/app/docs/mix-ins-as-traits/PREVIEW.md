@@ -24,7 +24,7 @@ None of SI, traits, or DI is always better.
 |---|---|
 | [A Taxonomy of Reuse](/docs/taxonomy-of-reuse) | Problems × SI / MI / mixins / traits+SI. Mixins win extraction, lose control. |
 | [Scalability of Composition](/docs/scalability-of-composition) | `load ≈ D × P × S`. Mixins least, DI + small API most. |
-| [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems) | Where each job lives. `include?` for two rows only. Single-use concern split = still a god object. Few, atomic mixins. Shared controller internals ≠ sibling base. |
+| [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems) | Where each job lives. `include?` for two rows only. Single-use concern split = still a god object. Few, atomic mixins. Shared controller internals ≠ sibling base. Controller trait = endpoint. |
 | [Include Is Not Composition](/docs/include-is-not-composition) | Category error. Ancestor chain ≠ collaborator. God class in several files is still one object. |
 | [The One Job of a Concern](/docs/one-job-of-a-concern) | Add a capability to a model so PORO collaborators can depend on that role. DSL grouping is the means. Single-use concerns are a table of contents. |
 
