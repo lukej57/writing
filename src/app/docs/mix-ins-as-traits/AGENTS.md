@@ -54,6 +54,15 @@ Leave the one-liner on each controller.
 If the procedure grows, a policy object takes `user` (or `current_ability`) and the record — never the controller.
 A one-liner repeated is cheaper than a concern, a sibling base, or a called module that imported `self` (*The Dark Side of DRY*).
 
+What a controller trait *is* (25 Aug 2026).
+Embodying modules-as-traits on a controller: the module adds an **endpoint**.
+A controller's public API is its actions.
+A mixin earns `include` when it adds to that API — `#export`, a comment action — an orthogonal capability, host supplies glue (`export_scope`).
+`authorize!`, `set_foo`, `*_params` are not endpoints.
+They do not change what the controller is toward the router.
+They stay glue, or become a policy / finder that takes data.
+The resource's own CRUD is the role (the class, or a hefty template), not a trait.
+
 On the other hand, concerns have one genuinely interesting role: co-locating and grouping together the many different kinds of Rails declarations — associations, validations, scopes, API methods, callbacks — that together implement a single capability of a Rails class. Normally those declarations are scattered by kind across a model; a concern lets them be grouped by capability instead. That is probably where concerns make sense.
 
 The reason this needs concerns specifically is that those declarations are class-level Rails machinery. If you didn't have concerns and wanted to add a capability to a model that leveraged a lot of that machinery, you'd be stuck: a plain module can hold pure methods, but the associations, validations, and scopes just couldn't be extracted into it. The `included do` block is what makes the extraction possible at all. So concerns do make sense in Rails — but they can be overused just like any module, and they have all the same shortcomings (no encapsulation, full access to host state, still inheritance).

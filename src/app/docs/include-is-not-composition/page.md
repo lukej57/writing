@@ -84,6 +84,7 @@ extend  M   eigenclass → M                        module methods become single
 | "More flexible than a base class" | Yes — that is why mixins exist ([taxonomy](/docs/taxonomy-of-reuse): they win extraction). Flexibility is not a boundary. |
 | "We used a base controller instead of a concern" | Only if they are one role and the parent is a template. A finder-holder parent is a shallow base — same spend, other operator. |
 | "We extracted `authorize!` into a called module" | You passed `self` because it was not a pure function. Glue stayed glue; the include list got quieter and the call got weirder. |
+| "We included a concern for shared internals" | A controller mixin-as-trait adds an endpoint. A helper is not an endpoint. |
 
 `prepend` is the one mixin job the paper said mixins do well: a generic wrapper with late-bound `super`.
 That is still inheritance.

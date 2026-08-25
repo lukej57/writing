@@ -62,6 +62,7 @@ Foundation (not this series): [Dependencies in the Abstract](/docs/dependencies-
 - Mixins should be few and atomic. No encapsulation + order-dependent resolution means they overwrite each other; do not combine huge shared bodies this way.
 - Carving one God class into concerns used only by that class is still a god object. Files / `concerning` are not a boundary.
 - Controller internals: concern-for-DRY is the wrong reflex; concern→sibling-base is the shallow-base swap; concern→`Foo.call(self)` is a utility that imported the host. Collaborator + host glue, or keep the one-liner. CanCan `authorize!` stays on the controller.
+- A controller trait adds an **endpoint**. The public API of a controller is its actions; `include` earns a place when it adds one (`CsvExport#export` + host glue). Helpers, `authorize!`, finders are not endpoints. The resource's CRUD is the role, not a trait.
 
 ## Still to write
 

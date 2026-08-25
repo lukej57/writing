@@ -15,6 +15,7 @@ In Rails that same job is a concern: add a capability to a model so PORO collabo
 A God class split into concerns that only that class includes is still a god object.
 A sibling base controller is not the inverse of a controller concern: a parent that exists to share a finder is the shallow-base pathology.
 A called module that takes the controller (`AuthorizesX.call(self)`) is rung 1 misapplied — you passed the host because the function was not pure.
+A controller trait adds an **endpoint**; helpers and `authorize!` are not endpoints.
 Everything else on the include list is a different organising problem wearing a module.
 {% /callout %}
 
@@ -44,12 +45,15 @@ Send the rest home so the include list can be a capability list.
 | Class-method utilities (`User.recent`) | Query object, or a dedicated class | no |
 | Admit a model to a capability its POROs depend on (`Billable` → `Issue.new(billable)`) | Concern as trait: DSL + small provided API; operation stays in the PORO | **yes — this is the Rails job** |
 | Orthogonal capability that needs host internals (`Enumerable` / `Comparable` shape) | Mixin as trait; host owns state + glue | **yes — this is the job** |
+| Orthogonal *endpoint* on many controllers (`CsvExport#export`) | Same row: the action is the provided API; host writes `export_scope` | **yes — the controller form of a trait**. Not the resource's CRUD. Not a helper. |
 
 Test: `Thing.new(host).call` → never a trait.
 `Foo.call(self)` / you had to pass the controller → never a pure utility (rung 1). The function needed the host, so it was glue.
 Child only fills gaps in a hefty parent → never a mixin (deep and thin → SI).
 As that family grows, the parent should be a template with slots, not a moving target.
 Needs `each`, provides `map` → trait (wide and shallow).
+Needs `export_scope`, provides `#export` → trait (a controller endpoint).
+Extracts `authorize!` / `set_foo` / `*_params` → never a trait (not an endpoint).
 Empty parent / one-method "Base" → shallow base class: you wanted a trait.
 `FooController < SharedInternalsController` → shallow base on the Rails tree: you wanted a collaborator, or glue on each host.
 Fat concern / settings-provider-as-module → deep trait: you wanted a base class or a collaborator.
@@ -158,6 +162,35 @@ RosterAccess.new(current_user, @roster).authorize!
 Never the controller.
 The host still writes the one line that triggers it.
 Wrapping `ability.authorize! :read, roster` and stopping there has not won anything; keep `authorize!`.
+
+## A controller trait adds an endpoint
+
+A controller's public API is its actions.
+Embodying mixin-as-trait there means the module **adds an endpoint**.
+`include CsvExport` and the controller now has `#export` — an orthogonal capability, wide and shallow, host writes `export_scope` / `export_filename` as glue.
+That is `Enumerable` with an HTTP face: required hook, provided action.
+
+```ruby
+module CsvExport
+  def export
+    send_data csv_for(export_scope), filename: export_filename
+  end
+end
+
+class InvoicesController < ApplicationController
+  include CsvExport
+  def export_scope = current_org.invoices
+  def export_filename = "invoices.csv"
+end
+```
+
+The resource's own `index` / `show` / `create` are the role.
+They belong on the class, or on a hefty `DocumentsController` template — not in a mixin.
+
+`authorize!`, `set_employee`, `invoice_params` are not endpoints.
+They do not change what the controller is toward the router.
+Putting them on the include list is how you get the huge grab-bag: capabilities mixed with internals.
+The include list should read as endpoints and model roles, not as a drawer of helpers.
 
 ## Payoff of sending the rest home
 

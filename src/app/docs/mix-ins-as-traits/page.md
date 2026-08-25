@@ -17,6 +17,7 @@ Rails occupies the SI slot on models, views, and controllers — if every piece 
 Pull work into objects you own so inheritance is free again.
 A sibling base controller is not the inverse of a concern: a parent that exists to share a finder is the shallow-base pathology.
 A called module that takes the controller is not a utility: you passed the host because `authorize!` was never a pure function.
+A controller trait adds an endpoint; `authorize!` and finders are not endpoints.
 ActiveModel is how those objects borrow Rails' face without borrowing the parent.
 A concern is how you add a capability to a model for those POROs to depend on — not where the operation lives.
 Keep the include list short and each mixin atomic: no encapsulation, later include wins.
@@ -255,6 +256,14 @@ A lambda the method can fire is the same ceremony.
 `authorize!` is already glue; `Ability` is already the policy.
 Leave the one-liner.
 If the procedure grows, a policy takes `user` + record, never `self`.
+
+**What a controller trait is.**
+A controller's public API is its actions.
+A mixin earns `include` when it adds an **endpoint** — `CsvExport#export`, a comment action — given host glue (`export_scope`).
+That is the `Enumerable` shape on HTTP.
+The resource's CRUD is the role, not a trait.
+`authorize!`, finders, `*_params` are not endpoints; they do not change what the controller is toward the router.
+See the [catalog](/docs/catalog-of-organizing-problems).
 
 `DocumentsController` is legal only when Invoice and Estimate *are* one role and the parent is the hefty body — the SI shape.
 Most "we share a `before_action`" or "we share an `authorize!`" cases are not that.
