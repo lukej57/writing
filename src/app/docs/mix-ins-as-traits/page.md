@@ -15,6 +15,7 @@ The pathologies are the swap: a shallow base class, a deep trait.
 Collaborators when reuse outgrows a single host.
 Rails occupies the SI slot on models, views, and controllers — if every piece of logic stays there, `include` is the only reuse operator left.
 Pull work into objects you own so inheritance is free again.
+A sibling base controller is not the inverse of a concern: a parent that exists to share a finder is the shallow-base pathology.
 ActiveModel is how those objects borrow Rails' face without borrowing the parent.
 A concern is how you add a capability to a model for those POROs to depend on — not where the operation lives.
 Keep the include list short and each mixin atomic: no encapsulation, later include wins.
@@ -235,6 +236,20 @@ That is why "everything is a concern" is the path of least resistance — not be
 Depth one.
 Further role variation does not belong one layer deeper in the framework tree.
 
+**The awkward rewrite.**
+Getting off the concern-for-internals reflex is right.
+Replacing every such concern with a sibling base controller is the swap: a deep trait becomes a shallow base.
+`EmployeeScopedController` / `ResourceController` / `CrudController` with `resource_class` hooks — the parent exists to share finders and `*_params`.
+The children are not filling slots in a template; they are inheriting helpers.
+That is not role variation.
+It is a capability wearing a superclass, on a tree whose parent is already taken.
+
+`DocumentsController` is legal only when Invoice and Estimate *are* one role and the parent is the hefty body — the SI shape.
+Most "we share a `before_action`" cases are not that.
+Pull the work out; leave the glue on each controller.
+A one-liner repeated is often cheaper than either operator ([The Dark Side of DRY](/docs/dark-side-of-dry)).
+See the [catalog](/docs/catalog-of-organizing-problems).
+
 **Pull logic into objects you own.**
 A PORO, a form, a notifier family, an exporter — these can use inheritance freely.
 `class EstimateDocument < BillableDocument`, `class SlackNotifier < Notifier`, `Issue.new(invoice).call`.
@@ -266,6 +281,7 @@ Ruby already has SI, so mixins-as-traits is not a taste — it is the remaining 
 Rails spends that SI slot on `ApplicationRecord` and friends; objects you own get it back.
 The destination is a short include list of capabilities on a thin host, and a graph of non-framework objects that can inherit.
 A folder of single-use concerns is not that destination — it is the God class with a table of contents.
+An intermediate controller that exists to share a finder is not that destination either — it is the shallow base class on a tree you do not own.
 Inheritance (SI + mixins-as-traits) and collaborators complement each other because they sit at different points on the coupling curve.
 Traits decorate a host; they do not replace a second object, and a second object does not replace a trait.
 

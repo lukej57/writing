@@ -53,7 +53,8 @@ Write the soup snapshot so that **each bad include is a catalog row**. The equat
 | Money / date formatting | `include Formatting` | `Formatting.currency(amount)` (`module_function`) | Pure utilities |
 | PDF bits taking a document | `include Exportable` that calls `pdf_*` on self | `PdfExporter.new(document).call` | Clustered on one argument → class |
 | Invoice vs Estimate internals | `include DocumentBehaviour` on both | `class Invoice < Document` / `Estimate < Document`, depth one | Variations of one role → SI |
-| Controllers | `include DocumentResources` in both controllers | `class InvoicesController < DocumentsController` | Same — "every controller needs this" is the *role* |
+| Controllers (same role) | `include DocumentResources` in both controllers | `DocumentsController` as a *template* — only if Invoice/Estimate are one role and the parent is the hefty body. Prefer pulling the operation out so the controllers stay thin. | Variations of one role → SI. Not "we share a before_action" |
+| Controllers (shared finder) | `include SetsEmployee` **or** `EmployeeScopedController` | `EmployeeFinder.new(org).find(id)`; each host writes the `before_action` / ivar. A one-liner may stay duplicated. | Shared internals — not a concern, not a shallow base. See catalog. |
 | Emailing the client | `include Notifiable` reading `@client` | `Notifier.new(mailer).notify(document)` | Own lifetime → DI (the `Notifier` family may be SI; a mailer may wear a mixin — DI complements both) |
 | "Billable" workflow | `include Billable` *as the operation* on the model | `Issue.new(billable).call` (PORO takes the *role*; a slim `Billable` concern may still group the record's DSL + `#total`) | Operation *on* a record; concern is the interface, not the work |
 | Form that needs `form_with` | jam it onto the record | `InvoiceForm < ApplicationForm` with `ActiveModel::API` (SI yours; AM is traits) | Rails face on a class you own |

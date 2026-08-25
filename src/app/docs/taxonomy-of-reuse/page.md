@@ -150,7 +150,7 @@ Those are capabilities, not a role.
 
 | Pathology | What it looks like | What it wanted to be |
 |---|---|---|
-| Shallow base class | `class Foo < EnumerableBase` with almost no body; or a "Base" that exists to share `#each` | A trait. You spent the parent on a capability. |
+| Shallow base class | `class Foo < EnumerableBase` with almost no body; or a "Base" that exists to share `#each`; or `EmployeeScopedController` / `ResourceController` that exists to share a finder | A trait, or a collaborator. You spent the parent on a capability. |
 | Deep trait | A 40-method concern; a settings-provider-as-module; `UserConcern` | A base class on an object you own, or a collaborator. You spent the include list on a role. |
 
 **Buys / pitfalls — stub, return to this.**

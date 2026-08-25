@@ -55,6 +55,13 @@ SI + traits is the fundamental pair ([taxonomy](/docs/taxonomy-of-reuse)).
 Rust still does both jobs inside one construct.
 Ruby already filled the SI slot, so the module should be the trait — not a second inheritance system.
 
+The inverse is also a category error.
+Two controllers share a finder, so you drop the concern and write `EmployeeScopedController`.
+That looks like "we used SI instead of a mixin."
+It is the [shallow base class](/docs/taxonomy-of-reuse): you spent the parent on a capability.
+The controllers were never variations of one role.
+See the [catalog](/docs/catalog-of-organizing-problems) row.
+
 ## What `include` actually does
 
 ```
@@ -69,6 +76,7 @@ extend  M   eigenclass → M                        module methods become single
 | "Composition over inheritance" | No second object. No private state. The mixin may touch anything on the host. |
 | "We split the God class into concerns" | Same instance, same methods, same ivars. Files are not a boundary. |
 | "More flexible than a base class" | Yes — that is why mixins exist ([taxonomy](/docs/taxonomy-of-reuse): they win extraction). Flexibility is not a boundary. |
+| "We used a base controller instead of a concern" | Only if they are one role and the parent is a template. A finder-holder parent is a shallow base — same spend, other operator. |
 
 `prepend` is the one mixin job the paper said mixins do well: a generic wrapper with late-bound `super`.
 That is still inheritance.

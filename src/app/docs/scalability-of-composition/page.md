@@ -75,7 +75,7 @@ See [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems).
 |---|---|---|---|
 | least | Mixin inheritance | a small capability on a few hosts | many includes, a **deep trait** (many methods per mixin), or N single-use concerns that are still one God class |
 | | Multiple inheritance | almost never worth it | diamond, named parents, state copied twice |
-| | Single inheritance | one level of role variation — deep body, thin travel; as P grows, a template with slots | the hierarchy deepens; children rewrite the parent; the parent keeps growing "real" behaviour; or a **shallow base class** |
+| | Single inheritance | one level of role variation — deep body, thin travel; as P grows, a template with slots | the hierarchy deepens; children rewrite the parent; the parent keeps growing "real" behaviour; or a **shallow base class** (an intermediate controller that exists to share a finder) |
 | | Traits | orthogonal capabilities on a class — wide and shallow | the required API grows; mixins pretending to be traits |
 | most | Object composition (DI) | a system | the interface fattens into a god collaborator |
 

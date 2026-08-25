@@ -13,6 +13,7 @@ Pure utilities, clustered arguments, role variation, operations on a record, pre
 Keep that list short and each mixin atomic: mixins have no encapsulation, and later include silently overwrites.
 In Rails that same job is a concern: add a capability to a model so PORO collaborators can depend on the role.
 A God class split into concerns that only that class includes is still a god object.
+A sibling base controller is not the inverse of a controller concern: a parent that exists to share a finder is the shallow-base pathology.
 Everything else on the include list is a different organising problem wearing a module.
 {% /callout %}
 
@@ -28,7 +29,7 @@ Send the rest home so the include list can be a capability list.
 |---|---|---|
 | Share pure utilities (formatters, date math, `Utils`) | Namespace + `module_function`; call `Utils.foo(x)` | no |
 | Share behaviour clustered on one argument | A class; that argument in the constructor | no |
-| Variations of one role (controllers of this app, a kind of exporter) | Single inheritance, depth one. `ApplicationController`, `BaseExporter` | no — that's the parent. Ruby already has SI; do not spend the module on it |
+| Variations of one role (a kind of exporter; Invoice and Estimate as one document family) | Single inheritance, depth one, on an object you own. `BaseExporter`. A `DocumentsController` only if it is a hefty template, not a finder-holder | no — that's the parent. Ruby already has SI; do not spend the module on it |
 | Reuse that needs its own lifetime or state (notify, charge, generate) | Collaborator + DI; host delegates | no |
 | An operation *on* a record (`Billable`, `Onboardable`) | PORO / form / service that *takes* the model | no |
 | Model file is long (scopes, queries extracted by kind) | Query object, or leave them on the model | no — file length is not a capability |
@@ -36,7 +37,8 @@ Send the rest home so the include list can be a capability list.
 | Presentation / formatting | Decorator, presenter, helper function | no |
 | Side effects on save | Host keeps the callback; it calls a job or object | no |
 | Authorization | Policy object (`user` + `record`) | no |
-| "Every controller needs this" (`current_user`, authn) | That's the role — base controller | no |
+| "Every controller needs this" (`current_user`, authn) | That's the app-wide role — `ApplicationController`. Depth one. | no |
+| Two controllers share internals (a finder, `*_params`, a `before_action`) | Collaborator, or leave the one-liner on each host. A sibling base only if they are the same role *and* the parent is a hefty template | no — `EmployeeScopedController` that exists to share `set_employee` is a shallow base; you spent SI on a capability. A concern that reads `params` is stolen glue |
 | Constants / config | Namespace module, or `Rails.configuration` | no |
 | Class-method utilities (`User.recent`) | Query object, or a dedicated class | no |
 | Admit a model to a capability its POROs depend on (`Billable` → `Issue.new(billable)`) | Concern as trait: DSL + small provided API; operation stays in the PORO | **yes — this is the Rails job** |
@@ -47,6 +49,7 @@ Child only fills gaps in a hefty parent → never a mixin (deep and thin → SI)
 As that family grows, the parent should be a template with slots, not a moving target.
 Needs `each`, provides `map` → trait (wide and shallow).
 Empty parent / one-method "Base" → shallow base class: you wanted a trait.
+`FooController < SharedInternalsController` → shallow base on the Rails tree: you wanted a collaborator, or glue on each host.
 Fat concern / settings-provider-as-module → deep trait: you wanted a base class or a collaborator.
 Concern used only here → a heading, not a trait. Still the God class.
 
@@ -73,7 +76,8 @@ If the behaviour stays on those classes, `include` is the only operator left —
 Steps 3 and 4 of the ladder (collaborator; SI for role variation) need an object the framework does not own.
 Pull the work out and the SI slot opens.
 Keep it in the model and you will `include` a concern for a job that wanted a parent.
-See [Mix-Ins as Traits](/docs/mix-ins-as-traits).
+Keep it in the controller and the inverse reflex is just as bad: an intermediate `*Controller` that exists to share internals.
+See [Mix-Ins as Traits](/docs/mix-ins-as-traits) and [A sibling base controller is not the inverse of a concern](#a-sibling-base-controller-is-not-the-inverse-of-a-concern).
 
 ## A file split is not a smaller object
 
@@ -90,6 +94,33 @@ A concern that has one client is a heading.
 
 See [The One Job of a Concern](/docs/one-job-of-a-concern) and [Include Is Not Composition](/docs/include-is-not-composition).
 
+## A sibling base controller is not the inverse of a concern
+
+The reflex this catalog is trying to break: two controllers share a finder, so `include SetsEmployee`.
+The mechanical inverse is `class AwardsController < EmployeeScopedController`.
+That is the [shallow base class](/docs/taxonomy-of-reuse): you spent the parent on a capability.
+Awards and leave requests are not variations of one role.
+The parent has almost no body — `set_employee`, maybe `employee_params`.
+Rails already used the SI slot on `ApplicationController`.
+Another layer on that tree is the same spend.
+
+Three different controller problems:
+
+| What you actually have | Mechanism |
+|---|---|
+| Every controller in this app (`current_user`, authn) | `ApplicationController` — that is the role |
+| Invoice and Estimate as the same resource family; hefty shared body; children fill slots | `DocumentsController` as a template — rare; the parent must be deep and thin |
+| A finder / params / callback two unrelated controllers both write | Collaborator, or the one-liner stays. Not a concern. Not a sibling base. |
+
+A concern that reaches for `params` and sets `@employee` is still stolen glue ([The One Job of a Concern](/docs/one-job-of-a-concern)).
+Mixin-as-trait discipline would push that glue onto each host (`employee_id`, `employee_scope`) and leave a one-method trait.
+For a finder that is ceremony.
+The object you own (`EmployeeFinder.new(organisation).find(id)`) is the DRY.
+The controller writes `before_action` and assigns the ivar — host-owned glue.
+
+If the duplication is a one-liner, [The Dark Side of DRY](/docs/dark-side-of-dry) applies: keep the copies.
+The awkwardness is the signal that you forced an inheritance operator onto a problem that wanted a collaborator, or no DRY at all.
+
 ## Payoff of sending the rest home
 
 Once the other rows have somewhere to go, a class includes a handful of capabilities.
@@ -99,6 +130,7 @@ Aim for a **small number** of **atomic** mixins.
 Mixins have no encapsulation, and names resolve by ancestor order — later `include` / `prepend` silently wins.
 A fat shared module, or a long include list of overlapping modules, is how one capability overwrites another.
 Huge shared bodies do not belong on the include list; they belong on a parent (deep and thin) or behind a collaborator, where there is a boundary.
+A parent that exists to share a finder is not that parent — it is the shallow-base swap.
 
 That list **scales better as mixins** because you stopped using mixins to scale everything else:
 

@@ -24,7 +24,7 @@ None of SI, traits, or DI is always better.
 |---|---|
 | [A Taxonomy of Reuse](/docs/taxonomy-of-reuse) | Problems × SI / MI / mixins / traits+SI. Mixins win extraction, lose control. |
 | [Scalability of Composition](/docs/scalability-of-composition) | `load ≈ D × P × S`. Mixins least, DI + small API most. |
-| [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems) | Where each job lives. `include?` for two rows only. Single-use concern split = still a god object. Few, atomic mixins. |
+| [A Catalog of Organising Problems](/docs/catalog-of-organizing-problems) | Where each job lives. `include?` for two rows only. Single-use concern split = still a god object. Few, atomic mixins. Shared controller internals ≠ sibling base. |
 | [Include Is Not Composition](/docs/include-is-not-composition) | Category error. Ancestor chain ≠ collaborator. God class in several files is still one object. |
 | [The One Job of a Concern](/docs/one-job-of-a-concern) | Add a capability to a model so PORO collaborators can depend on that role. DSL grouping is the means. Single-use concerns are a table of contents. |
 
@@ -39,7 +39,7 @@ Foundation (not this series): [Dependencies in the Abstract](/docs/dependencies-
 - Theory → Ruby dictionary (`include` / `prepend` / `extend`).
 - Discipline: required API, fake-host tests, `Enumerable` / `Comparable`.
 - Story: naïve → soup → equation (`examples/PLAN.md`).
-- Close: the pair is fundamental; Ruby has SI so modules are traits; Rails spends SI on MVC — pull logic out; short include list; single-use concerns are still a God class; collaborators scale a system.
+- Close: the pair is fundamental; Ruby has SI so modules are traits; Rails spends SI on MVC — pull logic out; short include list; single-use concerns are still a God class; a sibling base controller is not the inverse of a concern; collaborators scale a system.
 
 ## Decisions already locked
 
@@ -52,6 +52,7 @@ Foundation (not this series): [Dependencies in the Abstract](/docs/dependencies-
 - Rust looks traits-only; the typeclass / `impl Trait for T` half is the SI analogue (variation within a role; coherence as one parent). Last column stays traits+SI. Not a language axis.
 - The pair is fundamental. Ruby already has SI, so modules fill the trait slot — further evidence for mixin-as-trait discipline, not a second inheritance system.
 - Rails occupies the SI slot on MVC classes. Mixin-for-everything is the path of least resistance if logic stays there. Pull work into objects you own so inheritance is free again.
+- Base-controller-first is only for real role variation with a hefty parent (`DocumentsController` as a template). Mechanically replacing a controller concern with an intermediate base (`EmployeeScopedController` for a finder) is the shallow-base pathology. Usual escape: collaborator + host-owned glue. `ApplicationController` is the app-wide role.
 - ActiveModel is concern-shaped machinery on a class you own (validations, naming, `form_with`); it does not spend SI. AR macros stay on AR.
 - What concerns are for: adding a capability to a model so PORO collaborators can depend on that role. `included do` is the Rails means. Not the operation, and not included into the PORO.
 - SI is deep and thin; traits are wide and shallow. Pathologies: shallow base class, deep trait. Buys/pitfalls of those four are a stub — return to them.
@@ -59,6 +60,7 @@ Foundation (not this series): [Dependencies in the Abstract](/docs/dependencies-
 - Story for the prose: naïve Invoice/Estimate → concern soup → equation. Build soup first.
 - Mixins should be few and atomic. No encapsulation + order-dependent resolution means they overwrite each other; do not combine huge shared bodies this way.
 - Carving one God class into concerns used only by that class is still a god object. Files / `concerning` are not a boundary.
+- Controller internals: concern-for-DRY is the wrong reflex; concern→sibling-base is the shallow-base swap. Collaborator + host glue, or keep the one-liner.
 
 ## Still to write
 

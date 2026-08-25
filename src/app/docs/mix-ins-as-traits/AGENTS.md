@@ -40,6 +40,15 @@ Two points that must land: (1) aim for a small number of mixins, each small and 
 
 Some other examples are controllers with similar functionality. Unless the controllers are truly different in their domain, they could probably share a base controller, rather than using mixins to deduplicate their internals. Mixins should add some sort of out-of-band capability to a controller. If the controllers can be siblings under a base class, we should reach for that before using mixins, unless it truly does add a non-specific capability to that controller.
 
+Refinement (controller internals, 25 Aug 2026).
+The base-controller-first rule is right when the controllers are variations of one role *and* the parent is a hefty template.
+It comes out awkwardly when the parent exists only to share a finder, a `before_action`, or `*_params` — that is the shallow base class (taxonomy: you spent SI on a capability).
+Rails already spent the parent on `ApplicationController`; another layer on that tree is the same spend.
+The usual escape is the same as the model case: pull the work into an object you own, and let each controller write the glue.
+A concern is still only for an out-of-band capability; a concern that reads `params` and sets ivars is stolen glue, not that capability.
+A one-liner repeated is often cheaper than either inheritance operator (*The Dark Side of DRY*).
+Motivating case: TandaHQ/payaus#57946 — getting off the concern-for-internals reflex by introducing an intermediate controller.
+
 On the other hand, concerns have one genuinely interesting role: co-locating and grouping together the many different kinds of Rails declarations — associations, validations, scopes, API methods, callbacks — that together implement a single capability of a Rails class. Normally those declarations are scattered by kind across a model; a concern lets them be grouped by capability instead. That is probably where concerns make sense.
 
 The reason this needs concerns specifically is that those declarations are class-level Rails machinery. If you didn't have concerns and wanted to add a capability to a model that leveraged a lot of that machinery, you'd be stuck: a plain module can hold pure methods, but the associations, validations, and scopes just couldn't be extracted into it. The `included do` block is what makes the extraction possible at all. So concerns do make sense in Rails — but they can be overused just like any module, and they have all the same shortcomings (no encapsulation, full access to host state, still inheritance).
