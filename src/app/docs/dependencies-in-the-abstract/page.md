@@ -96,6 +96,9 @@ The node is now really hard to change.
 It is hard even to understand the consequences.
 As the number of dependants rises, the likelihood of unwanted ripple effects rises with it.
 A node many others depend on tends to *freeze*: `ApplicationRecord`, a shared kernel, a published API.
+A freeze pushes change into an additive form, and into a migration.
+You would not make a breaking change to `link_to` in Rails.
+You would deprecate it, add `new_link_to`, and allow time for the dependants to move.
 
 ## The move
 
