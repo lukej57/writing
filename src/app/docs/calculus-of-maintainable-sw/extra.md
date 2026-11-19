@@ -41,6 +41,8 @@ nextjs:
 - The low-level message is cryptic and inscrutable because it arrives without context
 - Exceptions throw that error up to a higher-context handler, which can add context and make it understandable
 - That also centralizes handling: one high-level handler, instead of handling in low-level code where you often can't, because you can't understand the error
+- Exceptions are relevant because algebraic effects are like resumable exceptions
+- They are a partial solution to the integration problem, scoped only to error handling
 - Side point, worth mentioning even though it isn't really about maintainability: context degradation — high-context and low-context code
 - Maps onto functional core, imperative shell: the core tends to be low context, the shell tends to be high context
 - The context-dependent bits are what change a lot, which leads to the family of problems
@@ -83,6 +85,7 @@ nextjs:
   - None of these is perfect. Complexity grows, and the technique gets harder to understand: advanced, nuanced, tricky, boilerplate
 
 ### Algebraic effects
+- Begin from exceptions: make them resumable, and applicable to general programming rather than only error handling
 - Seems like the ultimate approach: returns you to the naive imperative starting point without altering how you think, so you can swap effects later
 - That would be revolutionary for maintainability
 - Still experimental
