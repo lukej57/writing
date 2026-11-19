@@ -36,28 +36,66 @@ I think it's reasonable to include a good summary of the background and general 
 
 And then we'll move toward the end of the paper, where we see modules or mixins used as traits versus mixins used for absolutely everything. We should probably discuss concerns about the kind of Rails-specific manifestation of mixins and why they should be small, atomic, composable, etc.
 
+Two points that must land: (1) aim for a small number of mixins, each small and atomic — they lack encapsulation, resolve by ancestor order, and overwrite each other, so you do not combine huge amounts of shared common code that way; (2) taking one God class and splitting it into a bunch of concerns that are only used in that class is not any different from a god object.
+
 Some other examples are controllers with similar functionality. Unless the controllers are truly different in their domain, they could probably share a base controller, rather than using mixins to deduplicate their internals. Mixins should add some sort of out-of-band capability to a controller. If the controllers can be siblings under a base class, we should reach for that before using mixins, unless it truly does add a non-specific capability to that controller.
+
+Refinement (controller internals, 25 Aug 2026).
+The base-controller-first rule is right when the controllers are variations of one role *and* the parent is a hefty template.
+It comes out awkwardly when the parent exists only to share a finder, a `before_action`, or `*_params` — that is the shallow base class (taxonomy: you spent SI on a capability).
+Rails already spent the parent on `ApplicationController`; another layer on that tree is the same spend.
+
+The case that actually felt awkward: two controllers make the same CanCan `authorize!` call.
+The concern reflex (`include AuthorizesRoster`) clutters the include list for one method that is not a trait — no override, no plug into local state, no change of identity.
+The extract that replaced it — `RosterAuth.call(self)` / a `module_function` that calls `authorize!` on the controller — is rung 1 misapplied: the function is not pure, so you had to pass the host.
+A lambda the method can fire is the same ceremony.
+`authorize!` is already host-owned glue; CanCan's `Ability` is already the policy (`user` + subject).
+Leave the one-liner on each controller.
+If the procedure grows, a policy object takes `user` (or `current_ability`) and the record — never the controller.
+A one-liner repeated is cheaper than a concern, a sibling base, or a called module that imported `self` (*The Dark Side of DRY*).
+
+What a controller trait *is* (25 Aug 2026).
+Embodying modules-as-traits on a controller: the module adds an **endpoint**.
+A controller's public API is its actions.
+A mixin earns `include` when it adds to that API — `#export`, a comment action — an orthogonal capability, host supplies glue (`export_scope`).
+`authorize!`, `set_foo`, `*_params` are not endpoints.
+They do not change what the controller is toward the router.
+They stay glue, or become a policy / finder that takes data.
+The resource's own CRUD is the role (the class, or a hefty template), not a trait.
 
 On the other hand, concerns have one genuinely interesting role: co-locating and grouping together the many different kinds of Rails declarations — associations, validations, scopes, API methods, callbacks — that together implement a single capability of a Rails class. Normally those declarations are scattered by kind across a model; a concern lets them be grouped by capability instead. That is probably where concerns make sense.
 
 The reason this needs concerns specifically is that those declarations are class-level Rails machinery. If you didn't have concerns and wanted to add a capability to a model that leveraged a lot of that machinery, you'd be stuck: a plain module can hold pure methods, but the associations, validations, and scopes just couldn't be extracted into it. The `included do` block is what makes the extraction possible at all. So concerns do make sense in Rails — but they can be overused just like any module, and they have all the same shortcomings (no encapsulation, full access to host state, still inheritance).
 
+## Split (23 Aug 2026)
+
+The long outline was too much for one article.
+Axioms are now separate drafts; this folder is the synthesis.
+
+| Draft | Path |
+|---|---|
+| A Taxonomy of Reuse | `src/app/docs/taxonomy-of-reuse/page.md` |
+| Scalability of Composition | `src/app/docs/scalability-of-composition/page.md` |
+| A Catalog of Organising Problems | `src/app/docs/catalog-of-organizing-problems/page.md` |
+| Include Is Not Composition | `src/app/docs/include-is-not-composition/page.md` |
+| The One Job of a Concern | `src/app/docs/one-job-of-a-concern/page.md` |
+| Mix-Ins as Traits (this article) | `page.md` |
+
+Write the axioms first.
+This article assumes them and does ownership, the Ruby dictionary, mixin-as-trait discipline, and the Invoice/Estimate story.
+
+Do not re-derive the paper matrix, the `D × P × S` tables, or the fourteen-row catalog here — link.
+
 ## Shape
 
 Roughly the order to build toward:
 
-1. The problem: everything is a concern; God classes by accumulation.
-2. Background from the papers: why single, multiple, and mixin inheritance each fail; what a trait is.
-3. The ladder down into Ruby/Rails — the escalation:
-   - pure functions in a namespace module (`module_function`), called directly;
-   - a class when those functions cluster around a shared argument (it goes in the constructor);
-   - the "vanilla Rails" facade — model delegates to a collaborator, dependencies via constructor;
-   - a mixin *only* when it is a trait: API plus partial implementation needing the host's internal state.
+1. The problem: everything is a concern; God classes by accumulation — including a God class split into concerns used only by that class (still one object).
+2. Point at the axioms (taxonomy, coupling, catalog, category error).
+3. The equation as an *ownership* rule; mixin-as-trait discipline.
 4. `Enumerable` / `Comparable` as the canonical traits.
-5. Good and bad examples with the reasoning made explicit.
-6. Rails-specific manifestation: concerns, why small/atomic/composable, what state discipline buys you;
-   the legitimate case for concerns — grouping associations, validations, scopes, etc. by capability
-   rather than by kind.
+5. The story (naïve → soup → equation) applying the catalog.
+6. Rails: the framework occupies SI on MVC, so mixin-for-everything is the default if logic stays there; pull work into objects you own. Concerns add a capability to the model for those POROs. Point at *The One Job of a Concern*.
 
 ## Reference material
 

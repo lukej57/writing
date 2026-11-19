@@ -8,8 +8,10 @@ const nextConfig = {
   basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
   assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || '',
   pageExtensions: ['js', 'jsx', 'md', 'ts', 'tsx'],
+  // @markdoc/next.js only emits Turbopack .md rules when this key is present.
+  turbopack: {},
 }
 
 export default withSearch(
-  withMarkdoc({ schemaPath: './src/markdoc' })(nextConfig),
+  withMarkdoc({ schemaPath: './src/markdoc', dir: process.cwd() })(nextConfig),
 )

@@ -6,7 +6,8 @@ Do not start a separate git repo until (if) the snapshots are worth cloning. Unt
 
 ## Why examples at all
 
-The outline in `page.md` is dense on purpose: it is a brief. Readers will not sit through it. They will sit through a story:
+The synthesis outline in `page.md` is dense on purpose: it is a brief.
+The paper matrix, coupling tables, and catalog now live in sibling drafts (see `../PREVIEW.md`). Readers will not sit through it. They will sit through a story:
 
 1. We implement something the naïve way.
 2. Sharing code the usual Rails way (concerns for everything) makes it hard to maintain.
@@ -21,6 +22,7 @@ The article *points at* excerpts. This folder holds the full snapshots so we can
 Why this domain:
 
 - Two classes that are *variations of one role* (single inheritance) and also want *orthogonal capabilities* (traits).
+  They are POROs on purpose: if they were `ApplicationRecord`, Rails would already have spent the SI slot and the soup would be the only move.
 - Obvious fake-trait temptations: `Utils`, `Scopes`, `Exportable`, `Notifiable`, `Billable`, a shared controller concern.
 - Obvious real trait: comparison / ordering (`<=>` → `Comparable`).
 - Glue you can see: accessors, "document number", "client email."
@@ -51,14 +53,18 @@ Write the soup snapshot so that **each bad include is a catalog row**. The equat
 | Money / date formatting | `include Formatting` | `Formatting.currency(amount)` (`module_function`) | Pure utilities |
 | PDF bits taking a document | `include Exportable` that calls `pdf_*` on self | `PdfExporter.new(document).call` | Clustered on one argument → class |
 | Invoice vs Estimate internals | `include DocumentBehaviour` on both | `class Invoice < Document` / `Estimate < Document`, depth one | Variations of one role → SI |
-| Controllers | `include DocumentResources` in both controllers | `class InvoicesController < DocumentsController` | Same — "every controller needs this" is the *role* |
-| Emailing the client | `include Notifiable` reading `@client` | `Notifier.new(mailer).notify(document)` | Own lifetime → DI |
-| "Billable" workflow | `include Billable` on the model | `Issue.new(document).call` (PORO takes the model) | Operation *on* a record |
-| Scope pile | `include DocumentScopes` | Query object, or scopes stay on `Document` | File length ≠ capability |
+| Controllers (same role) | `include DocumentResources` in both controllers | `DocumentsController` as a *template* — only if Invoice/Estimate are one role and the parent is the hefty body. Prefer pulling the operation out so the controllers stay thin. | Variations of one role → SI. Not "we share a before_action" |
+| Controllers (shared finder) | `include SetsEmployee` **or** `EmployeeScopedController` | `EmployeeFinder.new(org).find(id)`; each host writes the `before_action` / ivar. A one-liner may stay duplicated. | Shared internals — not a concern, not a shallow base. See catalog. |
+| Controllers (same `authorize!`) | `include AuthorizesRoster` **or** `RosterAuth.call(self)` **or** a lambda the method fires | Leave `authorize!` on each host. `Ability` is the policy. If it grows: `RosterAccess.new(user, roster)` — never the controller. | Authorization. Rung 1 only if the function is *pure*. Passing `self` is the tell. Not an endpoint. |
+| Controllers (real trait) | `include Exportable` that also holds finders, `authorize!`, and `as_json` | `include CsvExport` — provided `#export`; host writes `export_scope`. Work of building the CSV may still be a collaborator. | Orthogonal endpoint. The include list reads as actions, not helpers. |
+| Emailing the client | `include Notifiable` reading `@client` | `Notifier.new(mailer).notify(document)` | Own lifetime → DI (the `Notifier` family may be SI; a mailer may wear a mixin — DI complements both) |
+| "Billable" workflow | `include Billable` *as the operation* on the model | `Issue.new(billable).call` (PORO takes the *role*; a slim `Billable` concern may still group the record's DSL + `#total`) | Operation *on* a record; concern is the interface, not the work |
+| Form that needs `form_with` | jam it onto the record | `InvoiceForm < ApplicationForm` with `ActiveModel::API` (SI yours; AM is traits) | Rails face on a class you own |
 | `as_json` for the API | `include Displayable` | Presenter / decorator | Presentation |
 | `after_save` sync | `include Auditable` | Host callback calls `Audit.log(document)` | Side effects |
 | Compare / sort documents | homemade `include Orderable` touching `@number` | `include Comparable`; host implements `<=>` as **glue**; `@number` is **state** | Real trait |
-| Client `has_many` + validations that *are* one capability | (optional) a fat concern | Small concern, `included do` only for that capability's DSL | Legitimate Rails leftover |
+| Client `has_many` + validations that *are* one capability | fat concern that *is* the operation | Slim concern admits the model to the role; PORO does the work | What concerns are for |
+| Long `User` split into `UserAuth` / `UserBilling` | `include` only on `User` (`concerning` or `app/models/concerns/`) | Leave methods on `User`, or extract collaborators other types actually use | God class carved into single-use concerns — still one object |
 
 Not every row needs a full class in the article. Several can be a 8-line before/after. The **spine** of the story is: duplication → soup (`Exportable` + `Notifiable` + `Formatting` + `DocumentBehaviour`) → equation (`Document` superclass, `Comparable`, `PdfExporter`, `Notifier`, `Formatting.currency`).
 
