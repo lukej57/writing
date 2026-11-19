@@ -137,6 +137,54 @@ A test that stubs the world.
 Depending on many others is close to having one class with many collaborators, or many concerns left unseparated.
 That is equivalent, in form, to a very large object doing many things at once — each of which may change.
 
+The only fan-out worth the attention is fan-out to volatile logic.
+Draw an arrow to every piece of the Ruby standard library a class uses, and the graph looks huge.
+Fan-out to something stable does no harm.
+Elide those arrows.
+Push them into the background.
+What has the effect is fan-out to volatile logic.
+Volatile means likely to change.
+Application code you have written yourself is the usual case of that.
+
+## Implicit fan-out
+
+Those arrows are the explicit case.
+The same fan-out can live inside the object, with no arrows drawn.
+All the code is in the class.
+One very large class has several other classes implemented inside it.
+The pieces are distinct, and they are probably tangled.
+That is internal fan-out: one god object, a large volume of code, harder not to change.
+
+Dependency injection is the remedy.
+It makes the dependencies swappable.
+The effects are swappable.
+One graph splits into many graphs, each with a smaller fan-out.
+One object no longer depends on the whole volume.
+
+A dot with five arrows out:
+
+```mermaid
+flowchart BT
+  L((L)) --> A((A))
+  L --> B((B))
+  L --> C((C))
+  L --> D((D))
+  L --> E((E))
+```
+
+splits into five dots, one arrow each:
+
+```mermaid
+flowchart BT
+  L1((L)) --> A((A))
+  L2((L)) --> B((B))
+  L3((L)) --> C((C))
+  L4((L)) --> D((D))
+  L5((L)) --> E((E))
+```
+
+Dependency injection is what an interface enables.
+
 ## Both
 
 Now put both shapes on the same node.
@@ -255,6 +303,42 @@ That would drive the chance down if the hop model holds.
 
 It is interesting.
 It is not yet the same kind of find as flipping the arrows.
+
+## Where Rails sits
+
+Active Record models are depended on by a lot of code, and they depend on a lot of code.
+Depended on by many is a high in-count: fan-in.
+Depending on many is a high out-count: fan-out.
+A node with both is a god object.
+That is what the model is.
+
+That is where Rails leads you.
+You start with the MVC model.
+For a long time you can do everything inside that box.
+Eventually the models take the overload.
+
+They are depended on by many, so fan-in freezes them.
+They also do many things, and depend on many, so fan-out keeps them volatile.
+Frozen and volatile at once is the hub: hard to change, and hard not to change.
+Churn stays high.
+Each change costs more, because ripples leave and ripples arrive.
+That is what unmaintainable means here.
+
+Piotr Solnica has been describing that turn for years.
+
+[Making ActiveRecord Models Thin](https://solnic.dev/making-activerecord-models-thin/), 1 August 2011: anything more than “a blog written in 15 minutes” will “sooner or later become a huge mess” once domain behaviour is mixed into Active Record.
+
+[TDD and ActiveRecord in Rails](https://solnic.dev/tdd-and-activerecord-in-rails/), 6 January 2014: models are among “the most complex elements in the rails stack” and are “simply hard to test.”
+Being able to “quickly build something” does not change that.
+
+[My time with Rails is up](https://solnic.dev/my-time-with-rails-is-up/), 22 May 2016: it is “nice and easy in the beginning,” and then it turns unmaintainable.
+The simplicity is “a false sense of simplicity,” because “complexity is being hidden by convenient interfaces.”
+Active Record, with “over 200 public methods” plus callbacks and concerns, “will not be able to handle growing complexity.”
+
+[Abstractions and the role of a framework](https://solnic.dev/abstractions-and-the-role-of-a-framework/), 30 May 2016: the long-term risk is “hitting a wall,” because Rails assumes Active Record.
+
+Models are detested, and they are why a true unit test is impossible in Rails.
+A plain old Ruby object of your own is a shock to test: it is quick, because it is not full of database calls.
 
 ## Map to examples (stub)
 
