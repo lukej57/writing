@@ -40,6 +40,21 @@ You embody the idea, and you watch how it plays out.
 Matthew 7:16: you shall know them by their fruits.
 You can know the idea by its fruit.
 
+Longitudinal thinking, because it happens over time, has an experiential element.
+The experience of the idea playing out is a back pressure on it.
+That pressure refines the worldview.
+Knowing the idea by its fruit is that refinement.
+
+Yoram Hazony reads a partial grasp of the same kind in the 2016 essay [Torah from Heaven](https://yoramhazony.substack.com/p/torah-from-heaven-moses-and-sinai-in-exodus).
+That essay, not his book Conservatism.
+His line is that one's place on the slope of the mountain represents what one knows of God.
+The people at the foot hear only Moses.
+The elders go partway up, and see God's feet.
+Moses reaches the summit.
+Even that view is partial, because the sky is still above him.
+The summit, he writes, "does not represent any kind of complete or perfect knowledge."
+The passages are Exodus 20, Exodus 24, Exodus 33, and Deuteronomy 29:29.
+
 A theory that survives that is strong enough to found lasting action.
 A strong theoretical foundation can motivate that action, and sustain it, toward a vision.
 This, something AI cannot do.
