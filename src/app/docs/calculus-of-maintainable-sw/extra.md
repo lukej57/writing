@@ -8,6 +8,16 @@ nextjs:
 
 # Calculus of Maintainable Software
 
+## Introduction
+
+I do not see this kind of technical wisdom staying in the consciousness of future generations of programmers.
+It tends to be offloaded into AI context.
+It is not something the programmer wants to keep in mind.
+It does not change.
+Because it is invariant, it is perfect for that context.
+Conceptual discussion of this sort is a dying art.
+I wanted to document it and move on.
+
 ## Naive starting point
 - Effects and logic mixed together
 - Easy to write for one concrete problem
