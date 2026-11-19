@@ -234,6 +234,11 @@ You cannot write `Invoice < Document` or `EmailNotifier < Notifier` *on those cl
 The only reuse operator left on the object is `include`.
 That is why "everything is a concern" is the path of least resistance — not because mixins are the right tool, but because SI + traits is fundamental and Rails already spent SI.
 
+Developing everything inside the same MVC abstractions, and nothing else, is how you enter the trap.
+The box is structural: those classes already sit in a hierarchy you do not own.
+It is also psychological: the box predisposes you to stay there.
+That is what makes `include` — the trait slot, used to de-duplicate — the path of least resistance.
+
 `ApplicationController` / `ApplicationRecord` are the *one* SI step Rails gives you: "every X in this app."
 Depth one.
 Further role variation does not belong one layer deeper in the framework tree.
