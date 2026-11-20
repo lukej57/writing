@@ -94,6 +94,37 @@ I wanted to document it and move on.
   - Or functional languages, which aren't perfect either: monad transformers increase the complexity again
   - None of these is perfect. Complexity grows, and the technique gets harder to understand: advanced, nuanced, tricky, boilerplate
 
+## The progression
+
+The approaches above, in the order you actually climb them.
+
+- You encounter a problem and start with naive code
+- A family of problems: inheritance lets you reuse the code and vary it
+- Inheritance does not work that well
+- The entire internal implementation is exposed to every child
+- That exposure is the fragile base class problem
+- Traits can help when you have cross-cutting concerns among classes
+- Dependency injection scales further
+- It adds interfaces and encapsulation boundaries between units
+- Nothing about dependency injection is inherently about separating logic from effects
+- Separating logic from effects is a principle you apply within the DI framework
+- The full realization is the functional core, imperative shell insight
+- Logic is pure and composable; effects are contextual and non-composable
+- That step is the maximum in complexity and conceptual weight
+- It is quite hard to do
+- Each step buys more scale and costs more to hold in your head
+
+- Tension, its own beat
+  - The very thing that makes the approach scale is itself a problem
+  - That thing is the refined intuition, and the many things to keep in your head
+
+- Payoff: algebraic effects
+  - A proper implementation would buy the separation of logic from effects, and the scaling benefits
+  - It would take you back to the simplicity of naive code
+  - You would no longer have to apply the functional core, imperative shell principle yourself
+  - You would no longer have to carry the refined intuition about effects versus logic
+  - The language handles the separation for you
+
 ### Algebraic effects
 - Begin from exceptions: make them resumable, and applicable to general programming rather than only error handling
 - Seems like the ultimate approach: returns you to the naive imperative starting point without altering how you think, so you can swap effects later
