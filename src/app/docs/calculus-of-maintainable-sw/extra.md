@@ -72,10 +72,12 @@ I wanted to document it and move on.
   - You end up with actually imperative code
   - You can kind of create more children, so you have variations of imperative code
   - As you add those variations, the fragile base class problem is compounded massively by multiple levels of inheritance
+  - Weakness: blind to the effects versus logic distinction
 - Traits — true traits exist in a language like Rust; Ruby modules are fake traits, really just horizontal inheritance
   - Testability problem: a trait reused everywhere kind of becomes a fragile base class
   - Rust implements traits well
   - The traits paper details the pitfalls of inheritance really well — paper reference is in the mixins versus traits article (`src/app/docs/mix-ins-as-traits/page.md`), not cited here
+  - Weakness: blind to the effects versus logic distinction
 - Dependency injection / composition — dependency injection is a way of achieving composition
   - Aside: in a functional world you have monads, which are kind of the opposite
   - Monads thread values up to something that will interpret them as effects and execute them — thread data back up for execution
@@ -92,6 +94,7 @@ I wanted to document it and move on.
   - Especially in Rails
   - DI and composition also lets you implement a separation along the lines of logic and effects
   - Inheritance and traits are essentially oblivious to that distinction
+  - That blindness is a weakness of both
   - This distinction is not obvious, and requires quite dedicated thought
   - Broader: approaches to integrating differentiated code fall into a simplicity and power trade-off
   - That trade-off relies on understanding functional core, imperative shell, and translating it into your language — probably an object-oriented context
