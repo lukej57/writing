@@ -161,6 +161,11 @@ The React team knew about algebraic effects, and they said so when Hooks were pr
 - [The Multicore OCaml tutorial the RFC cites](https://github.com/ocamllabs/ocaml-effects-tutorial#2-effectful-computations-in-a-pure-setting)
 - [Dan Abramov, Making Sense of React Hooks](https://medium.com/@dan_abramov/making-sense-of-react-hooks-fdbde8803889)
 - [Dan Abramov, Algebraic Effects for the Rest of Us](https://overreacted.io/algebraic-effects-for-the-rest-of-us/)
+
+Svelte was slated to make React obsolete by making reactivity implicit. The compiler hijacks `let` and `=`, so you never call a hooks API. That broke the hard way. Dependencies are fixed at compile time, so a function boundary hides them, and `let` is only reactive at the top of a component. Svelte 5 reimplemented the explicit call. `$state`, `$derived`, and `$effect` are runes: function-shaped marks the compiler treats as effects. That is React hooks again, a limited algebraic-effects mechanism, arrived at by hitting the wall. The announcement calls the syntax a step back and credits Knockout, signals, and Solid. It does not acknowledge that React had already got this right.
+
+- [Introducing runes](https://svelte.dev/blog/runes)
+
 - Overcomes the trade-off between simplicity and power
 - Language features let you address maintainability problems very concisely
 - DI and composition is verbose and high overhead because languages don't have a feature that directly enables it — it's a composite of lower-level features: argument passing, threading behavior down into logic, or threading values up for interpretation into effects
