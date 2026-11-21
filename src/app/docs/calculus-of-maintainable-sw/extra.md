@@ -153,6 +153,10 @@ The approaches above, in the order you actually climb them.
   - The set of effects is closed: React's hooks, not an effect you declare and handle yourself
   - `useEffect` is the escape hatch back into imperative code, not a handled effect
   - Still the evidence that a limited encoding can ship, and that a lot of UI code now separates logic from effects this way
+  - The React team knew about algebraic effects, and the link is explicit
+  - The Hooks RFC lists them as prior art: algebraic effects in Multicore OCaml, among several other sources. Sebastian Markbåge came up with the original design
+  - On the RFC, Markbåge wrote that conceptually they are algebraic effects. The engine is a pointer to the current handler, and it lives in the React package. The implementation does not
+  - Dan Abramov later said Sebastian used algebraic effects as a mental model inside React, including for Hooks and Suspense. JavaScript has no effects, so React keeps a current dispatcher instead. Abramov also notes that, if JavaScript had algebraic effects, handling Hooks could be implemented in a pure way
 - Overcomes the trade-off between simplicity and power
 - Language features let you address maintainability problems very concisely
 - DI and composition is verbose and high overhead because languages don't have a feature that directly enables it — it's a composite of lower-level features: argument passing, threading behavior down into logic, or threading values up for interpretation into effects
