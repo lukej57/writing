@@ -83,6 +83,8 @@ I wanted to document it and move on.
   - Differentiation creates the need for integration
   - Integration requires extra code to solve the integration problem
   - DI and composition adds that code, then creates new problems of how to manage it: factories, conventions for where factory code lives, or a dependency injection container (which has its own problems)
+  - A container such as Spring abstracts that complexity and helps the codebase scale
+  - The abstraction has costs: algorithmic inefficiency, memory problems, and competing schools of thought about how to scale, each with its own trade-offs
   - Inheritance, traits, and naive imperative code don't have this integration-cost problem
   - The problem they have: they don't achieve the differentiation all that well
   - Naive imperative code has none of it — extremely brittle, and doesn't really achieve maintainability
@@ -124,6 +126,9 @@ The approaches above, in the order you actually climb them.
   - You would no longer have to apply the functional core, imperative shell principle yourself
   - You would no longer have to carry the refined intuition about effects versus logic
   - The language handles the separation for you
+  - Compiler-level and runtime-level support for something essentially equivalent to dependency injection and composition
+  - A language-level feature, so the solution to that DI and composition complexity stays concise
+  - That is the functional core, imperative shell principle: logic separate from effects, with the language doing the separation
 
 ### Algebraic effects
 - Begin from exceptions: make them resumable, and applicable to general programming rather than only error handling
@@ -147,6 +152,9 @@ The approaches above, in the order you actually climb them.
 - The approaches for maintainability down the track, on a large Rails app, are not obvious
 - Developing all your code within the Rails inheritance hierarchy eventually becomes an unacceptable constraint
 - You have to break out into POROs to use composition and dependency injection, and you use the Rails framework classes to hang the factory code that dependency injection and composition requires
+- Rails generally has no DI container, unless the project adopts something like the dry-system gem
+- Hanami bakes dry-system in as its default container
+- In Rails codebases like Tanda, models are where you hang that factory code
 - Functional core, imperative shell: the Rails framework classes are all shell — effects, and effectful APIs for the logic you write within them
 - Part of why it's easy to start: a massive library of effects behind pretty ergonomic APIs
 - So you wind up writing the naive imperative approach, and you get its simplicity and initial speed
