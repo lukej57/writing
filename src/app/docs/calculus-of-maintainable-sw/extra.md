@@ -72,10 +72,12 @@ I wanted to document it and move on.
   - You end up with actually imperative code
   - You can kind of create more children, so you have variations of imperative code
   - As you add those variations, the fragile base class problem is compounded massively by multiple levels of inheritance
+  - Weakness: blind to the effects versus logic distinction
 - Traits — true traits exist in a language like Rust; Ruby modules are fake traits, really just horizontal inheritance
   - Testability problem: a trait reused everywhere kind of becomes a fragile base class
   - Rust implements traits well
   - The traits paper details the pitfalls of inheritance really well — paper reference is in the mixins versus traits article (`src/app/docs/mix-ins-as-traits/page.md`), not cited here
+  - Weakness: blind to the effects versus logic distinction
 - Dependency injection / composition — dependency injection is a way of achieving composition
   - Aside: in a functional world you have monads, which are kind of the opposite
   - Monads thread values up to something that will interpret them as effects and execute them — thread data back up for execution
@@ -83,15 +85,21 @@ I wanted to document it and move on.
   - Differentiation creates the need for integration
   - Integration requires extra code to solve the integration problem
   - DI and composition adds that code, then creates new problems of how to manage it: factories, conventions for where factory code lives, or a dependency injection container (which has its own problems)
+  - A container such as Spring abstracts that complexity and helps the codebase scale
+  - The abstraction has costs: algorithmic inefficiency, memory problems, and competing schools of thought about how to scale, each with its own trade-offs
   - Inheritance, traits, and naive imperative code don't have this integration-cost problem
   - The problem they have: they don't achieve the differentiation all that well
   - Naive imperative code has none of it — extremely brittle, and doesn't really achieve maintainability
   - DI and composition does achieve the differentiation, but introduces these extra costs as well
   - Especially in Rails
+  - DI and composition also lets you implement a separation along the lines of logic and effects
+  - Inheritance and traits are essentially oblivious to that distinction
+  - That blindness is a weakness of both
   - This distinction is not obvious, and requires quite dedicated thought
   - Broader: approaches to integrating differentiated code fall into a simplicity and power trade-off
   - That trade-off relies on understanding functional core, imperative shell, and translating it into your language — probably an object-oriented context
-  - Or functional languages, which aren't perfect either: monad transformers increase the complexity again
+  - Pure functional languages do draw that distinction, as in Haskell, and there is a cultural understanding of logic versus effects
+  - What you take on instead is monad transformers
   - None of these is perfect. Complexity grows, and the technique gets harder to understand: advanced, nuanced, tricky, boilerplate
 
 ## The progression
@@ -124,6 +132,10 @@ The approaches above, in the order you actually climb them.
   - You would no longer have to apply the functional core, imperative shell principle yourself
   - You would no longer have to carry the refined intuition about effects versus logic
   - The language handles the separation for you
+  - Compiler-level and runtime-level support for something essentially equivalent to dependency injection and composition
+  - A language-level feature, so the solution to that DI and composition complexity stays concise
+  - That is the functional core, imperative shell principle: logic separate from effects, with the language doing the separation
+  - Another point in their favour: the separation DI and composition can implement, which inheritance and traits never see, without taking on monad transformers
 
 ### Algebraic effects
 - Begin from exceptions: make them resumable, and applicable to general programming rather than only error handling
@@ -132,6 +144,23 @@ The approaches above, in the order you actually climb them.
 - Still experimental
 - Forefront: Koka (koka-lang), with typed algebraic effects; also OCaml
 - Possible example code: the dry-effects Ruby gem (Peter Solnica)
+- React hooks are essentially a limited form of algebraic effects
+  - A component performs an effect by calling a hook: state, context, a reducer
+  - React is the handler. It resumes the component with the value, or schedules the real side effect
+  - The render function stays closer to the logic. The runtime is the shell that supplies the effects
+  - Limited, because it is not a language feature. It is a library convention on top of JavaScript
+  - The effect is identified by call order, so the rules of hooks forbid the conditionals and loops a real effect system allows
+  - The set of effects is closed: React's hooks, not an effect you declare and handle yourself
+  - `useEffect` is the escape hatch back into imperative code, not a handled effect
+  - Still the evidence that a limited encoding can ship, and that a lot of UI code now separates logic from effects this way
+
+The React team knew about algebraic effects, and they said so when Hooks were proposed. Sebastian Markbåge designed Hooks. The Hooks RFC lists algebraic effects in Multicore OCaml as prior art, among several other sources. On the RFC he wrote that conceptually they are algebraic effects: the engine is a pointer to the current handler, it lives in the React package, and the implementation does not. Dan Abramov later wrote that Markbåge used algebraic effects as a mental model for things inside React, including Hooks and Suspense. JavaScript has no effects, so React keeps a current dispatcher instead. Abramov also noted that if JavaScript had algebraic effects, handling Hooks could be implemented in a pure way. The influence is explicit, and it is one of several. Hooks remain the limited encoding.
+
+- [Hooks RFC, credits and prior art](https://github.com/reactjs/rfcs/blob/main/text/0068-react-hooks.md)
+- [Markbåge on the RFC: "Conceptually they're algebraic effects"](https://github.com/reactjs/rfcs/pull/68#issuecomment-433158179)
+- [The Multicore OCaml tutorial the RFC cites](https://github.com/ocamllabs/ocaml-effects-tutorial#2-effectful-computations-in-a-pure-setting)
+- [Dan Abramov, Making Sense of React Hooks](https://medium.com/@dan_abramov/making-sense-of-react-hooks-fdbde8803889)
+- [Dan Abramov, Algebraic Effects for the Rest of Us](https://overreacted.io/algebraic-effects-for-the-rest-of-us/)
 - Overcomes the trade-off between simplicity and power
 - Language features let you address maintainability problems very concisely
 - DI and composition is verbose and high overhead because languages don't have a feature that directly enables it — it's a composite of lower-level features: argument passing, threading behavior down into logic, or threading values up for interpretation into effects
@@ -147,6 +176,9 @@ The approaches above, in the order you actually climb them.
 - The approaches for maintainability down the track, on a large Rails app, are not obvious
 - Developing all your code within the Rails inheritance hierarchy eventually becomes an unacceptable constraint
 - You have to break out into POROs to use composition and dependency injection, and you use the Rails framework classes to hang the factory code that dependency injection and composition requires
+- Rails generally has no DI container, unless the project adopts something like the dry-system gem
+- Hanami bakes dry-system in as its default container
+- In Rails codebases like Tanda, models are where you hang that factory code
 - Functional core, imperative shell: the Rails framework classes are all shell — effects, and effectful APIs for the logic you write within them
 - Part of why it's easy to start: a massive library of effects behind pretty ergonomic APIs
 - So you wind up writing the naive imperative approach, and you get its simplicity and initial speed
