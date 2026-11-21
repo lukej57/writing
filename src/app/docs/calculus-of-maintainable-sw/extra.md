@@ -153,10 +153,14 @@ The approaches above, in the order you actually climb them.
   - The set of effects is closed: React's hooks, not an effect you declare and handle yourself
   - `useEffect` is the escape hatch back into imperative code, not a handled effect
   - Still the evidence that a limited encoding can ship, and that a lot of UI code now separates logic from effects this way
-  - The React team knew about algebraic effects, and the link is explicit
-  - The Hooks RFC lists them as prior art: algebraic effects in Multicore OCaml, among several other sources. Sebastian Markbåge came up with the original design
-  - On the RFC, Markbåge wrote that conceptually they are algebraic effects. The engine is a pointer to the current handler, and it lives in the React package. The implementation does not
-  - Dan Abramov later said Sebastian used algebraic effects as a mental model inside React, including for Hooks and Suspense. JavaScript has no effects, so React keeps a current dispatcher instead. Abramov also notes that, if JavaScript had algebraic effects, handling Hooks could be implemented in a pure way
+
+The React team knew about algebraic effects, and they said so when Hooks were proposed. Sebastian Markbåge designed Hooks. The Hooks RFC lists algebraic effects in Multicore OCaml as prior art, among several other sources. On the RFC he wrote that conceptually they are algebraic effects: the engine is a pointer to the current handler, it lives in the React package, and the implementation does not. Dan Abramov later wrote that Markbåge used algebraic effects as a mental model for things inside React, including Hooks and Suspense. JavaScript has no effects, so React keeps a current dispatcher instead. Abramov also noted that if JavaScript had algebraic effects, handling Hooks could be implemented in a pure way. The influence is explicit, and it is one of several. Hooks remain the limited encoding.
+
+- [Hooks RFC, credits and prior art](https://github.com/reactjs/rfcs/blob/main/text/0068-react-hooks.md)
+- [Markbåge on the RFC: "Conceptually they're algebraic effects"](https://github.com/reactjs/rfcs/pull/68#issuecomment-433158179)
+- [The Multicore OCaml tutorial the RFC cites](https://github.com/ocamllabs/ocaml-effects-tutorial#2-effectful-computations-in-a-pure-setting)
+- [Dan Abramov, Making Sense of React Hooks](https://medium.com/@dan_abramov/making-sense-of-react-hooks-fdbde8803889)
+- [Dan Abramov, Algebraic Effects for the Rest of Us](https://overreacted.io/algebraic-effects-for-the-rest-of-us/)
 - Overcomes the trade-off between simplicity and power
 - Language features let you address maintainability problems very concisely
 - DI and composition is verbose and high overhead because languages don't have a feature that directly enables it — it's a composite of lower-level features: argument passing, threading behavior down into logic, or threading values up for interpretation into effects
