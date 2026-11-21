@@ -90,10 +90,13 @@ I wanted to document it and move on.
   - Naive imperative code has none of it — extremely brittle, and doesn't really achieve maintainability
   - DI and composition does achieve the differentiation, but introduces these extra costs as well
   - Especially in Rails
+  - DI and composition also lets you implement a separation along the lines of logic and effects
+  - Inheritance and traits are essentially oblivious to that distinction
   - This distinction is not obvious, and requires quite dedicated thought
   - Broader: approaches to integrating differentiated code fall into a simplicity and power trade-off
   - That trade-off relies on understanding functional core, imperative shell, and translating it into your language — probably an object-oriented context
-  - Or functional languages, which aren't perfect either: monad transformers increase the complexity again
+  - Pure functional languages do draw that distinction, as in Haskell, and there is a cultural understanding of logic versus effects
+  - What you take on instead is monad transformers
   - None of these is perfect. Complexity grows, and the technique gets harder to understand: advanced, nuanced, tricky, boilerplate
 
 ## The progression
@@ -129,6 +132,7 @@ The approaches above, in the order you actually climb them.
   - Compiler-level and runtime-level support for something essentially equivalent to dependency injection and composition
   - A language-level feature, so the solution to that DI and composition complexity stays concise
   - That is the functional core, imperative shell principle: logic separate from effects, with the language doing the separation
+  - Another point in their favour: the separation DI and composition can implement, which inheritance and traits never see, without taking on monad transformers
 
 ### Algebraic effects
 - Begin from exceptions: make them resumable, and applicable to general programming rather than only error handling
