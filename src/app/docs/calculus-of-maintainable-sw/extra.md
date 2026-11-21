@@ -144,6 +144,15 @@ The approaches above, in the order you actually climb them.
 - Still experimental
 - Forefront: Koka (koka-lang), with typed algebraic effects; also OCaml
 - Possible example code: the dry-effects Ruby gem (Peter Solnica)
+- React hooks are essentially a limited form of algebraic effects
+  - A component performs an effect by calling a hook: state, context, a reducer
+  - React is the handler. It resumes the component with the value, or schedules the real side effect
+  - The render function stays closer to the logic. The runtime is the shell that supplies the effects
+  - Limited, because it is not a language feature. It is a library convention on top of JavaScript
+  - The effect is identified by call order, so the rules of hooks forbid the conditionals and loops a real effect system allows
+  - The set of effects is closed: React's hooks, not an effect you declare and handle yourself
+  - `useEffect` is the escape hatch back into imperative code, not a handled effect
+  - Still the evidence that a limited encoding can ship, and that a lot of UI code now separates logic from effects this way
 - Overcomes the trade-off between simplicity and power
 - Language features let you address maintainability problems very concisely
 - DI and composition is verbose and high overhead because languages don't have a feature that directly enables it — it's a composite of lower-level features: argument passing, threading behavior down into logic, or threading values up for interpretation into effects
