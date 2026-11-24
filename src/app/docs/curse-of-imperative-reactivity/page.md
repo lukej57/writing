@@ -8,6 +8,7 @@ nextjs:
 {% callout title="TL;DR" type="note" %}
 Every piece of derived data on a screen is an edge in a dependency graph.
 Stimulus makes you maintain that graph by hand, inside imperative handlers, and every edge you forget is a stale piece of UI.
+That is the curse of imperative reactivity: the graph stays implicit, and once it outgrows your head it becomes a constant source of bugs.
 React and Alpine take the graph off your hands, which is why a whole class of bug does not exist there.
 {% /callout %}
 
