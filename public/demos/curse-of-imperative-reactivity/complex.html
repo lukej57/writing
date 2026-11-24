@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A complex UI</title>
+  <link rel="stylesheet" href="demo.css">
+  <script src="demo.js"></script>
+  <script>
+    document.addEventListener("alpine:init", () => {
+      Alpine.data("patternForm", (frequency, days) => ({
+        frequency,
+        days,
+
+        get visible() {
+          return this.days.filter((day) => day.week === 1 || this.frequency === "fortnightly")
+        },
+
+        get changed() {
+          return this.visible.filter((day) =>
+            ["state", "start", "finish"].some((field) => day[field] !== day.saved[field])
+          )
+        },
+
+        isNight(day) {
+          return day.state === "specific_times" && day.finish < day.start
+        },
+
+        // The pattern wraps, so the day before the first day is the last day.
+        morningTaken(day) {
+          const before = this.visible.at(this.visible.indexOf(day) - 1)
+          return this.isNight(before) ? before.finish : null
+        },
+
+        startsFrom(day) {
+          const taken = this.morningTaken(day)
+          return taken > day.start ? taken : day.start
+        },
+      }))
+    })
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+</head>
+<body>
+  <form x-data="patternForm('fortnightly', demoDays(NIGHT_SEED))" onsubmit="return false">
+    <div class="frequency">
+      <strong>Repeats</strong>
+      <label><input type="radio" name="frequency" value="weekly" x-model="frequency"> Weekly</label>
+      <label><input type="radio" name="frequency" value="fortnightly" x-model="frequency"> Fortnightly</label>
+    </div>
+
+    <template x-for="day in visible" :key="day.id">
+      <fieldset class="day">
+        <legend><span x-text="day.name"></span><small x-show="day.week === 2">week 2</small></legend>
+
+        <select :name="`days[${day.id}][state]`" x-model="day.state">
+          <option value="available">Available</option>
+          <option value="specific_times">Specific times</option>
+          <option value="unavailable">Unavailable</option>
+        </select>
+
+        <div class="times" x-show="day.state === 'specific_times'">
+          <input type="time" :name="`days[${day.id}][start]`" x-model="day.start">
+          <input type="time" :name="`days[${day.id}][finish]`" x-model="day.finish">
+          <p class="range" x-text="`Counts as ${startsFrom(day)} – ${day.finish}`"></p>
+        </div>
+
+        <p class="busy" x-show="morningTaken(day)" x-text="`Busy until ${morningTaken(day)} from the night before`"></p>
+      </fieldset>
+    </template>
+
+    <div class="footer">
+      <p x-text="`${changed.length} of ${visible.length} days changed`"></p>
+    </div>
+  </form>
+</body>
+</html>

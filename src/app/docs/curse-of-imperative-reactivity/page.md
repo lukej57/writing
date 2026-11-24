@@ -32,20 +32,11 @@ You are maintaining a dependency graph that exists nowhere in your code.
 
 ## A Simple UI
 
+{% demo src="/demos/curse-of-imperative-reactivity/simple.html" title="The simple UI. Change a day, or switch to fortnightly." height=400 /%}
+
 An employee sets their availability for each day of a pattern.
 The pattern repeats weekly or fortnightly, and week two is only shown for a fortnightly pattern.
-The Save button is enabled once a visible day differs from what is saved, and a hint counts the changes.
-
-```
-Repeats    (•) Weekly    ( ) Fortnightly
-
-Monday       [ Available    ▾ ]
-Tuesday      [ Unavailable  ▾ ]
-   ⋮
-Sunday       [ Available    ▾ ]
-
-1 of 7 days changed                       [ Save ]
-```
+A hint counts the visible days that differ from what is saved.
 
 Here is what the form computes.
 
@@ -56,10 +47,9 @@ frequency ──────▶ visible days ───────▶ rows shown
                        │
 state ───────┐         ▼
 saved ───────┴──▶ changed days ───────▶ "1 of 7 days changed"
-                                      ▶ Save enabled
 ```
 
-Three raw inputs, two derived values, three things on screen.
+Three raw inputs, two derived values, two things on screen.
 Every arrow is a fact about the form.
 The hint needs the changed days.
 The changed days need the visible days.
@@ -71,20 +61,24 @@ The visible days need the frequency.
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["day", "hint", "submit"]
+  static targets = ["day", "hint"]
   static values = { frequency: String }
 
   connect() {
-    this.updateSubmitButton()
+    this.updateHint()
+  }
+
+  frequencyChosen(event) {
+    this.frequencyValue = event.target.value
   }
 
   frequencyValueChanged() {
     this.updateDayVisibility()
-    this.updateSubmitButton()
+    this.updateHint()
   }
 
   stateChanged() {
-    this.updateSubmitButton()
+    this.updateHint()
   }
 
   updateDayVisibility() {
@@ -95,18 +89,18 @@ export default class extends Controller {
       .forEach((day) => day.classList.toggle("hidden", !fortnightly))
   }
 
-  updateSubmitButton() {
+  updateHint() {
     const visible = this.dayTargets.filter((day) => !day.classList.contains("hidden"))
     const changed = visible.filter((day) => day.querySelector("select").value !== day.dataset.saved)
 
-    this.submitTarget.disabled = changed.length === 0
     this.hintTarget.textContent = `${changed.length} of ${visible.length} days changed`
   }
 }
 ```
 
-This is Stimulus doing what it is good at.
-Forty lines, three handlers, two update methods.
+This is the controller behind the form at the top of this section.
+It is Stimulus doing what it is good at.
+Forty-odd lines and two update methods.
 You can hold all of it in your head.
 
 Two details are worth a look before moving on.
@@ -115,29 +109,22 @@ It is there because the hint depends on which days are visible.
 It is an arrow from the diagram, written as a call.
 
 The order of those two lines matters as well.
-`updateSubmitButton` reads the `hidden` class that `updateDayVisibility` writes.
+`updateHint` reads the `hidden` class that `updateDayVisibility` writes.
 Swap them and the hint is one step behind.
 
 Neither detail is a problem at this size.
 
 ## A Complex UI
 
+{% demo src="/demos/curse-of-imperative-reactivity/complex.html" title="The complex UI. Switch to weekly, or change the second Sunday's finish, and watch Monday." height=720 /%}
+
 Now a feature.
 A day can be *specific times*, with a start and a finish.
 A shift that finishes before it starts runs overnight.
 A night takes up the start of the next day, so the next day shows a notice and counts from when the night ends.
 
-```
-Repeats    (•) Weekly    ( ) Fortnightly
-
-Saturday     [ Available       ▾ ]
-Sunday       [ Specific times  ▾ ]   22:00 – 06:00
-Monday       [ Specific times  ▾ ]   05:00 – 13:00
-             Busy until 06:00 from the night before
-             Counts as 06:00 – 13:00
-
-2 of 7 days changed                       [ Save ]
-```
+The form above opens on a fortnightly pattern with a night on the second Sunday.
+That night runs into the first Monday, because the pattern wraps.
 
 The graph gains two raw inputs, three derived values and three things on screen.
 
@@ -159,7 +146,7 @@ start ────────────────────────�
 state ───────┐
 start ───────┤
 finish ──────┼──▶ changed days ──────────────────▶ "2 of 7 days changed"
-saved ───────┘    (of the visible days)          ▶ Save enabled
+saved ───────┘    (of the visible days)
 ```
 
 Follow one path through it.
@@ -173,30 +160,34 @@ So the frequency radio affects the notice on a day row, three steps away.
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["day", "hint", "submit"]
+  static targets = ["day", "hint"]
   static values = { frequency: String }
 
   connect() {
     this.dayTargets.forEach((day) => this.updateTimeFields(day))
     this.updateNights()
-    this.updateSubmitButton()
+    this.updateHint()
+  }
+
+  frequencyChosen(event) {
+    this.frequencyValue = event.target.value
   }
 
   frequencyValueChanged() {
     this.updateDayVisibility()
     this.updateNights()
-    this.updateSubmitButton()
+    this.updateHint()
   }
 
   stateChanged(event) {
     this.updateTimeFields(event.target.closest("[data-pattern-target='day']"))
     this.updateNights()
-    this.updateSubmitButton()
+    this.updateHint()
   }
 
   timeChanged() {
     this.updateNights()
-    this.updateSubmitButton()
+    this.updateHint()
   }
 
   updateDayVisibility() {
@@ -225,11 +216,10 @@ export default class extends Controller {
     })
   }
 
-  updateSubmitButton() {
+  updateHint() {
     const visible = this.#visibleDays
     const changed = visible.filter((day) => this.#current(day) !== day.dataset.saved)
 
-    this.submitTarget.disabled = changed.length === 0
     this.hintTarget.textContent = `${changed.length} of ${visible.length} days changed`
   }
 
@@ -270,7 +260,7 @@ You do not touch the frequency handler, because the feature has nothing to do wi
 ```js
 frequencyValueChanged() {
   this.updateDayVisibility()
-  this.updateSubmitButton()
+  this.updateHint()
 }
 ```
 
@@ -293,7 +283,7 @@ Each one is a single line, and each one passes a quick manual test.
 **The handlers are a table you keep by hand.**
 Laid out, the controller is this.
 
-| When this changes | visibility | time fields | nights | submit |
+| When this changes | visibility | time fields | nights | hint |
 |--|:--:|:--:|:--:|:--:|
 | **connect** | | ✓ | ✓ | ✓ |
 | **frequency** | ✓ | | ✓ | ✓ |
@@ -303,7 +293,7 @@ Laid out, the controller is this.
 Eleven ticks.
 Each tick is a line that somebody had to know to write.
 Each blank is a decision too: somebody had to be sure it was not needed.
-The ticks in a row must also be called left to right, because nights read visibility and submit reads both.
+Visibility must also be called first in its row, because nights and the hint both read which days are visible.
 
 The feature added one row and two columns.
 The next feature adds another column, and every existing row must be revisited to decide tick or blank.
@@ -414,14 +404,14 @@ Alpine.data("patternForm", (frequency, days) => ({
   </template>
 
   <p x-text="`${changed.length} of ${visible.length} days changed`"></p>
-  <button :disabled="changed.length === 0">Save</button>
 </form>
 ```
 
 That is the whole form, and there are no handlers in it.
+It is the code running in the form at the top of this section.
 Compare it to the diagram.
 `visible`, `changed`, `isNight`, `morningTaken` and `startsFrom` are the five derived values, by name.
-The `x-for`, `x-show`, `x-text` and `:disabled` attributes are the arrows to the screen.
+The `x-for`, `x-show` and `x-text` attributes are the arrows to the screen.
 
 The stale notice cannot be written here.
 There is no handler for the frequency radio, so there is nowhere to forget a call.
@@ -489,7 +479,6 @@ function PatternForm({ savedFrequency, savedDays }) {
       ))}
 
       <p>{changed.length} of {visible.length} days changed</p>
-      <button disabled={changed.length === 0}>Save</button>
     </form>
   )
 }
@@ -503,7 +492,7 @@ It re-runs the whole component, and its children, whenever any state changes.
 That is overeager, and large trees need `memo`, `useMemo` or the compiler to stay fast.
 For a form inside a Rails page it also means a build step and a component tree, which is a lot to take on for one screen.
 
-### Reflection: Declarative Versus Imperative Reactivity
+### Reactivity: Declarative vs. Imperative
 
 All three versions implement the same graph.
 They differ in where the graph is kept.
@@ -614,7 +603,6 @@ Render the whole form from it, inside a Turbo Frame.
     <% end %>
 
     <p><%= @pattern.changed_days.size %> of <%= @pattern.visible_days.size %> days changed</p>
-    <%= form.submit "Save", disabled: @pattern.changed_days.none? %>
 
     <%= form.button "Refresh", formaction: preview_pattern_path, hidden: true,
           data: { pattern_target: "refresh" } %>

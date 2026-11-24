@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A simple UI</title>
+  <link rel="stylesheet" href="demo.css">
+  <script src="demo.js"></script>
+</head>
+<body>
+  <form data-controller="pattern" data-pattern-frequency-value="weekly" onsubmit="return false">
+    <div class="frequency">
+      <strong>Repeats</strong>
+      <label><input type="radio" name="frequency" value="weekly" checked data-action="pattern#frequencyChosen"> Weekly</label>
+      <label><input type="radio" name="frequency" value="fortnightly" data-action="pattern#frequencyChosen"> Fortnightly</label>
+    </div>
+
+    <div id="days"></div>
+
+    <div class="footer">
+      <p data-pattern-target="hint"></p>
+    </div>
+  </form>
+
+  <script>
+    // Stands in for the server render.
+    document.getElementById("days").innerHTML = demoDays({ 2: { state: "unavailable" } })
+      .map((day) => `
+        <div class="day" data-pattern-target="day" data-week="${day.week}" data-saved="${day.state}">
+          <span class="name">${day.name}${day.week === 2 ? "<small>week 2</small>" : ""}</span>
+          <select name="days[${day.id}][state]" data-action="pattern#stateChanged">
+            <option value="available" ${day.state === "available" ? "selected" : ""}>Available</option>
+            <option value="unavailable" ${day.state === "unavailable" ? "selected" : ""}>Unavailable</option>
+          </select>
+        </div>`)
+      .join("")
+  </script>
+
+  <script type="module">
+    import { Application, Controller } from "https://cdn.jsdelivr.net/npm/@hotwired/stimulus@3.2.2/dist/stimulus.js"
+
+    class PatternController extends Controller {
+      static targets = ["day", "hint"]
+      static values = { frequency: String }
+
+      connect() {
+        this.updateHint()
+      }
+
+      frequencyChosen(event) {
+        this.frequencyValue = event.target.value
+      }
+
+      frequencyValueChanged() {
+        this.updateDayVisibility()
+        this.updateHint()
+      }
+
+      stateChanged() {
+        this.updateHint()
+      }
+
+      updateDayVisibility() {
+        const fortnightly = this.frequencyValue === "fortnightly"
+
+        this.dayTargets
+          .filter((day) => day.dataset.week === "2")
+          .forEach((day) => day.classList.toggle("hidden", !fortnightly))
+      }
+
+      updateHint() {
+        const visible = this.dayTargets.filter((day) => !day.classList.contains("hidden"))
+        const changed = visible.filter((day) => day.querySelector("select").value !== day.dataset.saved)
+
+        this.hintTarget.textContent = `${changed.length} of ${visible.length} days changed`
+      }
+    }
+
+    Application.start().register("pattern", PatternController)
+  </script>
+</body>
+</html>
