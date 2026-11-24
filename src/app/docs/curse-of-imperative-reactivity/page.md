@@ -9,21 +9,14 @@ nextjs:
 Every piece of derived data on a screen is an edge in a dependency graph.
 Stimulus makes you maintain that graph by hand, inside imperative handlers, and every edge you forget is a stale piece of UI.
 That is the curse of imperative reactivity: the graph stays implicit, and once it outgrows your head it becomes a constant source of bugs.
-React and Alpine take the graph off your hands, which is why a whole class of bug does not exist there.
+Alpine and React take the graph off your hands, which is why a whole class of bug does not exist there.
 {% /callout %}
 
 Stimulus calls itself a modest JavaScript framework for the HTML you already have.
 That modesty is the appeal.
 You render HTML on the server, attach a controller, and write a few handlers.
 
-The model holds up while each handler touches one thing.
-It stops holding up when the screen shows data that is derived from other data.
-From that point on you are no longer writing handlers.
-You are maintaining a dependency graph that exists nowhere in your code.
-
-## What Stimulus Gives You
-
-A Stimulus controller has three moving parts.
+A controller has three moving parts.
 *Targets* are named DOM elements.
 *Actions* route DOM events to methods.
 *Values* are typed data attributes, and they are the reactive part: change `frequencyValue` and Stimulus calls `frequencyValueChanged()`.
@@ -32,10 +25,47 @@ That callback is where the reactivity ends.
 Stimulus tells you that something changed.
 What should happen next is a method body, and you write it.
 
-Here is a small form.
+The model holds up while each handler touches one thing.
+It stops holding up when the screen shows data that is derived from other data.
+From that point on you are no longer writing handlers.
+You are maintaining a dependency graph that exists nowhere in your code.
+
+## A Simple UI
+
 An employee sets their availability for each day of a pattern.
 The pattern repeats weekly or fortnightly, and week two is only shown for a fortnightly pattern.
 The Save button is enabled once a visible day differs from what is saved, and a hint counts the changes.
+
+```
+Repeats    (•) Weekly    ( ) Fortnightly
+
+Monday       [ Available    ▾ ]
+Tuesday      [ Unavailable  ▾ ]
+   ⋮
+Sunday       [ Available    ▾ ]
+
+1 of 7 days changed                       [ Save ]
+```
+
+Here is what the form computes.
+
+```
+RAW               DERIVED               SCREEN
+
+frequency ──────▶ visible days ───────▶ rows shown
+                       │
+state ───────┐         ▼
+saved ───────┴──▶ changed days ───────▶ "1 of 7 days changed"
+                                      ▶ Save enabled
+```
+
+Three raw inputs, two derived values, three things on screen.
+Every arrow is a fact about the form.
+The hint needs the changed days.
+The changed days need the visible days.
+The visible days need the frequency.
+
+### Stimulus
 
 ```js
 import { Controller } from "@hotwired/stimulus"
@@ -50,9 +80,10 @@ export default class extends Controller {
 
   frequencyValueChanged() {
     this.updateDayVisibility()
+    this.updateSubmitButton()
   }
 
-  dayChanged() {
+  stateChanged() {
     this.updateSubmitButton()
   }
 
@@ -74,12 +105,167 @@ export default class extends Controller {
 }
 ```
 
-It reads well, and it is wrong.
-Switch to fortnightly, change a day in week two, then switch back to weekly.
-The hint still says *1 of 14 days changed*.
-The Save button is still enabled, and the only change is on a row you can no longer see.
+This is Stimulus doing what it is good at.
+Forty lines, three handlers, two update methods.
+You can hold all of it in your head.
 
-The fix is one line.
+Two details are worth a look before moving on.
+The second line of `frequencyValueChanged` adds no behaviour.
+It is there because the hint depends on which days are visible.
+It is an arrow from the diagram, written as a call.
+
+The order of those two lines matters as well.
+`updateSubmitButton` reads the `hidden` class that `updateDayVisibility` writes.
+Swap them and the hint is one step behind.
+
+Neither detail is a problem at this size.
+
+## A Complex UI
+
+Now a feature.
+A day can be *specific times*, with a start and a finish.
+A shift that finishes before it starts runs overnight.
+A night takes up the start of the next day, so the next day shows a notice and counts from when the night ends.
+
+```
+Repeats    (•) Weekly    ( ) Fortnightly
+
+Saturday     [ Available       ▾ ]
+Sunday       [ Specific times  ▾ ]   22:00 – 06:00
+Monday       [ Specific times  ▾ ]   05:00 – 13:00
+             Busy until 06:00 from the night before
+             Counts as 06:00 – 13:00
+
+2 of 7 days changed                       [ Save ]
+```
+
+The graph gains two raw inputs, three derived values and three things on screen.
+
+```
+RAW               DERIVED                          SCREEN
+
+frequency ──────▶ visible days ──────────────────▶ rows shown
+                    │      │
+state ──────────────┼──────┼─────────────────────▶ time fields shown
+                    │      │
+state ───────┐      │      │
+start ───────┼──▶ night    │
+finish ──────┘      │      ▼
+                    └────▶ morning taken ────────▶ "Busy until 06:00"
+                           (from the day before)
+                                 │
+start ───────────────────────────┴▶ starts from ─▶ "06:00 – 13:00"
+
+state ───────┐
+start ───────┤
+finish ──────┼──▶ changed days ──────────────────▶ "2 of 7 days changed"
+saved ───────┘    (of the visible days)          ▶ Save enabled
+```
+
+Follow one path through it.
+`frequency → visible days → morning taken → "Busy until"`.
+Switching from fortnightly to weekly changes which day comes before Monday, because the pattern wraps a week sooner.
+So the frequency radio affects the notice on a day row, three steps away.
+
+### Stimulus
+
+```js
+import { Controller } from "@hotwired/stimulus"
+
+export default class extends Controller {
+  static targets = ["day", "hint", "submit"]
+  static values = { frequency: String }
+
+  connect() {
+    this.dayTargets.forEach((day) => this.updateTimeFields(day))
+    this.updateNights()
+    this.updateSubmitButton()
+  }
+
+  frequencyValueChanged() {
+    this.updateDayVisibility()
+    this.updateNights()
+    this.updateSubmitButton()
+  }
+
+  stateChanged(event) {
+    this.updateTimeFields(event.target.closest("[data-pattern-target='day']"))
+    this.updateNights()
+    this.updateSubmitButton()
+  }
+
+  timeChanged() {
+    this.updateNights()
+    this.updateSubmitButton()
+  }
+
+  updateDayVisibility() {
+    const fortnightly = this.frequencyValue === "fortnightly"
+
+    this.dayTargets
+      .filter((day) => day.dataset.week === "2")
+      .forEach((day) => day.classList.toggle("hidden", !fortnightly))
+  }
+
+  updateTimeFields(day) {
+    day.querySelector(".times").hidden = this.#state(day) !== "specific_times"
+  }
+
+  updateNights() {
+    const visible = this.#visibleDays
+
+    visible.forEach((day, index) => {
+      const before = visible.at(index - 1)
+      const taken = this.#isNight(before) ? this.#finish(before) : ""
+      const start = taken > this.#start(day) ? taken : this.#start(day)
+
+      day.querySelector(".busy").hidden = taken === ""
+      day.querySelector(".busy").textContent = `Busy until ${taken} from the night before`
+      day.querySelector(".range").textContent = `Counts as ${start} – ${this.#finish(day)}`
+    })
+  }
+
+  updateSubmitButton() {
+    const visible = this.#visibleDays
+    const changed = visible.filter((day) => this.#current(day) !== day.dataset.saved)
+
+    this.submitTarget.disabled = changed.length === 0
+    this.hintTarget.textContent = `${changed.length} of ${visible.length} days changed`
+  }
+
+  get #visibleDays() {
+    return this.dayTargets.filter((day) => !day.classList.contains("hidden"))
+  }
+
+  #state(day) {
+    return day.querySelector("select").value
+  }
+
+  #start(day) {
+    return day.querySelector("[name$='[start]']").value
+  }
+
+  #finish(day) {
+    return day.querySelector("[name$='[finish]']").value
+  }
+
+  #isNight(day) {
+    return this.#state(day) === "specific_times" && this.#finish(day) < this.#start(day)
+  }
+
+  #current(day) {
+    return [this.#state(day), this.#start(day), this.#finish(day)].join()
+  }
+}
+```
+
+This version is correct.
+It is also the version you arrive at, not the one you write first.
+
+**Staleness is one missing line away.**
+Here is the natural first attempt at the feature.
+You add the time inputs, write `timeChanged`, and extend `stateChanged`.
+You do not touch the frequency handler, because the feature has nothing to do with frequency.
 
 ```js
 frequencyValueChanged() {
@@ -88,66 +274,266 @@ frequencyValueChanged() {
 }
 ```
 
-Look at what that line is.
-It adds no behaviour.
-It is a note to the computer that the hint depends on the frequency.
-The dependency was always true.
-The code just had not been told.
+Set a fortnightly pattern with a night on the second Sunday.
+The first Monday correctly says *Busy until 06:00 from the night before*.
+Switch to weekly.
+The second week disappears, the first Sunday is now the day before Monday, and it has no night.
+Monday still says *Busy until 06:00*.
 
-The order of those two lines matters as well.
-`updateSubmitButton` reads the `hidden` class that `updateDayVisibility` writes.
-Swap them and the hint is one step behind.
-You are now sorting the graph by hand too.
+That is the three-step path from the diagram.
+Nothing failed and nothing was logged.
+The notice is simply out of date, and it stays that way until someone edits a time.
+The fix is one line, `this.updateNights()`, in a method the feature gave you no reason to open.
 
-## The Graph You Cannot See
+There are more of these waiting.
+Put `updateNights` before `updateDayVisibility` and it reads last frequency's rows.
+Leave it out of `connect` and a form that loads with a night draws no notice.
+Each one is a single line, and each one passes a quick manual test.
 
-Draw what the form actually computes.
+**The handlers are a table you keep by hand.**
+Laid out, the controller is this.
 
-```
-RAW                 DERIVED                SCREEN
+| When this changes | visibility | time fields | nights | submit |
+|--|:--:|:--:|:--:|:--:|
+| **connect** | | ✓ | ✓ | ✓ |
+| **frequency** | ✓ | | ✓ | ✓ |
+| **state** | | ✓ | ✓ | ✓ |
+| **time** | | | ✓ | ✓ |
 
-frequency ────────▶ visible days ────────▶ rows shown
-                         │       └──────┐
-                         ▼              ▼
-day states ───────▶ changed days ─────▶ "1 of 14 days changed"
-saved states ─────▶      │
-                         └────────────▶ Save enabled
-```
+Eleven ticks.
+Each tick is a line that somebody had to know to write.
+Each blank is a decision too: somebody had to be sure it was not needed.
+The ticks in a row must also be called left to right, because nights read visibility and submit reads both.
 
-Three raw inputs, two derived values, three things on screen.
-Every arrow is a fact about the form.
-None of the arrows appear in the controller.
+The feature added one row and two columns.
+The next feature adds another column, and every existing row must be revisited to decide tick or blank.
+The work for a feature grows with the size of the controller it is added to.
 
-What appears instead is the graph turned inside out.
-Each place that *writes* an input carries a list of the things that *read* it.
-`frequencyValueChanged` is a writer, and its body is a list of readers.
-The bug was a reader missing from a writer's list.
-
-This is the root of the curse.
-Dependencies are properties of the readers.
-The hint knows it needs the visible days.
-Imperative reactivity stores each dependency at the writer, which is the one place that has no reason to know.
-
-That inversion sets the cost of every change.
-
-- **Add a derived value** and you must find every writer that affects it, including the ones that affect it through another derived value.
-- **Add a writer** and you must know every reader downstream of it.
-- **Get the order wrong** and a reader runs before the value it reads has been refreshed.
-
-With *W* writers and *R* readers there are up to *W × R* calls to get right.
-Nothing checks them.
-A missing call does not throw.
-It leaves a label showing yesterday's number until somebody notices.
-
-Stimulus adds a twist of its own.
-Much of the state is not in values at all.
-It is in the DOM: which radio is checked, what an input holds, whether an element has the `hidden` class.
-The example above reads `classList.contains("hidden")` to find out which days are visible.
+**The state lives in the DOM.**
+Six private methods at the bottom do nothing but read values back out of elements.
+Which days are visible is the `hidden` class.
+The current state is whatever the `select` holds.
 The DOM is both the output and the database, so a derived value is often derived from another derived value's rendering.
 
-## We Have Been Here Before
+**It gets worse than this.**
+The example is cut down from a real form I work on, which grew a feature at a time over six months.
+Today it is two controllers and about 1,100 lines.
+The per-day controller alone has 21 targets and 17 values.
 
-Anyone who wrote desktop software in the 2000s knows this shape.
+The example above redraws every day from one controller.
+The real form has a controller per day, and it rewrites the next day's start time in its input instead of only displaying it.
+So the night took:
+
+- an event dispatched from the day to a parent controller,
+- a lookup in the parent to find the neighbouring day's controller,
+- a public method on the neighbour to receive the change,
+- an undo log, so the neighbour can restore the times it trimmed if the night is later removed,
+- six separate places that clear the undo log, because six other handlers invalidate it,
+- a replay of every night when a day connects, deferred with `setTimeout` so all the days exist first.
+
+The undo log is a cache of derived data, and the six clears are hand-written cache invalidation.
+
+The bug history reads as you would now expect.
+I have paraphrased the commit subjects.
+
+| Bug | Cause |
+|-----|-------|
+| Day count showed the fortnightly total for a weekly pattern | The frequency handler did not call the update for the count. The fix was one line. |
+| Day headers were not redrawn in some forms | An early return in an update method skipped the redraw when there was no saved state to compare against. |
+| Disabling a day reset the state the user had chosen | The disable path ticked the *Unavailable* radio to drive the display. The radio was also the user's answer. |
+| A day with no times entered was saved as available all day | A check counted the time rows in the DOM, including rows already marked for deletion. |
+| Client-side state was lost when the form reloaded | State that lived only in the controller did not survive a server re-render, so it is now mirrored into hidden fields. |
+
+None of these is a logic error in the usual sense.
+In each one the rule was right and some copy of the state had fallen out of step with it.
+No one wrote this controller badly.
+The code is careful and well commented, and it is careful because it has to be.
+
+### Alpine
+
+Alpine is the fair comparison for Stimulus.
+It sits in the same niche: server-rendered HTML, a script tag, no build step.
+It attaches behaviour to markup with attributes, as Stimulus does.
+The difference is what those attributes say.
+
+```js
+Alpine.data("patternForm", (frequency, days) => ({
+  frequency,
+  days,
+
+  get visible() {
+    return this.days.filter((day) => day.week === 1 || this.frequency === "fortnightly")
+  },
+
+  get changed() {
+    return this.visible.filter((day) =>
+      ["state", "start", "finish"].some((field) => day[field] !== day.saved[field])
+    )
+  },
+
+  isNight(day) {
+    return day.state === "specific_times" && day.finish < day.start
+  },
+
+  // The pattern wraps, so the day before the first day is the last day.
+  morningTaken(day) {
+    const before = this.visible.at(this.visible.indexOf(day) - 1)
+    return this.isNight(before) ? before.finish : null
+  },
+
+  startsFrom(day) {
+    const taken = this.morningTaken(day)
+    return taken > day.start ? taken : day.start
+  },
+}))
+```
+
+```erb
+<form x-data="patternForm('<%= @pattern.frequency %>', <%= @pattern.days.to_json %>)">
+  <label><input type="radio" name="frequency" value="weekly" x-model="frequency"> Weekly</label>
+  <label><input type="radio" name="frequency" value="fortnightly" x-model="frequency"> Fortnightly</label>
+
+  <template x-for="day in visible" :key="day.id">
+    <fieldset>
+      <legend x-text="day.name"></legend>
+
+      <select :name="`days[${day.id}][state]`" x-model="day.state">
+        <option value="available">Available</option>
+        <option value="specific_times">Specific times</option>
+        <option value="unavailable">Unavailable</option>
+      </select>
+
+      <div x-show="day.state === 'specific_times'">
+        <input type="time" :name="`days[${day.id}][start]`" x-model="day.start">
+        <input type="time" :name="`days[${day.id}][finish]`" x-model="day.finish">
+        <p x-text="`Counts as ${startsFrom(day)} – ${day.finish}`"></p>
+      </div>
+
+      <p x-show="morningTaken(day)" x-text="`Busy until ${morningTaken(day)} from the night before`"></p>
+    </fieldset>
+  </template>
+
+  <p x-text="`${changed.length} of ${visible.length} days changed`"></p>
+  <button :disabled="changed.length === 0">Save</button>
+</form>
+```
+
+That is the whole form, and there are no handlers in it.
+Compare it to the diagram.
+`visible`, `changed`, `isNight`, `morningTaken` and `startsFrom` are the five derived values, by name.
+The `x-for`, `x-show`, `x-text` and `:disabled` attributes are the arrows to the screen.
+
+The stale notice cannot be written here.
+There is no handler for the frequency radio, so there is nowhere to forget a call.
+`morningTaken` reads `visible`, `visible` reads `frequency`, and the notice follows.
+Nobody wrote the three-step case.
+It falls out of the getters.
+
+There is no table of ticks, and no order of calls.
+There is no undo log either.
+`startsFrom` is derived, so the user's own start time is never overwritten and there is nothing to put back.
+
+It is still an ordinary Rails form.
+The inputs have names, so it submits the usual `params`.
+The server renders the starting state as JSON, so it stays the authority on what was saved.
+
+Alpine knows what to update because it watches the code run.
+Its state is a reactive proxy, borrowed from Vue.
+When an attribute's expression runs, the runtime records every property it reads.
+When one of those is written, that expression and only that expression runs again.
+The graph is discovered by running the code, so it cannot disagree with the code.
+
+### React
+
+React gets to the same place by a blunter route.
+Keep the raw state.
+Recompute everything else whenever any of it changes.
+
+```jsx
+function PatternForm({ savedFrequency, savedDays }) {
+  const [frequency, setFrequency] = useState(savedFrequency)
+  const [days, setDays] = useState(savedDays)
+
+  const visible = days.filter((day) => day.week === 1 || frequency === "fortnightly")
+  const changed = visible.filter((day) =>
+    ["state", "start", "finish"].some((field) => day[field] !== day.saved[field])
+  )
+
+  const isNight = (day) => day.state === "specific_times" && day.finish < day.start
+
+  const morningTaken = (day) => {
+    const before = visible.at(visible.indexOf(day) - 1)
+    return isNight(before) ? before.finish : null
+  }
+
+  const startsFrom = (day) => {
+    const taken = morningTaken(day)
+    return taken > day.start ? taken : day.start
+  }
+
+  const update = (id, fields) =>
+    setDays(days.map((day) => (day.id === id ? { ...day, ...fields } : day)))
+
+  return (
+    <form>
+      <FrequencyPicker value={frequency} onChange={setFrequency} />
+
+      {visible.map((day) => (
+        <DayRow
+          key={day.id}
+          day={day}
+          busyUntil={morningTaken(day)}
+          startsFrom={startsFrom(day)}
+          onChange={(fields) => update(day.id, fields)}
+        />
+      ))}
+
+      <p>{changed.length} of {visible.length} days changed</p>
+      <button disabled={changed.length === 0}>Save</button>
+    </form>
+  )
+}
+```
+
+The derived values are the same five, written as constants and functions.
+They are rebuilt on every render, so none of them can be stale.
+
+React does not track reads.
+It re-runs the whole component, and its children, whenever any state changes.
+That is overeager, and large trees need `memo`, `useMemo` or the compiler to stay fast.
+For a form inside a Rails page it also means a build step and a component tree, which is a lot to take on for one screen.
+
+### Reflection: Declarative Versus Imperative Reactivity
+
+All three versions implement the same graph.
+They differ in where the graph is kept.
+
+In Alpine and React the dependencies are written at the reader.
+`changed` says it needs `visible`.
+`visible` says it needs `frequency`.
+Each arrow is written once, by the thing that has the dependency.
+That is declarative reactivity: you state what each value is, and the runtime works out when to recompute it.
+
+In Stimulus the graph is turned inside out.
+Each place that *writes* an input carries a list of the things that *read* it.
+`frequencyValueChanged` is a writer, and its body is a list of readers.
+That is imperative reactivity: you are told that something changed, and you issue the updates yourself.
+
+The trouble is that dependencies are properties of the readers.
+The notice knows it needs the morning taken.
+The frequency handler has no reason to know the notice exists.
+Imperative reactivity stores each arrow at the one place that cannot see it.
+
+| | Stimulus | Alpine |
+|--|--|--|
+| **Simple UI** | 3 handlers, 2 updates, 4 calls | 2 getters |
+| **Complex UI** | 4 handlers, 4 updates, 11 calls | 2 getters, 3 methods |
+| **Existing code edited for the feature** | Every handler | One getter, because its own meaning changed |
+| **What a new derived value costs** | A column, checked against every row | The value |
+| **How a mistake shows up** | Stale UI, silently, after one sequence of clicks | A wrong value, every time it is read |
+
+None of this is new.
+Anyone who wrote desktop software in the 2000s knows the Stimulus shape.
 It is the WinForms event handler.
 
 ```csharp
@@ -170,219 +556,133 @@ A button that stays greyed out after you fix the error.
 A status bar describing the record you were on a minute ago.
 Small pieces of the window going stale, one forgotten call at a time.
 
-Developers coped the same way then as now.
-When the recital got too long, they wrote one `RefreshEverything()` and called it from every handler.
-That works, and it is worth noticing why.
-It gives up on tracking the graph and recomputes all of it.
-It is a declarative renderer, written by hand, without the discipline of one.
-
-The industry moved on from this model for a reason.
+The industry moved on from that model for a reason.
 Data binding, then MVVM, then React and its descendants all make the same move.
 They stop asking the programmer to propagate changes.
 
-## A Controller That Went Too Far
-
-The example form is not invented.
-It is cut down from a real one I work on: a single availability form that grew a feature at a time over six months.
-
-Today it is two controllers and about 1,100 lines.
-The per-day controller alone has 21 targets and 17 values.
-A parent controller reaches into each day through outlets.
-The days dispatch events back up to the parent.
-
-The private methods tell the story.
-There is an `updateState`, an `updateSubtitle`, an `updateToggleLabel`, an `updateStateBar`, and a `refreshSummary` that calls some of the others.
-`refreshSummary` is invoked from six different handlers.
-Each of those handlers ends with its own recital.
-
-```js
-timeChanged() {
-  this.#nightTrims = []
-  this.#refreshSummary()
-  this.#announceNight()
-}
-```
-
-The latest feature shows where this leads.
-A time block that runs past midnight eats into the next day's availability.
-So one day's inputs are now an input to its neighbour's display.
-In a dependency graph that is one more arrow.
-In Stimulus it took:
-
-- an event dispatched from the day to the parent,
-- a lookup in the parent to find the neighbouring day's controller,
-- a public method on the neighbour to receive the change,
-- an undo log, so the neighbour can restore the times it trimmed if the night is later removed,
-- six separate places that clear the undo log, because six other handlers invalidate it,
-- a replay of every night when a day connects, deferred with `setTimeout` so all the days exist first.
-
-The undo log is the telling part.
-It is a cache of derived data, and the six clears are hand-written cache invalidation.
-The code is careful and well commented.
-It is careful because it has to be.
-
-The bug history reads as you would now expect.
-I have paraphrased the commit subjects.
-
-| Bug | Cause |
-|-----|-------|
-| Day count showed the fortnightly total for a weekly pattern | A handler did not call the update for the count. This is the bug in the example above, and the fix was the same one line. |
-| Day headers were not redrawn in some forms | An early return in an update method skipped the redraw when there was no saved state to compare against. |
-| Disabling a day reset the state the user had chosen | The disable path ticked the *Unavailable* radio to drive the display. The radio was also the user's answer. |
-| A day with no times entered was saved as available all day | A check counted the time rows in the DOM, including rows already marked for deletion. |
-| Client-side state was lost when the form reloaded | State that lived only in the controller did not survive a server re-render, so it is now mirrored into hidden fields. |
-
-None of these is a logic error in the usual sense.
-In each one the rule was right and some copy of the state had fallen out of step with it.
-They are all one bug: a missing, misordered or doubled-up edge.
-
-No one wrote this controller badly.
-Each feature added a handful of reasonable lines.
-The model made every one of those lines a place where the graph could be wrong.
-
-## React: Derive Everything, Every Time
-
-React's answer is blunt.
-Keep the raw state.
-Recompute everything else whenever any of it changes.
-
-```jsx
-function PatternForm({ savedDays }) {
-  const [frequency, setFrequency] = useState("weekly")
-  const [days, setDays] = useState(savedDays)
-
-  const visible = days.filter((day) => day.week === 1 || frequency === "fortnightly")
-  const changed = visible.filter((day) => day.state !== day.saved)
-
-  const setDayState = (id, state) =>
-    setDays(days.map((day) => (day.id === id ? { ...day, state } : day)))
-
-  return (
-    <form>
-      <FrequencyPicker value={frequency} onChange={setFrequency} />
-
-      {visible.map((day) => (
-        <DayRow key={day.id} day={day} onChange={(state) => setDayState(day.id, state)} />
-      ))}
-
-      <p>{changed.length} of {visible.length} days changed</p>
-      <button disabled={changed.length === 0}>Save</button>
-    </form>
-  )
-}
-```
-
-There is no `updateSubmitButton`.
-There is no `updateDayVisibility`.
-The handlers set raw state and stop.
-
-`visible` and `changed` are ordinary constants.
-Their dependencies are written where they belong: at the reader, as the expressions that compute them.
-The stale hint cannot be written, because nothing holds an old copy of it.
-Order is settled by the order of the statements.
-
-The cost is the one the parenthesis in every React discussion mentions.
-React does not know which state a component read, so it re-runs the whole component and its children.
-That is overeager.
-Large trees need `memo`, `useMemo`, or the compiler to stay fast.
-
-It matters which way each model fails, though.
+The declarative tools are not free of cost, and it matters which way each one fails.
 React fails toward doing too much work and showing the right answer.
 Stimulus fails toward doing too little work and showing the wrong one.
 A performance problem shows up in a profiler.
 A stale label shows up in a support ticket.
 
-React is not immune.
-Copy a prop into `useState`, or sync two pieces of state with `useEffect`, and you have rebuilt the handler model inside React, stale data and all.
-That supports the argument.
+They can also be dragged back.
+Alpine has `$watch` and `x-effect`, and React has `useEffect`.
+Each runs code when a value changes, which is a handler by another name.
+Use one to copy a piece of state into another and the stale data returns.
 The bugs come back exactly when you leave the declarative path.
-
-## Alpine: The Same Idea, Smaller
-
-React is a large answer to a form with two derived values.
-Alpine is a fairer comparison for Stimulus.
-It sits in the same niche: server-rendered HTML, a script tag, no build step.
-
-```html
-<form x-data="{
-  frequency: 'weekly',
-  days: [
-    { id: 1, week: 1, saved: 'available', state: 'available' },
-    { id: 8, week: 2, saved: 'unavailable', state: 'unavailable' },
-  ],
-  get visible() { return this.days.filter((day) => day.week === 1 || this.frequency === 'fortnightly') },
-  get changed() { return this.visible.filter((day) => day.state !== day.saved) },
-}">
-  <label><input type="radio" value="weekly" x-model="frequency"> Weekly</label>
-  <label><input type="radio" value="fortnightly" x-model="frequency"> Fortnightly</label>
-
-  <template x-for="day in visible" :key="day.id">
-    <select x-model="day.state">
-      <option value="available">Available</option>
-      <option value="unavailable">Unavailable</option>
-    </select>
-  </template>
-
-  <p x-text="`${changed.length} of ${visible.length} days changed`"></p>
-  <button :disabled="changed.length === 0">Save</button>
-</form>
-```
-
-That is the whole form.
-There are no handlers at all.
-The two getters are the two derived nodes of the graph, and the attributes are its arrows to the screen.
-In a Rails view the `days` array would be rendered from the server as JSON.
-
-Alpine also avoids React's cost.
-Its state is a reactive proxy, borrowed from Vue.
-When `x-text` evaluates its expression, the runtime records which properties were read.
-When one of them changes, only that expression runs again.
-The graph is discovered by running the code, so it cannot disagree with the code.
 
 | | Who maintains the graph | How it fails |
 |--|--|--|
 | **WinForms handlers** | You, in every handler | Stale UI |
 | **Stimulus** | You, in every handler and callback | Stale UI |
+| **Alpine** | The runtime, by tracking reads | Rarely, unless you use watchers to copy state |
 | **React** | Nobody. Everything is re-derived. | Wasted renders |
-| **Alpine** | The runtime, by tracking reads | Rarely |
 
-## Where Stimulus Is Right
+### Stimulus, Turbo and SSR
 
-None of this makes Stimulus a bad tool.
-It makes it a tool with a boundary.
-
-A controller that toggles a menu, copies to the clipboard, or autosubmits a form has no derived data.
-One event causes one effect.
-There is no graph, so there is nothing to keep in sync, and the modest framework is the right amount of framework.
-
-Stimulus also assumes a partner.
+There is another way out, and it needs no new library.
+Stimulus assumes a partner.
 The intended source of derived data is the server.
-Change an input, let Turbo fetch fresh HTML, and every derived value arrives correct because the server computed all of them from scratch.
-That is React's model with a network hop in the middle.
-The real form above already does this when the frequency or the dates change.
 
-The network hop sets the grain.
-Turbo is good at coarse updates: a new set of rows for a new frequency, a fresh list after a filter, a page section after a save.
-It is a poor fit for fine ones: a label that tracks each keystroke, a total that moves as a time is typed, one row reacting to its neighbour.
-Each of those would be a request, and each response replaces a whole frame that may hold half-typed input.
-Client-side reactivity has no such floor, so it can update any value at any grain.
-Turbo is the less flexible tool, and it is the right one when the change is coarse.
+So do not fix the client-side graph.
+Remove it.
+Put the rules in Ruby.
 
-This gives a rule for staying inside the boundary.
-Make the server render authoritative.
+```ruby
+class Pattern
+  def visible_days = days.select { |day| day.week == 1 || fortnightly? }
+  def changed_days = visible_days.select(&:changed?)
+
+  # The pattern wraps, so the day before the first day is the last day.
+  def morning_taken(day)
+    before = visible_days[visible_days.index(day) - 1]
+    before.finish if before.night?
+  end
+
+  def starts_from(day) = [morning_taken(day), day.start].compact.max
+end
+```
+
+Render the whole form from it, inside a Turbo Frame.
+
+```erb
+<%= turbo_frame_tag "pattern" do %>
+  <%= form_with model: @pattern, data: { controller: "pattern", action: "change->pattern#refresh" } do |form| %>
+    <% @pattern.visible_days.each do |day| %>
+      <%= render "day", form:, day:, pattern: @pattern %>
+    <% end %>
+
+    <p><%= @pattern.changed_days.size %> of <%= @pattern.visible_days.size %> days changed</p>
+    <%= form.submit "Save", disabled: @pattern.changed_days.none? %>
+
+    <%= form.button "Refresh", formaction: preview_pattern_path, hidden: true,
+          data: { pattern_target: "refresh" } %>
+  <% end %>
+<% end %>
+```
+
+```ruby
+def preview
+  @pattern = Pattern.new(pattern_params)
+  render :edit
+end
+```
+
+The controller is what is left.
+
+```js
+import { Controller } from "@hotwired/stimulus"
+
+export default class extends Controller {
+  static targets = ["refresh"]
+
+  refresh() {
+    this.element.requestSubmit(this.refreshTarget)
+  }
+}
+```
+
+Any change posts the form to `preview`.
+The server builds a `Pattern` from the fields, renders the form, and Turbo swaps the frame.
+The four handlers, the four update methods and the table of eleven ticks are gone.
+
+It works for the same reason Alpine does.
+The Ruby methods are the getters.
+`morning_taken` asks for `visible_days`, and `visible_days` asks for the frequency.
+Every render derives everything from the raw fields, so nothing can be stale.
+The server render is declarative, and Turbo is how it reaches the page.
+
+Turbo gives three ways to deliver it.
+A *frame* replaces one region, as above.
+*Streams* update several named regions from one response, for changes that reach outside the frame.
+*Morphing* patches the new HTML into the old instead of replacing it, which keeps focus and scroll.
+
+**It rests on one rule.**
+The server render must be authoritative.
 Any state the form can be in, the server must be able to draw, complete and correct, from the submitted fields alone.
 
-The controllers get simpler as a direct result.
+Hold to that and the controllers get simpler.
 A controller no longer has to build the screen for a state.
 It only has to move between states the server could have drawn, and it can hand back to the server whenever that gets hard.
 Nothing needs initialising on connect, because the HTML arrived right.
 Nothing needs mirroring, because the form fields already are the state.
 
-It is also the test of what Stimulus can carry.
-A small, local change to HTML that is already correct is the job it was built for.
+That is also the limit of what Stimulus can carry.
+A small, local change to HTML that is already correct is the job it was built for: toggle a menu, copy to the clipboard, submit a form.
 A controller that must work out what correct means is doing the server's job, with handlers.
 
-The rule is easy to state and hard to hold.
+**It is coarse.**
+The network hop sets the grain.
+Turbo is good at a new set of rows for a new frequency, a fresh list after a filter, a page section after a save.
+It is a poor fit for a label that tracks each keystroke or a total that moves as a time is typed.
+The form above refreshes on `change`, when you leave a field.
+Monday's notice updates after you finish typing Sunday's time, not while you type it.
+Refreshing on every keystroke would mean a request each time, and morphing softens the swap but not the round trip.
+Client-side reactivity has no such floor.
+
+**It takes a substantial mental model.**
+The rule is easy to state and hard to keep.
 Nothing in Stimulus enforces it.
 A controller will accept any state you give it, and it cannot tell you which of that state the server knows about.
 
@@ -390,6 +690,7 @@ The pressure comes from ephemeral data.
 An open panel, a half-typed time, a pending undo: all of it is state the server never sees.
 For each piece you have to decide whether to put it in a field so the server can redraw it, or to let it die on the next render.
 Then you have to remember what you decided, in every handler that touches it.
+You also have to choose, for each interaction, between a frame, a stream and a morph, and know what each one does to the state already on the page.
 
 Holding that line means running a framework in your head.
 You emulate the reactive runtime you do not have: what is raw, what is derived, what survives a render, what must be refreshed after which change.
@@ -401,51 +702,34 @@ You can still build a component library from partials, by keeping the view compo
 It works while you are concentrating.
 
 Discipline that lives in the programmer's head is the first thing to go when the form gets its tenth feature or its third author.
-A little ephemeral state is fine.
-A lot of it is the wrong job for Stimulus, however carefully it is done.
-
-The trouble is the middle ground.
-The form wants instant feedback, so the derivation moves to the client.
+The real form shows what happens next.
+It wants instant feedback, so some derivation moves to the client.
 The client has only handlers, so the derivation becomes a web of update calls.
 Then the server re-render wipes the client state, and the state gets mirrored into hidden fields to survive it.
-Now there are two renderers and each can be stale relative to the other.
+Now there are two renderers, and each can be stale relative to the other.
 
-## Knowing When You Have Crossed the Line
+## Conclusion
 
-A few signs that a controller is carrying a graph.
-
-- It has methods named `update…`, `refresh…` or `sync…`.
-- A handler calls more than one of them.
-- The order of those calls matters.
-- A bug was fixed by adding a call to one of them.
-- State is read back out of the DOM: a class, a `checked`, a hidden field.
-- Controllers call each other's methods to pass changes along.
-
-One or two of these is normal.
-All of them together is a hand-rolled reactive runtime, and it will keep producing stale-data bugs for as long as it grows.
-
-At that point there are three honest options.
-
-**Send the derivation back to the server.**
-If the feedback can wait for a round trip, let Turbo re-render and delete the update methods.
-
-**Write the `RefreshEverything()` on purpose.**
-Hold all raw state in values.
-Give the controller a single idempotent `render()` that derives everything and writes the whole DOM.
-Call it from every value callback and nothing else.
-This is the declarative model implemented by hand, and it is far better than a web of partial updates.
-
-**Use a reactive library for that component.**
-Alpine, or a React island, or anything else that owns the graph.
-One form is allowed to need more than a modest framework.
-
-What does not work is the fourth option, which is the default: keep adding handlers and keep fixing the stale label each time one appears.
-The handlers are not the problem and neither is the programmer.
-The problem is that the dependencies are real, and the code has nowhere to write them down.
-
-That is the curse of imperative reactivity.
-The dependency graph exists whether or not you write it down.
+Imperative event handlers produce an implicit dependency graph.
+WinForms did it with `TextChanged`, and Stimulus does it with actions and value callbacks.
+The graph exists whether or not you write it down.
 Left implicit, it grows with every feature, and each new node adds edges that every existing handler must now respect.
 Small graphs fit in your head.
-Grown ones do not, and from then on the graph is a steady source of bugs.
-Each one is fixed with a single call, and each fix is followed by the next.
+Grown ones do not, and from then on the graph is a steady source of stale-data bugs, each fixed with a single call and each followed by the next.
+That is the curse of imperative reactivity.
+
+Within the Stimulus model, the answer is to not have a client-side graph.
+Make the server render authoritative, let Turbo redraw, and keep controllers to small local changes.
+Used that way, Turbo and SSR prevent the network of front-end data dependencies from forming at all.
+
+That answer has a ceiling.
+It is a coarser approach, bounded by the round trip.
+It will not stretch to a high-fidelity front end, where values move as the user types and one control reacts to another.
+That work needs declarative reactivity on the client, from Alpine, React or anything else that owns the graph.
+
+It is also harder than it looks.
+Organising a front end deliberately, so that Stimulus stays minimal and frames, streams and morphing each do the right job, takes real design effort and a model that lives mostly in your head.
+Nothing in the tools holds you to it.
+
+The Turbo and Stimulus model is lightweight.
+Whether it is simple is debatable.
