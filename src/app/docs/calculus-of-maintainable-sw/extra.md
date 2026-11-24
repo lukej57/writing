@@ -25,6 +25,11 @@ I wanted to document it and move on.
 ## The family of problems
 - It's never just the one thing
 - You learn you need to solve a family of related but slightly different problems: commonality plus lots of differences
+- Every reuse mechanism answers the same two questions: where does the commonality live, and how do the differences get in?
+  - Single inheritance: the family is variations of one role. Commonality in the parent; children fill the gaps
+  - Trait: the family is unrelated types sharing one capability. Commonality in the trait; differences arrive through the required methods the host supplies
+  - Collaborator: the family is the callers of one piece of behaviour. Commonality behind a boundary; differences arrive as arguments and injected dependencies
+- Handling the family by accumulation — every difference another branch, or another `include` on the one object — is how the naive code breaks down
 
 ## Where the differences come from
 - Differences cut along the lines of effects
@@ -44,6 +49,31 @@ I wanted to document it and move on.
 - Differentiating separates the functional core from the imperative shell (the effectful code)
 - Integration is the techniques for recombining core and effects so the software runs and does everything it needs
 - While staying maintainable for developers, so they maintain velocity as things get more complicated and confusing
+
+## Decisions in the foreground, mechanics in the background
+- The family of problems restated: the commonality is the mechanics, the differences are the decisions
+- Explicitness isn't automatically better
+  - It pays off when it exposes a decision someone might get wrong
+  - It is noise when it spells out a stable convention
+- The distinction is context-sensitivity
+  - A mechanic has the same right answer in every context
+  - A decision's answer varies, so it should be made by whoever holds the context, usually the caller
+  - This is the same cut as differentiation: context-free from context-dependent
+- The classification drifts both ways
+  - Decisions harden into conventions as contexts converge
+  - They resurface as usage grows to cover contexts where the answer differs
+  - Each new member of the family is a new context
+- Good designs let you promote one decision at a time
+  - The failure mode is a cliff, where overriding one detail means owning the whole mechanism
+- Ease of partial override trades against isolation
+  - Scala's `super` chaining is smooth but coupled
+  - Rust's all-or-nothing default methods are isolated but blunt
+- Example: a trait is a mechanic with its decisions promoted to required methods
+  - `map` in terms of `each` is a mechanic: the same in every host
+  - What `each` yields is a decision: only the host knows, so the host writes the glue
+  - Background on traits is in the mixins versus traits article (`src/app/docs/mix-ins-as-traits/page.md`)
+- The smell test: code that makes a context-dependent choice where the context isn't available
+  - It has to either guess or reach outward through globals and skip flags
 
 ## Aside: Exceptions and error handling
 - An example of this pattern: exceptions in error handling
@@ -178,6 +208,15 @@ Svelte was slated to make React obsolete by making reactivity implicit. The comp
 - It tries to provide large, comprehensive APIs that at least let you leverage pre-built effects
 - You write naive imperative code for the most part, but Rails gets you a lot of mileage out of it
 - Once that mileage runs out, you cop the opposite side of the trade-off — a cliff of complexity
+- Rails as the case study for decisions versus mechanics
+  - It handles naming and configuration deviations gracefully: `self.table_name =`, `foreign_key:`, one decision promoted at a time
+  - Its cliffs are structural
+  - It treats the fusion of row, validation, form, and resource as mechanics when it is a context-dependent decision
+  - Callbacks, model validations, and `default_scope` give context-free answers to context-dependent questions
+  - Should this save send the email? Is this record valid for this form? Does this query want the archived rows?
+  - Those are where the family differs, and the differences cut along effects
+  - The model cannot know, so it guesses, and callers reach outward: `unscoped`, `validate: false`, `skip_callback`, `Current`
+  - Form, service, and query objects are teams manually promoting those hidden decisions
 - The approaches for maintainability down the track, on a large Rails app, are not obvious
 - Developing all your code within the Rails inheritance hierarchy eventually becomes an unacceptable constraint
 - You have to break out into POROs to use composition and dependency injection, and you use the Rails framework classes to hang the factory code that dependency injection and composition requires

@@ -36,10 +36,8 @@ Foundation (not this series): [Dependencies in the Abstract](/docs/dependencies-
 
 - Ownership table (trait / state / glue) and composite-trait warning.
 - Coherence vs conflict-at-compose (why Ruby will not get uniqueness of assignment).
-- Theory → Ruby dictionary (`include` / `prepend` / `extend`).
-- Discipline: required API, fake-host tests, `Enumerable` / `Comparable`.
-- Story: naïve → soup → equation (`examples/PLAN.md`).
-- Close: the pair is fundamental; Ruby has SI so modules are traits; Rails spends SI on MVC — pull logic out; short include list; single-use concerns are still a God class; a sibling base controller is not the inverse of a concern; collaborators scale a system.
+- A trait is an interface / base-class hybrid (contract + partial implementation); the spectrum is how much base class comes with the interface.
+- The spectrum (brief): Ruby module → Scala trait → paper trait → Rust trait → Haskell type class. Mixin inheritance to stateless contract. Not a language axis for the matrix.
 
 ## Decisions already locked
 

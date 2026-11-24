@@ -10,6 +10,8 @@ nextjs:
 `include` is mixin inheritance, not composition-over-inheritance.
 SI + traits is the fundamental pair — the papers put Superclass in the equation; Rust still does both jobs inside one construct.
 Ruby already has SI, so modules should do the trait job: small capabilities, host owns state and glue.
+A trait is an interface / base-class hybrid: a contract plus a partial implementation built on it.
+"Trait" is a spectrum — Ruby module, Scala trait, Rust trait, Haskell type class — and each step right removes a way to reach into the host.
 Base classes are deep and thin (a hefty settings-provider family); traits are wide and shallow (`Enumerable`).
 The pathologies are the swap: a shallow base class, a deep trait.
 Collaborators when reuse outgrows a single host.
@@ -100,6 +102,75 @@ A dump of common code — `Utils`, `Shared`, a 40-method concern — is the oppo
 Huge shared bodies belong on a parent (deep and thin) or behind a collaborator.
 The mitigation is surface area: few mixins per class, few methods per mixin, and other rungs of the [catalog](/docs/catalog-of-organizing-problems) for internal reuse.
 The paper's own Smalltalk advice is in the same spirit: design traits around abstractions, not reuse; avoid too-fine-grained traits; prefer classes, use traits to resolve design conflicts.
+
+---
+
+### The spectrum: Ruby → Scala → Rust → Haskell
+
+A trait is an interface / base-class hybrid.
+The interface half is the contract: the required methods, and the polymorphism they buy.
+The base-class half is the partial implementation built on that contract.
+`Comparable` requires `<=>` (interface) and provides `<`, `between?`, `clamp` (base class).
+
+"Trait" names four different things.
+They are all that hybrid.
+They differ in how much base class comes with the interface.
+They sit on one line, from mixin inheritance to stateless contract.
+
+```
+mixin inheritance                                              stateless contract
+Ruby module ─── Scala trait ─── (paper trait) ─── Rust trait ─── Haskell type class
+```
+
+| | Ruby module | Scala trait | Rust trait | Haskell type class |
+|---|---|---|---|---|
+| State in the unit | ivars, nothing stops it | fields allowed | none | none |
+| What it needs from the host | undeclared; it just calls `self.foo` | abstract members, self-types | required methods | class methods |
+| Where it attaches | in the class, or from any file | on the class | a separate `impl` | a separate `instance` |
+| Conflicts | ancestor order, silent | linearisation | coherence | coherence |
+| Override one piece | `super` chain | `super` chain | replace the whole default method | replace the whole default method |
+| Dispatch | on the receiver | on the receiver | on the type; static or `dyn` | on the type; dictionary |
+
+**Ruby and Scala are mixins.**
+A Scala trait is an interface that can also carry concrete methods and its own state, with several mixable into one class.
+It reaches host state through abstract members or self-types, and conflicts resolve by linearisation.
+That is multiple inheritance made tractable, so it keeps inheritance's costs: fragile base classes, order-dependent behaviour, initialisation traps.
+Scala improves on Ruby in one place: the requirements are declared and checked.
+The name is the only thing it shares with the paper ([taxonomy](/docs/taxonomy-of-reuse)).
+
+**Rust and Haskell are contracts.**
+A Rust trait is stateless, close to a Haskell type class.
+The implementation is separate from the type definition.
+Dispatch is on the type, not on a value.
+Instances can be conditional.
+Coherence is enforced.
+Rust differs from Haskell in mechanics: no higher-kinded types, ownership in the method signatures, monomorphisation where Haskell passes dictionaries, built-in `dyn` dispatch.
+Visibility applies to the whole trait and is module-based; there are no per-method private or protected members.
+
+**The paper trait sits in the middle.**
+No state and no ancestor order, like the right-hand side.
+Still flattened into a class that has a superclass, like the left.
+
+**Reading the line.**
+Each step right removes a way for the unit to reach into its host.
+First the state goes, then the place in the ancestor chain, then the object.
+Inheritance bundles three things: data reuse, code reuse, polymorphism.
+The left end keeps the bundle.
+Rust splits it: traits carry the polymorphism, and reuse of state happens through composition with explicit delegation, at the cost of boilerplate.
+
+In hybrid terms: the left end is nearly all base class, with the interface undeclared.
+The right end is nearly all interface, with default methods as the only base class left.
+
+**Ease of partial override trades against isolation.**
+Scala's `super` chaining is smooth but coupled.
+Rust's all-or-nothing default methods are isolated but blunt.
+Ruby is on Scala's side of that trade: the host overrides one method and calls `super`.
+That smoothness is the fragile-base-class surface.
+Few, small, atomic is how to afford it — when a trait is tiny, replacing it whole costs little.
+
+Ruby sits at the far left and will not move.
+Mixin-as-trait discipline is walking a module rightward by hand: no ivars, a declared required API, nothing that depends on include order.
+The state reuse a module can no longer do has the same home it has in Rust: a collaborator and `delegate`.
 
 ---
 
