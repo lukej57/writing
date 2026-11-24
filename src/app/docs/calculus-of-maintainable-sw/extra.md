@@ -18,6 +18,13 @@ Because it is invariant, it is perfect for that context.
 Conceptual discussion of this sort is a dying art.
 I wanted to document it and move on.
 
+## The argument
+- We abstract to emphasise decisions while hiding mechanics
+- We discover a family of problems over time
+- The design that lasts tolerates shifting more of the mechanics into the foreground, making them tunable as we discover more and more variations of our problem
+- The elements most likely to move from mechanics to decisions are effects
+- Therefore separation along the functional core, imperative shell principle is the most maintainable: the likely path of change is the cheapest
+
 ## Naive starting point
 - Effects and logic mixed together
 - Easy to write for one concrete problem
