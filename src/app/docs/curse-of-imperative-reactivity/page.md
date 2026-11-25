@@ -357,6 +357,66 @@ In each one the rule was right and some copy of the state had fallen out of step
 No one wrote this controller badly.
 The code is careful and well commented, and it is careful because it has to be.
 
+### React
+
+React's answer is blunt.
+Keep the raw state.
+Recompute everything else whenever any of it changes.
+
+```jsx
+function PatternForm({ savedFrequency, savedDays }) {
+  const [frequency, setFrequency] = useState(savedFrequency)
+  const [days, setDays] = useState(savedDays)
+
+  const visible = days.filter((day) => day.week === 1 || frequency === "fortnightly")
+  const changed = visible.filter((day) =>
+    ["state", "start", "finish"].some((field) => day[field] !== day.saved[field])
+  )
+
+  const isNight = (day) => day.state === "specific_times" && day.finish < day.start
+
+  const morningTaken = (day) => {
+    const before = visible.at(visible.indexOf(day) - 1)
+    return isNight(before) ? before.finish : null
+  }
+
+  const startsFrom = (day) => {
+    const taken = morningTaken(day)
+    return taken > day.start ? taken : day.start
+  }
+
+  const update = (id, fields) =>
+    setDays(days.map((day) => (day.id === id ? { ...day, ...fields } : day)))
+
+  return (
+    <form>
+      <FrequencyPicker value={frequency} onChange={setFrequency} />
+
+      {visible.map((day) => (
+        <DayRow
+          key={day.id}
+          day={day}
+          busyUntil={morningTaken(day)}
+          startsFrom={startsFrom(day)}
+          onChange={(fields) => update(day.id, fields)}
+        />
+      ))}
+
+      <p>{changed.length} of {visible.length} days changed</p>
+    </form>
+  )
+}
+```
+
+Compare it to the diagram.
+`visible`, `changed`, `isNight`, `morningTaken` and `startsFrom` are the five derived values, by name.
+They are constants and functions, rebuilt on every render, so none of them can be stale.
+
+React does not work out what changed.
+It re-runs the whole component, and its children, whenever any state changes.
+That is overeager, and large trees need `memo`, `useMemo` or the compiler to stay fast.
+For a form inside a Rails page it also means a build step and a component tree, which is a lot to take on for one screen.
+
 ### Alpine
 
 Alpine is the fair comparison for Stimulus.
@@ -427,8 +487,7 @@ Alpine.data("patternForm", (frequency, days) => ({
 
 That is the whole form, and there are no handlers in it.
 It is the code running in the form at the top of this section.
-Compare it to the diagram.
-`visible`, `changed`, `isNight`, `morningTaken` and `startsFrom` are the five derived values, by name.
+The same five derived values are here, as getters and methods.
 The `x-for`, `x-show` and `x-text` attributes are the arrows to the screen.
 
 The stale notice cannot be written here.
@@ -445,70 +504,11 @@ It is still an ordinary Rails form.
 The inputs have names, so it submits the usual `params`.
 The server renders the starting state as JSON, so it stays the authority on what was saved.
 
-Alpine knows what to update because it watches the code run.
+Where React re-runs everything, Alpine knows what to update, because it watches the code run.
 Its state is a reactive proxy, borrowed from Vue.
 When an attribute's expression runs, the runtime records every property it reads.
 When one of those is written, that expression and only that expression runs again.
 The graph is discovered by running the code, so it cannot disagree with the code.
-
-### React
-
-React gets to the same place by a blunter route.
-Keep the raw state.
-Recompute everything else whenever any of it changes.
-
-```jsx
-function PatternForm({ savedFrequency, savedDays }) {
-  const [frequency, setFrequency] = useState(savedFrequency)
-  const [days, setDays] = useState(savedDays)
-
-  const visible = days.filter((day) => day.week === 1 || frequency === "fortnightly")
-  const changed = visible.filter((day) =>
-    ["state", "start", "finish"].some((field) => day[field] !== day.saved[field])
-  )
-
-  const isNight = (day) => day.state === "specific_times" && day.finish < day.start
-
-  const morningTaken = (day) => {
-    const before = visible.at(visible.indexOf(day) - 1)
-    return isNight(before) ? before.finish : null
-  }
-
-  const startsFrom = (day) => {
-    const taken = morningTaken(day)
-    return taken > day.start ? taken : day.start
-  }
-
-  const update = (id, fields) =>
-    setDays(days.map((day) => (day.id === id ? { ...day, ...fields } : day)))
-
-  return (
-    <form>
-      <FrequencyPicker value={frequency} onChange={setFrequency} />
-
-      {visible.map((day) => (
-        <DayRow
-          key={day.id}
-          day={day}
-          busyUntil={morningTaken(day)}
-          startsFrom={startsFrom(day)}
-          onChange={(fields) => update(day.id, fields)}
-        />
-      ))}
-
-      <p>{changed.length} of {visible.length} days changed</p>
-    </form>
-  )
-}
-```
-
-The derived values are the same five, written as constants and functions.
-They are rebuilt on every render, so none of them can be stale.
-
-React does not track reads.
-It re-runs the whole component, and its children, whenever any state changes.
-That is overeager, and large trees need `memo`, `useMemo` or the compiler to stay fast.
-For a form inside a Rails page it also means a build step and a component tree, which is a lot to take on for one screen.
 
 ## Stimulus: The Wrong Abstraction for Reactive UI
 
