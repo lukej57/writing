@@ -7,6 +7,9 @@ import { Fence } from '@/components/Fence'
 
 let documentSlugifyMap = new Map()
 
+// Each article's own glossary, from its frontmatter, for the {% term %} tag.
+export const articleGlossaries = new WeakMap()
+
 const nodes = {
   document: {
     ...defaultNodes.document,
@@ -14,10 +17,13 @@ const nodes = {
     transform(node, config) {
       documentSlugifyMap.set(config, slugifyWithCounter())
 
+      let frontmatter = yaml.load(node.attributes.frontmatter)
+      articleGlossaries.set(config, frontmatter?.glossary ?? {})
+
       return new Tag(
         this.render,
         {
-          frontmatter: yaml.load(node.attributes.frontmatter),
+          frontmatter,
           nodes: node.children,
         },
         node.transformChildren(config),

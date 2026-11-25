@@ -3,13 +3,20 @@ title: The Curse of Imperative Reactivity
 nextjs:
   metadata:
     title: The Curse of Imperative Reactivity
+glossary:
+  dependency-graph:
+    term: Dependency graph
+    definition: The values on a screen drawn as nodes, with an arrow from each value to the values computed from it.
+  derived-data:
+    term: Derived data
+    definition: A value computed from other values, such as a total or a count. Nobody edits it directly.
 ---
 
 {% callout title="TL;DR" type="note" %}
-Every piece of derived data on a screen is an edge in a dependency graph.
-Pushing a change along those edges is mechanics: the right answer is always the same, so it belongs in the background.
+Every piece of {% term "derived-data" %}derived data{% /term %} on a screen is an edge in a {% term "dependency-graph" %}dependency graph{% /term %}.
+Pushing a change along those edges is {% term "mechanic" %}mechanics{% /term %}: the right answer is always the same, so it belongs in the background.
 Alpine and React keep it there, and the runtime does it for you.
-Stimulus brings it into the foreground, as a decision you make in every handler, over and over, until you get one wrong.
+Stimulus brings it into the foreground, as a {% term "decision" %}decision{% /term %} you make in every handler, over and over, until you get one wrong.
 That is the curse of imperative reactivity: it is backwards.
 The mechanics of data flow have become a decision you must remember to make, and every one you forget is a stale piece of UI.
 {% /callout %}
@@ -617,7 +624,7 @@ That needs no new library.
 Stimulus assumes a partner.
 The intended source of derived data is the server.
 
-The handlers, the table of ticks and the undo log are incidental complexity.
+The handlers, the table of ticks and the undo log are {% term "incidental-complexity" %}incidental complexity{% /term %}.
 None of it is the problem the form solves.
 Used well, Turbo and server rendering keep it from forming.
 
