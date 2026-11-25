@@ -12,7 +12,11 @@ An arrow is a reference plus an invocation.
 As more things depend on a node, unwanted ripples become more likely, so the node gets harder to change.
 Flip the arrows — a move in the structure, not in the examples — and you get the inverse: harder *not* to change.
 Both at once is a god object — hard to change and hard not to change.
-Layers look like they attenuate ripples.
+Coupling that runs one way is less brittle: call down, event up.
+A boundary absorbs change.
+Fan-in and depth cost where that absorption fails.
+Dependency injection and data down, actions up both leave the graph until runtime.
+Layers look like they attenuate ripples by path length.
 That frame is not locked yet.
 {% /callout %}
 
@@ -224,6 +228,69 @@ Fan-in and fan-out are the same shape, opposite direction.
 DRY's vertical coupling ([Dark Side of DRY](/docs/dark-side-of-dry)) is a hub: many sites → one abstraction, short paths, ripples both ways.
 Scalability's *P* is *degree*; this article is *paths* ([Scalability of Composition](/docs/scalability-of-composition)).
 *S* — how wide the coupling is — is not in the dots yet.
+Shape is one factor in how brittle the graph is.
+Whether an edge runs one way or both is another.
+
+## One way
+
+Dependency couples the two ends of an arrow.
+The brittle case is coupling that runs both ways.
+A change in B ripples to A, and a change in A reaches back into B.
+
+The downward direction can stay a direct call.
+A holds a reference to B and invokes it.
+That is the arrow this article already draws.
+
+The upward direction can be a channel with no back-edge.
+B emits an event.
+A handler above receives it.
+B does not reference the handler, so there is no arrow from B back to its dependants.
+
+```mermaid
+flowchart BT
+  A((A)) --> B((B))
+  H((H)) --> E((E))
+```
+
+A depends on B and invokes it.
+H depends on the event.
+The emitter does not depend on H.
+The same shape as an exception climbing to a handler, and as an algebraic effect.
+The lower code does not name who will receive it.
+
+That pattern is data down, actions up.
+Calls and data go down the dependency.
+Actions come up a channel that adds no return arrow.
+A change does not ripple out through both directions.
+
+Topology still does its work.
+A high fan-in node can still freeze.
+A high fan-out node can still be forced to change.
+One-way coupling sits beside the shape.
+It is a second reason the graph is less brittle.
+
+## Decided at runtime
+
+Dependency injection and data down, actions up are different mechanisms.
+One hands a collaborator in.
+The other sends a call down and an event up.
+Composition is the same idea as the injection, seen from the caller that builds the object.
+
+Both leave the edges unset until runtime.
+The graph is not fixed at compile time.
+You assemble a small graph for one case, and a different small graph for the next.
+Each graph can keep a desirable shape: modest fan-out, one-way where a return edge would carry a ripple, and one job for the node.
+
+The split under implicit fan-out is that assembly.
+One object that depended on five things becomes five graphs, one arrow each.
+
+Plain inheritance fixes the graph when the classes are declared.
+The family is one graph.
+It is mammoth, and it suffers immensely.
+Every case lives in that one graph.
+
+In the code, each mechanism is built differently.
+The shared property is a graph that is dynamic and decomposable.
 
 ## How does software work at all?
 
@@ -235,6 +302,7 @@ Those are not small fan-outs.
 The count of arrows is not the whole story.
 Something about path length seems to matter.
 The frame for that is not yet in hand.
+A separate claim is already in reach: a boundary can absorb a change, so the count and the depth do not arrive raw.
 
 ## Insert a layer
 
@@ -307,6 +375,23 @@ That would drive the chance down if the hop model holds.
 It is interesting.
 It is not yet the same kind of find as flipping the arrows.
 
+## What a boundary absorbs
+
+A deep chain is not inherently a costly graph.
+Layers of abstraction absorb change at each boundary.
+An application can depend on hundreds of libraries, or thousands, and stay stable.
+Interfaces and wrappers condition what propagates upward.
+A change below stops at a boundary that holds.
+
+Fan-in raises the maintainability cost only where the abstraction fails to absorb.
+Depth raises it on the same condition.
+A leaky layer is still a short path with a longer name.
+A fat interface is that failure: the hop was added, and the surface did not shrink.
+
+A boundary that holds is a damper on the semiring.
+What travels upward is what the interface allowed through.
+Interfaces and wrappers are how that damper is built.
+
 ## Where Rails sits
 
 Active Record models are depended on by a lot of code, and they depend on a lot of code.
@@ -350,7 +435,12 @@ A plain old Ruby object of your own is a shock to test: it is quick, because it 
 - A role interface / DI collaborator — the inserted M; the hop exists so the surface can be small.
 - A controller that knows every model — high fan-out, volatile.
 - A god class that everyone calls and that knows everyone — both.
-- A deep package tree that is still calm — many edges, long paths.
+- A deep package tree that is still calm — many edges, long paths, boundaries that absorb.
+- Data down, actions up — a call down, an event up, no back-edge.
+- A wrapper around a library — the library's fan-in stays behind the boundary.
+- A leaky wrapper — the same fan-in and depth, now expensive.
+- Dependency injection, or a handler subscribed at runtime — a small graph chosen for the case.
+- An inheritance hierarchy — one mammoth graph, fixed when the classes are declared.
 
 Return to this with one diagram per example.
 
@@ -358,6 +448,7 @@ Return to this with one diagram per example.
 
 The same arrows describe classes, packages, services, teams.
 Maintainability is a property of the graph's shape.
+One-way edges, a boundary that absorbs, and a graph assembled at runtime sit beside that shape.
 
 ## Decisions already locked
 
@@ -371,4 +462,7 @@ Maintainability is a property of the graph's shape.
 - Layers as attenuation is interesting; that frame is not locked.
 - A hop can be an interface: a node that exists to be coupled to, so *S* shrinks.
 - The graph has *P* and a candidate for path length. *S* and *D* are not represented yet.
+- One-way coupling sits beside topology. Call down, event up. Both directions is the brittle case.
+- Abstraction damps the semiring. Interfaces and wrappers are the mechanism. Fan-in and depth raise cost only where a boundary fails to absorb.
+- Dependency injection, composition, and data down, actions up are built differently. They share a dynamic, decomposable graph. Inheritance fixes one mammoth graph.
 - Diagrams do the carrying; examples come after the shapes.
