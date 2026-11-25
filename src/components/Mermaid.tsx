@@ -244,7 +244,20 @@ function loadMermaid() {
   return mermaidReady
 }
 
-export function Mermaid({ chart }: { chart: string }) {
+// 'dots' is the abstract, unlabelled dependency graph. 'dataflow' keeps
+// the node labels and draws outlined boxes, for graphs of named values.
+type Variant = 'dots' | 'dataflow'
+
+const DATAFLOW_CONFIG =
+  '%%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 22, "rankSpacing": 44, "padding": 12}}}%%\n'
+
+export function Mermaid({
+  chart,
+  variant = 'dots',
+}: {
+  chart: string
+  variant?: Variant
+}) {
   const reactId = useId().replace(/:/g, '')
   const [svg, setSvg] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -253,10 +266,19 @@ export function Mermaid({ chart }: { chart: string }) {
     let cancelled = false
 
     loadMermaid()
-      .then((mermaid) => mermaid.render(`mermaid-${reactId}`, chart.trim()))
+      .then((mermaid) =>
+        mermaid.render(
+          `mermaid-${reactId}`,
+          variant === 'dataflow' ? DATAFLOW_CONFIG + chart.trim() : chart.trim(),
+        ),
+      )
       .then(({ svg }) => {
         if (!cancelled) {
-          setSvg(fitSvgToDotSize(routeEdgesBetweenDots(svg)))
+          setSvg(
+            variant === 'dataflow'
+              ? svg
+              : fitSvgToDotSize(routeEdgesBetweenDots(svg)),
+          )
           setError(null)
         }
       })
@@ -269,7 +291,7 @@ export function Mermaid({ chart }: { chart: string }) {
     return () => {
       cancelled = true
     }
-  }, [chart, reactId])
+  }, [chart, reactId, variant])
 
   if (error) {
     return (
@@ -281,9 +303,9 @@ export function Mermaid({ chart }: { chart: string }) {
 
   return (
     <figure
-      className="dependency-graph not-prose my-10 flex justify-center text-slate-950 dark:text-slate-100"
+      className={`${variant === 'dataflow' ? 'dataflow-graph' : 'dependency-graph'} not-prose my-10 flex justify-center text-slate-950 dark:text-slate-100`}
       dangerouslySetInnerHTML={svg ? { __html: svg } : undefined}
-      aria-label="Dependency diagram"
+      aria-label={variant === 'dataflow' ? 'Data flow diagram' : 'Dependency diagram'}
     />
   )
 }

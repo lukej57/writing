@@ -50,6 +50,45 @@
   }
 }
 
+/* Labelled data flow graphs (Mermaid): outlined boxes, readable labels. */
+.dataflow-graph svg {
+  max-width: 100%;
+  height: auto;
+  overflow: visible;
+  background: transparent !important;
+}
+
+.dataflow-graph .node rect,
+.dataflow-graph .node path,
+.dataflow-graph .node polygon,
+.dataflow-graph .label-container {
+  fill: transparent !important;
+  stroke: currentColor !important;
+  stroke-width: 1.25px !important;
+}
+
+.dataflow-graph .label,
+.dataflow-graph .label *,
+.dataflow-graph .nodeLabel {
+  fill: currentColor !important;
+  color: currentColor !important;
+  stroke: none !important;
+}
+
+.dataflow-graph .edgePath .path,
+.dataflow-graph .flowchart-link {
+  stroke: currentColor !important;
+  stroke-width: 1.25px !important;
+  fill: none !important;
+}
+
+.dataflow-graph marker path,
+.dataflow-graph .arrowheadPath,
+.dataflow-graph .marker {
+  fill: currentColor !important;
+  stroke: currentColor !important;
+}
+
 /* Black-and-white abstract dependency graphs (Mermaid). */
 .dependency-graph svg {
   max-width: 100%;

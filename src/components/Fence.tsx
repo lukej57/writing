@@ -13,6 +13,10 @@ export async function Fence({
     return <Mermaid chart={children} />
   }
 
+  if (language === 'dataflow') {
+    return <Mermaid chart={children} variant="dataflow" />
+  }
+
   const html = await codeToHtml(children.trimEnd(), {
     lang: language || 'text',
     theme: 'github-dark',

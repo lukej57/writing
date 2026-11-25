@@ -42,15 +42,18 @@ A hint counts the visible days that differ from what is saved.
 
 Here is what the form computes.
 
+```dataflow
+flowchart LR
+  frequency(["weekly / fortnightly radio"]) --> visible[visible days]
+  state(["availability dropdown"]) ---> changed[changed days]
+  saved(["last saved values"]) ---> changed
+  visible --> changed
+  visible ---> rows["rows shown"]:::screen
+  changed --> hint["1 of 7 days changed"]:::screen
+  classDef screen stroke-dasharray: 4 3
 ```
-RAW               DERIVED               SCREEN
 
-frequency ──────▶ visible days ───────▶ rows shown
-                       │
-state ───────┐         ▼
-saved ───────┴──▶ changed days ───────▶ "1 of 7 days changed"
-```
-
+Rounded nodes are raw inputs, boxes are derived values, and dashed boxes are what the screen shows.
 Three raw inputs, two derived values, two things on screen.
 Every arrow is a fact about the form.
 The hint needs the changed days.
@@ -130,29 +133,31 @@ That night runs into the first Monday, because the pattern wraps.
 
 The graph gains two raw inputs, three derived values and three things on screen.
 
-```
-RAW               DERIVED                          SCREEN
-
-frequency ──────▶ visible days ──────────────────▶ rows shown
-                    │      │
-state ──────────────┼──────┼─────────────────────▶ time fields shown
-                    │      │
-state ───────┐      │      │
-start ───────┼──▶ night    │
-finish ──────┘      │      ▼
-                    └────▶ morning taken ────────▶ "Busy until 06:00"
-                           (from the day before)
-                                 │
-start ───────────────────────────┴▶ starts from ─▶ "06:00 – 13:00"
-
-state ───────┐
-start ───────┤
-finish ──────┼──▶ changed days ──────────────────▶ "2 of 7 days changed"
-saved ───────┘    (of the visible days)
+```dataflow
+flowchart LR
+  frequency(["weekly / fortnightly radio"]) --> visible[visible days]
+  visible ----> rows["rows shown"]:::screen
+  state(["availability dropdown"]) -----> fields["time fields shown"]:::screen
+  state --> night[night]
+  start(["start time field"]) --> night
+  finish(["finish time field"]) --> night
+  visible --> morning[morning taken]
+  night --> morning
+  morning ---> busy["Busy until 06:00"]:::screen
+  morning --> from[starts from]
+  start ---> from
+  from --> range["06:00 – 13:00"]:::screen
+  state ---> changed[changed days]
+  start ---> changed
+  finish ---> changed
+  saved(["last saved values"]) ---> changed
+  visible --> changed
+  changed ---> hint["2 of 7 days changed"]:::screen
+  classDef screen stroke-dasharray: 4 3
 ```
 
 Follow one path through it.
-`frequency → visible days → morning taken → "Busy until"`.
+`weekly / fortnightly radio → visible days → morning taken → "Busy until"`.
 Switching from fortnightly to weekly changes which day comes before Monday, because the pattern wraps a week sooner.
 So the frequency radio affects the notice on a day row, three steps away.
 
