@@ -7,9 +7,11 @@ nextjs:
 
 {% callout title="TL;DR" type="note" %}
 Every piece of derived data on a screen is an edge in a dependency graph.
-Stimulus makes you maintain that graph by hand, inside imperative handlers, and every edge you forget is a stale piece of UI.
-That is the curse of imperative reactivity: the graph stays implicit, and once it outgrows your head it becomes a constant source of bugs.
-Alpine and React take the graph off your hands, which is why a whole class of bug does not exist there.
+Pushing a change along those edges is mechanics: the right answer is always the same, so it belongs in the background.
+Alpine and React keep it there, and the runtime does it for you.
+Stimulus brings it into the foreground, as a decision you make in every handler, over and over, until you get one wrong.
+That is the curse of imperative reactivity: it is backwards.
+The mechanics of data flow have become a decision you must remember to make, and every one you forget is a stale piece of UI.
 {% /callout %}
 
 Stimulus calls itself a modest JavaScript framework for the HTML you already have.
@@ -27,8 +29,8 @@ What should happen next is a method body, and you write it.
 
 The model holds up while each handler touches one thing.
 It stops holding up when the screen shows data that is derived from other data.
-From that point on you are no longer writing handlers.
-You are maintaining a dependency graph that exists nowhere in your code.
+From that point on you are no longer just writing handlers.
+You are carrying each change through a dependency graph by hand, one call at a time.
 
 ## A Simple UI
 
@@ -295,6 +297,10 @@ Each tick is a line that somebody had to know to write.
 Each blank is a decision too: somebody had to be sure it was not needed.
 Visibility must also be called first in its row, because nights and the hint both read which days are visible.
 
+Yet none of the sixteen cells is a judgement call.
+The graph settles every one of them.
+You are asked to make sixteen decisions that each have exactly one right answer.
+
 The feature added one row and two columns.
 The next feature adds another column, and every existing row must be revisited to decide tick or blank.
 The work for a feature grows with the size of the controller it is added to.
@@ -495,23 +501,53 @@ For a form inside a Rails page it also means a build step and a component tree, 
 ### Reactivity: Declarative vs. Imperative
 
 All three versions implement the same graph.
-They differ in where the graph is kept.
+None of them writes it down.
+You will not find the diagram in the Alpine getters or the React component, any more than in the Stimulus controller.
+The graph is implicit in all three.
 
-In Alpine and React the dependencies are written at the reader.
-`changed` says it needs `visible`.
-`visible` says it needs `frequency`.
-Each arrow is written once, by the thing that has the dependency.
-That is declarative reactivity: you state what each value is, and the runtime works out when to recompute it.
+They differ in who has to act on it.
 
-In Stimulus the graph is turned inside out.
-Each place that *writes* an input carries a list of the things that *read* it.
-`frequencyValueChanged` is a writer, and its body is a list of readers.
+In Alpine and React you say what each value is.
+`changed` is the visible days that differ from what was saved.
+`visible` is week one, plus week two for a fortnightly pattern.
+The runtime works out what to recompute, and when.
+That is declarative reactivity.
+The data flow is implicit in the good way: it is handled, and you never think about it.
+
+In Stimulus the data flow is the code you write.
+`frequencyValueChanged` does not say what anything is.
+Its body is a list of what to update, and in what order.
 That is imperative reactivity: you are told that something changed, and you issue the updates yourself.
+Every handler puts the same question to you again.
+What depends on this, and in what order?
 
-The trouble is that dependencies are properties of the readers.
+That question should never have been yours.
+In [The Calculus of Maintainable Software](/docs/calculus-of-maintainable-sw) I separate decisions from mechanics.
+A decision has an answer that varies with context, so it belongs in the foreground, made by whoever holds the context.
+A mechanic has the same right answer in every context, so it belongs in the background, where nobody can get it wrong.
+
+Data flow is a mechanic.
+When an input changes, everything derived from it updates, in dependency order.
+There is no form where the right answer is to leave the hint stale.
+The decisions in this form are the definitions: what counts as a night, what counts as changed.
+
+Stimulus has this backwards.
+The mechanics sit in the foreground of every handler, as a choice you must remember to make.
+You make it over and over, and sooner or later you make it wrong.
+The definitions, which are the real decisions, end up buried inside update methods, between the DOM reads and the DOM writes.
+
+This is fundamentally what an abstraction does.
+It automates the mechanics, and leaves the decisions manual and explicit.
+Alpine and React do that for data flow.
+Stimulus automates the wiring: finding elements, routing events, noticing that a value changed.
+The data flow itself it hands back to you.
+For reactive data flow on the front end, that makes it the wrong abstraction.
+
+The choice is also put to the wrong place.
+Dependencies are properties of the readers.
 The notice knows it needs the morning taken.
 The frequency handler has no reason to know the notice exists.
-Imperative reactivity stores each arrow at the one place that cannot see it.
+Imperative reactivity asks each question at the one place that cannot see the answer.
 
 | | Stimulus | Alpine |
 |--|--|--|
@@ -561,7 +597,7 @@ Each runs code when a value changes, which is a handler by another name.
 Use one to copy a piece of state into another and the stale data returns.
 The bugs come back exactly when you leave the declarative path.
 
-| | Who maintains the graph | How it fails |
+| | Who carries a change through the graph | How it fails |
 |--|--|--|
 | **WinForms handlers** | You, in every handler | Stale UI |
 | **Stimulus** | You, in every handler and callback | Stale UI |
@@ -698,13 +734,24 @@ Now there are two renderers, and each can be stale relative to the other.
 
 ## Conclusion
 
-Imperative event handlers produce an implicit dependency graph.
+Every screen with derived data has a dependency graph.
+It is implicit in every tool here, and that is not the problem.
+The problem is who has to act on it.
+
+Alpine and React treat data flow as mechanics and keep it in the background.
+Imperative handlers bring it into the foreground.
 WinForms did it with `TextChanged`, and Stimulus does it with actions and value callbacks.
-The graph exists whether or not you write it down.
-Left implicit, it grows with every feature, and each new node adds edges that every existing handler must now respect.
-Small graphs fit in your head.
-Grown ones do not, and from then on the graph is a steady source of stale-data bugs, each fixed with a single call and each followed by the next.
+Every handler becomes a decision about what to update and in what order, and the decision has only one right answer.
+Each feature adds more of them, and reopens the ones already made.
+
+Small graphs fit in your head, and you answer correctly.
+Grown ones do not, and from then on you get stale-data bugs, each fixed with a single call and each followed by the next.
 That is the curse of imperative reactivity.
+The mechanics of data flow, which are always the same, have been turned into a decision you must remember to make.
+
+An abstraction should automate the mechanics and leave the decisions explicit.
+For reactive data flow on the front end, Stimulus does the reverse.
+It is the wrong abstraction for that job.
 
 Within the Stimulus model, the answer is to not have a client-side graph.
 Make the server render authoritative, let Turbo redraw, and keep controllers to small local changes.
@@ -713,7 +760,7 @@ Used that way, Turbo and SSR prevent the network of front-end data dependencies 
 That answer has a ceiling.
 It is a coarser approach, bounded by the round trip.
 It will not stretch to a high-fidelity front end, where values move as the user types and one control reacts to another.
-That work needs declarative reactivity on the client, from Alpine, React or anything else that owns the graph.
+That work needs declarative reactivity on the client, from Alpine, React or anything else that handles the data flow for you.
 
 It is also harder than it looks.
 Organising a front end deliberately, so that Stimulus stays minimal and frames, streams and morphing each do the right job, takes real design effort and a model that lives mostly in your head.
