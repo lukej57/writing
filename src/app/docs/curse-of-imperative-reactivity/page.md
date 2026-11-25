@@ -635,6 +635,7 @@ Put the rules in Ruby.
 ```ruby
 class Pattern
   def visible_days = days.select { |day| day.week == 1 || fortnightly? }
+  def hidden_days = days - visible_days
   def changed_days = visible_days.select(&:changed?)
 
   # The pattern wraps, so the day before the first day is the last day.
@@ -647,27 +648,32 @@ class Pattern
 end
 ```
 
-Render the whole form from it, inside a Turbo Frame.
+Render the whole form from it.
 
 ```erb
-<%= turbo_frame_tag "pattern" do %>
-  <%= form_with model: @pattern, data: { controller: "pattern", action: "change->pattern#refresh" } do |form| %>
-    <% @pattern.visible_days.each do |day| %>
-      <%= render "day", form:, day:, pattern: @pattern %>
-    <% end %>
-
-    <p><%= @pattern.changed_days.size %> of <%= @pattern.visible_days.size %> days changed</p>
-
-    <%= form.button "Refresh", formaction: preview_pattern_path, hidden: true,
-          data: { pattern_target: "refresh" } %>
+<%= form_with model: @pattern, id: "pattern", data: { controller: "pattern", action: "change->pattern#refresh" } do |form| %>
+  <% @pattern.visible_days.each do |day| %>
+    <%= render "day", form:, day:, pattern: @pattern %>
   <% end %>
+
+  <%# Week two stays in the form while the pattern is weekly. %>
+  <% @pattern.hidden_days.each do |day| %>
+    <%= render "hidden_day", form:, day: %>
+  <% end %>
+
+  <p><%= @pattern.changed_days.size %> of <%= @pattern.visible_days.size %> days changed</p>
+
+  <%= form.button "Refresh", formaction: preview_pattern_path(@pattern), hidden: true,
+        data: { pattern_target: "refresh" } %>
 <% end %>
 ```
 
 ```ruby
 def preview
-  @pattern = Pattern.new(pattern_params)
-  render :edit
+  @pattern = Pattern.find(params[:id])
+  @pattern.assign_attributes(pattern_params) # in memory, never saved
+
+  render turbo_stream: turbo_stream.replace("pattern", method: :morph, partial: "form")
 end
 ```
 
@@ -686,8 +692,14 @@ export default class extends Controller {
 ```
 
 Any change posts the form to `preview`.
-The server builds a `Pattern` from the fields, renders the form, and Turbo swaps the frame.
+The server loads the saved pattern, lays the submitted fields over it in memory, and renders the form.
+Turbo morphs the result into the page.
 The four handlers, the four update methods and the table of eleven ticks are gone.
+
+Even this small form took three decisions the Alpine version never asked for.
+The preview starts from the saved pattern, because *changed* needs something to compare against.
+Week two stays in the form as hidden fields while the pattern is weekly, or its unsaved edits would vanish with its rows.
+The response morphs instead of replacing, or every change would throw away the user's place in the form.
 
 It works for the same reason Alpine does.
 The Ruby methods are the getters.
@@ -702,9 +714,10 @@ Data flows one way: an event becomes a request, the request produces state, the 
 Redux draws the same loop, with the request as the action and the template as the view.
 
 Turbo gives three ways to deliver it.
-A *frame* replaces one region, as above.
-*Streams* update several named regions from one response, for changes that reach outside the frame.
+A *frame* replaces one region.
+*Streams* update several named regions from one response.
 *Morphing* patches the new HTML into the old instead of replacing it, which keeps focus and scroll.
+The example uses a stream that morphs, because the user is in the middle of the form when the response arrives.
 
 **It rests on one rule.**
 The server render must be authoritative.
@@ -719,6 +732,8 @@ Nothing needs mirroring, because the form fields already are the state.
 That is also the limit of what Stimulus can carry.
 A small, local change to HTML that is already correct is the job it was built for: toggle a menu, copy to the clipboard, submit a form.
 A controller that must work out what correct means is doing the server's job, with handlers.
+
+### Limitations
 
 **It is coarse.**
 The network hop sets the grain.
