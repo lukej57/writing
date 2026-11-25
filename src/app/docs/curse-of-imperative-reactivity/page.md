@@ -292,10 +292,10 @@ Laid out, the controller is this.
 
 | When this changes | visibility | time fields | nights | hint |
 |--|:--:|:--:|:--:|:--:|
-| **connect** | | ✓ | ✓ | ✓ |
-| **frequency** | ✓ | | ✓ | ✓ |
-| **state** | | ✓ | ✓ | ✓ |
-| **time** | | | ✓ | ✓ |
+| **connect** | | ✅ | ✅ | ✅ |
+| **frequency** | ✅ | | ✅ | ✅ |
+| **state** | | ✅ | ✅ | ✅ |
+| **time** | | | ✅ | ✅ |
 
 Eleven ticks.
 Each tick is a line that somebody had to know to write.

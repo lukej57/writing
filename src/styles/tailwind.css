@@ -50,6 +50,52 @@
   }
 }
 
+/* Prose tables, after the Tailwind Plus simple table: hairline dividers,
+   a strong first column, quieter body cells. */
+.prose table {
+  width: 100%;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+}
+
+.prose thead {
+  border-bottom: 1px solid var(--color-slate-300);
+}
+
+.prose thead th {
+  padding: 0.875rem 0.75rem;
+  font-weight: 600;
+  color: var(--color-slate-900);
+  vertical-align: bottom;
+}
+
+.prose tbody tr {
+  border-bottom: 1px solid var(--color-slate-200);
+}
+
+.prose tbody tr:last-child {
+  border-bottom: 0;
+}
+
+.prose tbody td {
+  padding: 1rem 0.75rem;
+  color: var(--color-slate-500);
+  vertical-align: top;
+}
+
+.prose tbody td:first-child {
+  font-weight: 500;
+  color: var(--color-slate-900);
+}
+
+.prose :is(th, td):first-child {
+  padding-left: 0;
+}
+
+.prose :is(th, td):last-child {
+  padding-right: 0;
+}
+
 /* Labelled data flow graphs (Mermaid): outlined boxes, readable labels. */
 .dataflow-graph svg {
   max-width: 100%;
