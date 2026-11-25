@@ -503,7 +503,7 @@ It re-runs the whole component, and its children, whenever any state changes.
 That is overeager, and large trees need `memo`, `useMemo` or the compiler to stay fast.
 For a form inside a Rails page it also means a build step and a component tree, which is a lot to take on for one screen.
 
-### Reactivity: Declarative vs. Imperative
+## Stimulus: The Wrong Abstraction for Reactive UI
 
 All three versions implement the same graph.
 None of them writes it down.
@@ -543,10 +543,11 @@ The definitions, which are the real decisions, end up buried inside update metho
 
 This is fundamentally what an abstraction does.
 It automates the mechanics, and leaves the decisions manual and explicit.
-Alpine and React do that for data flow.
-Stimulus automates the wiring: finding elements, routing events, noticing that a value changed.
-The data flow itself it hands back to you.
-For reactive data flow on the front end, that makes it the wrong abstraction.
+Alpine and React abstract the data flow completely.
+You never write it, so what is left to write is declarative: what each value is.
+Stimulus abstracts the wiring: finding elements, routing events, noticing that a value changed.
+The data flow it leaves manual and imperative, a list of updates in every handler.
+That is why it is the wrong abstraction for a reactive UI.
 
 The choice is also put to the wrong place.
 Dependencies are properties of the readers.
@@ -609,11 +610,16 @@ The bugs come back exactly when you leave the declarative path.
 | **Alpine** | The runtime, by tracking reads | Rarely, unless you use watchers to copy state |
 | **React** | Nobody. Everything is re-derived. | Wasted renders |
 
-### Stimulus, Turbo and SSR
+## Stimulus, Turbo and SSR
 
-There is another way out, and it needs no new library.
+If Stimulus is the wrong abstraction for reactive data flow, the answer inside its own frame is to stop giving it any.
+That needs no new library.
 Stimulus assumes a partner.
 The intended source of derived data is the server.
+
+The handlers, the table of ticks and the undo log are incidental complexity.
+None of it is the problem the form solves.
+Used well, Turbo and server rendering keep it from forming.
 
 So do not fix the client-side graph.
 Remove it.
@@ -682,6 +688,12 @@ The Ruby methods are the getters.
 Every render derives everything from the raw fields, so nothing can be stale.
 The server render is declarative, and Turbo is how it reaches the page.
 
+Front-end developers will recognise the shape.
+It is a store and a render function, kept on the server.
+There is one source of truth, and the DOM is not it.
+Data flows one way: an event becomes a request, the request produces state, the state produces HTML, and Turbo applies it.
+Redux draws the same loop, with the request as the action and the template as the view.
+
 Turbo gives three ways to deliver it.
 A *frame* replaces one region, as above.
 *Streams* update several named regions from one response, for changes that reach outside the frame.
@@ -713,6 +725,8 @@ Client-side reactivity has no such floor.
 **It takes a substantial mental model.**
 The rule is easy to state and hard to keep.
 Nothing in Stimulus enforces it.
+This is where the comparison with a store stops.
+A Redux component can only read from the store.
 A controller will accept any state you give it, and it cannot tell you which of that state the server knows about.
 
 The pressure comes from ephemeral data.
@@ -760,11 +774,15 @@ It is the wrong abstraction for that job.
 
 Within the Stimulus model, the answer is to not have a client-side graph.
 Make the server render authoritative, let Turbo redraw, and keep controllers to small local changes.
-Used that way, Turbo and SSR prevent the network of front-end data dependencies from forming at all.
+Used that way, Turbo and SSR prevent the incidental complexity.
+The network of front-end data dependencies never forms.
 
 That answer has a ceiling.
 It is a coarser approach, bounded by the round trip.
 It will not stretch to a high-fidelity front end, where values move as the user types and one control reacts to another.
+Those values have to be derived on the front end, and derived state on the front end is what Stimulus cannot carry.
+A little of it is manageable.
+As it grows it inevitably pushes Stimulus beyond its limits, however well the rest is organised.
 That work needs declarative reactivity on the client, from Alpine, React or anything else that handles the data flow for you.
 
 It is also harder than it looks.
